@@ -1,0 +1,902 @@
+.container {
+  background: #222;
+  color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+
+}
+
+
+.entryRow input {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.plusBtn {
+  padding: 10px;
+  background: #ffc107;
+  color: #000;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.betsList {
+  margin-bottom: 16px;
+}
+
+.betsList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #333;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
+.num {
+  font-weight: bold;
+  font-size: 16px;
+  width: 40px;
+}
+
+.amt {
+  font-size: 16px;
+  flex: 1;
+  text-align: left;
+  padding-left: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer span {
+  font-size: 16px;
+}
+
+.submitBtn {
+  background: #28a745;
+  border: none;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Medium+ screens */
+@media (min-width: 600px) {
+  .entryRow {
+    flex-direction: row;
+    align-items: center;
+  }
+  .entryRow input {
+    flex: 1;
+  }
+  .plusBtn {
+    width: auto;
+  }
+  .footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .submitBtn {
+    width: auto;
+  }
+}
+
+
+.doubleInput {
+  display: flex;
+  gap: 8px;
+}
+
+.doubleInput input {
+  flex: 1;
+}
+.container {
+  background: #222;
+  color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+
+
+/* Styles for the two inputs inside the row */
+.entryRow input {
+  padding: 10px;
+  border-radius: 40px;
+  border: none;
+  font-size: 16px;
+  flex: 1;
+  box-sizing: border-box;
+  outline: none;
+  background: transparent;
+  color: #000;
+}
+
+.entryRow input::placeholder {
+  color: #666;
+}
+
+/* Style for the + button */
+.plusBtn {
+  padding: 10px 16px;
+  background: #ffc107;
+  color: #000;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.plusBtn:hover {
+  background: #e6b800;
+}
+
+.betsList {
+  margin-bottom: 16px;
+}
+
+.betsList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #333;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
+.num {
+  font-weight: bold;
+  font-size: 16px;
+  width: 40px;
+}
+
+.amt {
+  font-size: 16px;
+  flex: 1;
+  text-align: left;
+  padding-left: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer span {
+  font-size: 16px;
+}
+
+.submitBtn {
+  background: #28a745;
+  border: none;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Responsive layout for medium+ screens */
+@media (min-width: 600px) {
+  .footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .submitBtn {
+    width: auto;
+  }
+}
+
+/* Optional support for Maryaj layout */
+.doubleInput {
+  display: flex;
+  gap: 8px;
+}
+
+.doubleInput input {
+  flex: 1;
+}
+.container {
+  background: #222;
+  color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Flex row with spacing and rounded background */
+.entryRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 40px;
+  gap: 12px; /* ✅ space between inputs and button */
+  margin-bottom: 16px;
+}
+
+/* Style for inputs inside rounded row */
+.entryRow input {
+  padding: 10px 14px;
+  border-radius: 40px;
+  border: none;
+  font-size: 16px;
+  flex: 1;
+  outline: none;
+  background: transparent;
+  color: #000;
+}
+
+.entryRow input::placeholder {
+  color: #666;
+}
+
+/* Style for the + button */
+.plusBtn {
+  background: #ffc107;
+  color: #000;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 50%;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.plusBtn:hover {
+  background: #e6b800;
+}
+
+.betsList {
+  margin-bottom: 16px;
+}
+
+.betsList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #333;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
+.num {
+  font-weight: bold;
+  font-size: 16px;
+  width: 40px;
+}
+
+.amt {
+  font-size: 16px;
+  flex: 1;
+  text-align: left;
+  padding-left: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer span {
+  font-size: 16px;
+}
+
+.submitBtn {
+  background: #28a745;
+  border: none;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Medium+ screen layout */
+@media (min-width: 600px) {
+  .footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .submitBtn {
+    width: auto;
+  }
+}
+
+/* For Maryaj side-by-side inputs */
+.doubleInput {
+  display: flex;
+  gap: 8px;
+}
+
+.doubleInput input {
+  flex: 1;
+}
+.container {
+  background: #222;
+  color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.entryRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px; /* space between each element */
+  margin-bottom: 16px;
+}
+
+/* Input style - clean, visible separation */
+.entryRow input {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  width: 100%;
+  max-width: 120px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #000;
+  outline: none;
+}
+
+.entryRow input::placeholder {
+  color: #666;
+}
+
+/* Distinct button - round and spaced */
+.plusBtn {
+  padding: 10px 16px;
+  background: #ffc107;
+  color: #000;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s ease;
+}
+
+.plusBtn:hover {
+  background: #e6b800;
+}
+
+.betsList {
+  margin-bottom: 16px;
+}
+
+.betsList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #333;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
+.num {
+  font-weight: bold;
+  font-size: 16px;
+  width: 40px;
+}
+
+.amt {
+  font-size: 16px;
+  flex: 1;
+  text-align: left;
+  padding-left: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer span {
+  font-size: 16px;
+}
+
+.submitBtn {
+  background: #28a745;
+  border: none;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Medium+ screen layout */
+@media (min-width: 600px) {
+  .footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .submitBtn {
+    width: auto;
+  }
+}
+
+/* Double input row (for Maryaj) */
+.doubleInput {
+  display: flex;
+  gap: 8px;
+}
+
+.doubleInput input {
+  flex: 1;
+}
+.entryRow input {
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #000;
+  outline: none;
+}
+
+/* Specific control for number input */
+.entryRow input[type="number"] {
+  width: 80px; /* ✅ fixes the circle issue */
+  min-width: 60px;
+  max-width: 100px;
+}
+.betSelect {
+  background: #fff;
+  color: #000;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 14px;
+  margin: 0 8px;
+  cursor: pointer;
+}
+.timeRow {
+  display: flex;
+  justify-content: space-between;
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.container {
+  background: #222;
+  color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: rgb(29, 29, 40);
+}
+
+/* Rounded entry row */
+.entryRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 40px;
+  gap: 12px;
+  margin: 16px auto;
+  max-width: 350px;
+}
+
+/* Input fields */
+.entryRow input {
+  padding: 10px 14px;
+  border-radius: 40px;
+  border: none;
+  font-size: 16px;
+  background: transparent;
+  color: #000;
+  outline: none;
+  text-align: center;
+}
+
+/* Small number input (like "Pwen") */
+.entryRow input[type="number"] {
+  width: 80px;
+  min-width: 60px;
+  max-width: 100px;
+}
+
+/* Placeholder text */
+.entryRow input::placeholder {
+  color: #666;
+}
+
+/* Double input layout for Maryaj */
+.doubleInput {
+  display: flex;
+  gap: 8px;
+}
+.doubleInput input {
+  flex: 1;
+}
+
+/* + Button */
+.plusBtn {
+  background: #ffc107;
+  color: #000;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 50%;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+.plusBtn:hover {
+  background: #e6b800;
+}
+
+/* Time Row for NY / FL */
+.timeRow {
+  display: flex;
+  justify-content: space-between;
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+/* Bets List */
+.betsList {
+  margin-bottom: 16px;
+}
+
+
+.amt {
+  font-size: 16px;
+  flex: 1;
+  text-align: left;
+  padding-left: 8px;
+}
+.actions {
+  display: flex;
+  gap: 10px;
+}
+.actions button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Footer for total + submit */
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.footer span {
+  font-size: 16px;
+}
+.submitBtn {
+  background: #28a745;
+  border: none;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Medium+ screen layout */
+@media (min-width: 600px) {
+  .footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+.entryRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+/* Nimewo input (left side) */
+.entryRow input[type="text"] {
+  padding: 12px 16px;
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  outline: none;
+}
+
+/* Maryaj inputs (side-by-side circles) */
+.doubleInput {
+  display: flex;
+  gap: 8px;
+}
+
+.doubleInput input[type="text"] {
+  border-radius: 50%;
+  width: 64px;
+  height: 64px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  outline: none;
+}
+
+/* Pwen input (right side input) */
+.entryRow input[type="number"] {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 16px;
+  width: 100px; /* ✅ Adjusted to be shorter */
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  outline: none;
+}
+
+/* + button */
+.plusBtn {
+  background-color: #007bff;
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.plusBtn:hover {
+  background-color: #0056b3;
+}
+/* 1. Capsule input group (White bubble) */
+.entryRow {
+  background: linear-gradient(135deg, #ffffff, #f2f2f2);
+  border: 2px solid #007bff;
+  border-radius: 40px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+ 
+  
+}
+
+/* 2. Bets list container */
+.betsList li {
+  background: linear-gradient(135deg, #222, #444);
+  border-left: 5px solid #ffc107;
+  border-radius: 10px;
+  padding: 12px;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  box-shadow: 0 0 6px rgba(255, 193, 7, 0.3);
+}
+
+/* 3. Total row (make it pop with a clean highlight) */
+.totalRow {
+  background: linear-gradient(90deg, #111, #1a1a1a);
+  color: #ffc107;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 4. Submit Button area */
+.submitBtn {
+  background: linear-gradient(to right, #28a745, #218838);
+  color: #fff;
+  font-weight: bold;
+  font-size: 18px;
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 8px rgba(40, 167, 69, 0.4);
+  transition: background 0.3s ease;
+}
+
+.submitBtn:hover {
+  background: linear-gradient(to right, #218838, #1e7e34);
+}
+select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  margin-left: 6px;
+}
+.entryRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  background: #fff;
+  padding: 10px 16px;
+  border-radius: 40px;
+  gap: 12px;
+  margin: 16px auto;
+  max-width: 500px;
+}
+
+.doubleInput {
+  display: flex;
+  gap: 8px;
+}
+
+.doubleInput input {
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  outline: none;
+}
+
+.amountInput {
+  width: 90px;
+  padding: 12px 10px;
+  border-radius: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  outline: none;
+  text-align: center;
+}
+
+/* Location Dropdown */
+.entryRow select {
+  padding: 10px 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #fff;
+  color: #000;
+  outline: none;
+}
+
+/* + Button */
+.plusBtn {
+  background-color: #007bff;
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.plusBtn:hover {
+  background-color: #0056b3;
+}
+.actions button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  
+}

@@ -1,0 +1,184 @@
+.header {
+  background-color: #111;
+  color: white;
+  padding: 0.4rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Container to center the full layout */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 80%;
+}
+
+/* Left group: burger + logo + nav */
+.left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+/* Burger button wrapper */
+.burgerWrapper {
+  display: flex;
+  align-items: center;
+}
+
+/* Logo link and images */
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logoFull {
+  height: 32px;
+  display: block;
+}
+
+.logoSmall {
+  height: 32px;
+  display: none;
+}
+
+/* Navigation */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4rem;
+  margin-left: 1rem;
+  justify-content: space-around;
+}
+
+.link {
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.5rem 0;
+  position: relative;
+}
+
+.link::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: transparent;
+  transition: all 0.3s ease;
+}
+
+/* Active nav link indicator */
+.link.active::after,
+.active::after {
+  background-color: #ffc107;
+  border-radius: 999px;
+}
+
+/* Right side (login or bell/points) */
+.right {
+  font-weight: bold;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.bellButton {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  margin-left: 1rem;
+}
+
+.pointsContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pointsBubble {
+  background-color: #ffc107;
+  color: black;
+  font-weight: bold;
+  border-radius: 50px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav {
+    display: none;
+  }
+
+  .container {
+    width: 100%;
+  }
+
+  .logoFull {
+    display: none;
+  }
+
+  .logoSmall {
+    display: block;
+  }
+}
+/* Header */
+.header {
+  background-color: #111;
+  color: white;
+  padding: 0.4rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  -webkit-tap-highlight-color: transparent; /* Prevent flash on mobile */
+  user-select: none;
+}
+
+/* Burger button */
+.burger {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.5rem;
+  z-index: 1001;
+
+  outline: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-focus-ring-color: transparent;
+}
+
+.burger:focus,
+.burger:active {
+  background: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+img,
+svg,
+button svg,
+.burgerWrapper svg {
+  background-color: transparent !important;
+  border: none;
+  outline: none;
+}
+.burger {
+  background-color: transparent !important;
+  border: none;
+  box-shadow: none;
+}

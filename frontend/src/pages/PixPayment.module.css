@@ -1,0 +1,383 @@
+/* PixPayment.module.css */
+
+.container {
+  max-width: 600px;
+  margin: 2rem auto;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.title {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.inputGroup label {
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+}
+
+.inputGroup input {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.button {
+  background-color: #28a745;
+  color: white;
+  padding: 0.8rem 1.2rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.button:hover {
+  background-color: #218838;
+}
+
+.qrCode {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.status {
+  margin-top: 1rem;
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.success {
+  color: #28a745;
+}
+
+@media (max-width: 600px) {
+  .container {
+    padding: 1rem;
+  }
+}
+.container {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 1rem;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.button {
+  padding: 10px;
+  background-color: green;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+
+.status {
+  margin-top: 1rem;
+  font-weight: bold;
+}
+
+.qrContainer {
+  margin-top: 1rem;
+}
+
+.qrImage {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 1rem;
+}
+
+.codeBox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.codeInput {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.copyButton {
+  padding: 0.5rem;
+  background: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 5px;
+}
+.container {
+  padding: 1rem;
+  text-align: center;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1rem auto;
+  max-width: 300px;
+}
+
+.button {
+  background: green;
+  color: white;
+  padding: 0.7rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.resultBox {
+  margin-top: 1rem;
+}
+
+.pixCodeInput {
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.copyButton {
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.container {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  max-width: 500px;
+  margin: auto;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  font-family: sans-serif;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.payButton {
+  background-color: #28a745;
+  color: white;
+  padding: 10px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.receiptBox {
+  text-align: center;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo, .pixLogo {
+  height: 40px;
+}
+
+.info {
+  margin: 10px 0;
+}
+
+.instruction {
+  font-size: 0.95rem;
+  margin-top: 10px;
+}
+
+.pixInput {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  font-size: 0.9rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+.copyButton {
+  background-color: #ffc107;
+  color: black;
+  padding: 10px;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.or {
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+.qrImage {
+  width: 200px;
+  height: 200px;
+  margin-top: 10px;
+}
+
+.footer {
+  margin-top: 20px;
+  font-size: 0.8rem;
+  color: #666;
+}
+.container {
+  padding: 1rem;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.payButton {
+  background-color: #ffcc00;
+  border: none;
+  padding: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.receiptBox {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo, .pixLogo {
+  width: 80px;
+  height: auto;
+}
+
+.paymentInfo {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.label {
+  color: #2a6ddf;
+  margin-right: 6px;
+}
+
+.amount {
+  float: right;
+  font-weight: bold;
+  color: #2a6ddf;
+}
+
+.instruction {
+  margin: 1rem 0;
+}
+
+.pixInput {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.copyButton {
+  background-color: #ffc107;
+  border: none;
+  padding: 0.6rem 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.qrImage {
+  display: block;
+  margin: 0 auto 1rem;
+  width: 200px;
+  height: 200px;
+}
+
+.or {
+  text-align: center;
+  font-weight: bold;
+}
+
+.footer {
+  font-size: 0.8rem;
+  color: #666;
+  text-align: center;
+  margin-top: 2rem;
+}
+.amountRow {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+  padding: 0 10px;
+}
+
+.label {
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.value {
+  color: #333;
+  font-weight: 600;
+}
+.amountRow {
+  margin: 8px 0;
+  padding: 0 10px;
+}
+
+.label {
+  color: #1976d2;
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.value {
+  color: #333;
+  font-weight: 600;
+}
