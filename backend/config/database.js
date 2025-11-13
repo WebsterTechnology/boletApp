@@ -29,7 +29,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
       require: true,
       rejectUnauthorized: false
     }
-  }
-});
+  }  // ← This was missing the closing brace and parenthesis
+});  // ← Add this closing brace and parenthesis
 
 module.exports = sequelize;
