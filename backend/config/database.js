@@ -22,14 +22,15 @@ console.log("Loaded JWT_SECRET:", process.env.JWT_SECRET);
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: "postgres",
-  protocol: "postgres",
   logging: false,
   dialectOptions: {
     ssl: {
       require: true,
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      // Render-specific TLS settings
+      minVersion: "TLSv1.2"
     }
-  }  // ← This was missing the closing brace and parenthesis
-});  // ← Add this closing brace and parenthesis
+  }
+});
 
 module.exports = sequelize;
