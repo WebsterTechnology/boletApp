@@ -27,9 +27,40 @@ const RegisterModal = ({ onClose }) => {
 
   const fullPhone = `${selectedCountry.code}${phone}`;
 
-  const handleRegister = async () => {
+//   const handleRegister = async () => {
+//   try {
+//     const res = await fetch("http://localhost:3001/api/auth/register", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({
+//         phone: fullPhone.trim(),
+//         password: password.toString().trim(),
+//       }),
+//     });
+
+//     const data = await res.json();
+//     if (res.ok) {
+//       // ✅ Save both full phone & user object
+//       localStorage.setItem("user", JSON.stringify({ phone: fullPhone }));
+//       localStorage.setItem("userPhone", fullPhone); // ✅ Needed by Header
+//       window.dispatchEvent(new Event("userLoggedIn")); // ✅ Let Header know
+      
+    
+//       window.location.href = "/game"; // ✅ You can change this if needed
+//     } else {
+//       alert("❌ " + data.message);
+//     }
+//   } catch (err) {
+//     console.error("Register error:", err);
+//     alert("❌ Erè pandan ou te kreye kont la");
+//   }
+// };
+
+const API = import.meta.env.VITE_API_URL;
+
+const handleRegister = async () => {
   try {
-    const res = await fetch("http://localhost:3001/api/auth/register", {
+    const res = await fetch(`${API}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -40,13 +71,10 @@ const RegisterModal = ({ onClose }) => {
 
     const data = await res.json();
     if (res.ok) {
-      // ✅ Save both full phone & user object
       localStorage.setItem("user", JSON.stringify({ phone: fullPhone }));
-      localStorage.setItem("userPhone", fullPhone); // ✅ Needed by Header
-      window.dispatchEvent(new Event("userLoggedIn")); // ✅ Let Header know
-      
-    
-      window.location.href = "/game"; // ✅ You can change this if needed
+      localStorage.setItem("userPhone", fullPhone);
+      window.dispatchEvent(new Event("userLoggedIn"));
+      window.location.href = "/game";
     } else {
       alert("❌ " + data.message);
     }
@@ -55,7 +83,6 @@ const RegisterModal = ({ onClose }) => {
     alert("❌ Erè pandan ou te kreye kont la");
   }
 };
-
 
   return (
     <div className={styles.overlay}>
