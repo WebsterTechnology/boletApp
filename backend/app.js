@@ -51,7 +51,17 @@ require("dotenv").config();
 const app = express();
 
 // ---------- Middleware ----------
-app.use(cors());
+// CORS configuration for Vercel + Local dev
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",            // local frontend dev
+      "https://bolet-app.vercel.app"     // YOUR PRODUCTION FRONTEND
+    ],
+    credentials: true,
+  })
+);
+
 app.use(express.json()); // Parse JSON bodies
 
 // ---------- Import Routes ----------
@@ -64,9 +74,9 @@ const pwenRoutes = require("./routes/pwenRoutes");
 const pixRoutes = require("./routes/pixRoutes");
 const claimRoutes = require("./routes/claimRoutes");
 
-const adminBetsRoutes = require("./routes/adminBetsRoutes"); // specific admin bet endpoints
-const adminRoutes = require("./routes/adminRoutes");         // general admin routes
-const userRoutes = require("./routes/userRoutes");           // user mgmt routes
+const adminBetsRoutes = require("./routes/adminBetsRoutes"); 
+const adminRoutes = require("./routes/adminRoutes");         
+const userRoutes = require("./routes/userRoutes");           
 
 // ---------- Mount Routes ----------
 app.use("/api/auth", authRoutes);
@@ -80,13 +90,8 @@ app.use("/api/pix", pixRoutes);
 // ⚠️ MUST COME BEFORE /api/admin so it doesn't get overridden
 app.use("/api/admin/bets", adminBetsRoutes);
 
-// All other admin endpoints
 app.use("/api/admin", adminRoutes);
-
-// User endpoints
 app.use("/api/users", userRoutes);
-
-// Claims
 app.use("/api/claims", claimRoutes);
 
 // ---------- Export ----------
