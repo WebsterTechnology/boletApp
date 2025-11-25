@@ -14,6 +14,26 @@
 // );
 
 // module.exports = sequelize;
+// const { Sequelize } = require("sequelize");
+// require("dotenv").config();
+
+// console.log("Loaded DATABASE_URL:", process.env.DATABASE_URL);
+// console.log("Loaded JWT_SECRET:", process.env.JWT_SECRET);
+
+// const sequelize = new Sequelize(process.env.DATABASE_URL, {
+//   dialect: "postgres",
+//   logging: false,
+//   dialectOptions: {
+//     ssl: {
+//       require: true,
+//       rejectUnauthorized: false,
+//       // Render-specific TLS settings
+//       minVersion: "TLSv1.2"
+//     }
+//   }
+// });
+
+// module.exports = sequelize;
 const { Sequelize } = require("sequelize");
 require("dotenv").config();
 
@@ -26,9 +46,7 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialectOptions: {
     ssl: {
       require: true,
-      rejectUnauthorized: false,
-      // Render-specific TLS settings
-      minVersion: "TLSv1.2"
+      rejectUnauthorized: false
     }
   }
 });
