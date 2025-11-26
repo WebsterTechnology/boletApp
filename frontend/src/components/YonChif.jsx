@@ -6,7 +6,7 @@ import { useBet } from "../context/BetContext.jsx";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const API = import.meta.env.VITE_API_URL || "https://relevant-ophelia-bolet-6d72249b.koyeb.app";
+const API = import.meta.env.VITE_API_URL || "boletapp-production.up.railway.app";
 
 /* ---------------- Helpers ---------------- */
 async function syncUserFromServer() {

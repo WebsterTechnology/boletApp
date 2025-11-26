@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const API = import.meta.env.VITE_API_URL || "https://relevant-ophelia-bolet-6d72249b.koyeb.app";
+const API = import.meta.env.VITE_API_URL || "boletapp-production.up.railway.app";
 
 export default function Profile() {
   const navigate = useNavigate();
