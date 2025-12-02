@@ -52,7 +52,7 @@ const Header = ({ openLogin }) => {
                 isActive ? `${styles.link} ${styles.active}` : styles.link
               }
             >
-              Rezilta
+              Reziltaaa
             </NavLink>
           </nav>
         </div>
