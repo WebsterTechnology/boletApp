@@ -50,21 +50,22 @@ require("dotenv").config();
 
 const app = express();
 
-// ---------- Middleware ----------
-// CORS configuration for Vercel + Local dev
+// ----------------------------------------------------
+// 🔥 FIXED CORS — ALLOW ALL ORIGINS FOR DEBUGGING PIX
+// ----------------------------------------------------
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",            // local frontend dev
-      "https://bolet-app.vercel.app"     // YOUR PRODUCTION FRONTEND
-    ],
-    credentials: true,
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "access_token"],
   })
 );
 
 app.use(express.json()); // Parse JSON bodies
 
-// ---------- Import Routes ----------
+// ----------------------------------------------------
+// 🔗 Import Routes
+// ----------------------------------------------------
 const authRoutes = require("./routes/authRoutes");
 const yonChifRoutes = require("./routes/yonChifRoutes");
 const maryajRoutes = require("./routes/maryajRoutes");
@@ -74,11 +75,13 @@ const pwenRoutes = require("./routes/pwenRoutes");
 const pixRoutes = require("./routes/pixRoutes");
 const claimRoutes = require("./routes/claimRoutes");
 
-const adminBetsRoutes = require("./routes/adminBetsRoutes"); 
-const adminRoutes = require("./routes/adminRoutes");         
-const userRoutes = require("./routes/userRoutes");           
+const adminBetsRoutes = require("./routes/adminBetsRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const userRoutes = require("./routes/userRoutes");
 
-// ---------- Mount Routes ----------
+// ----------------------------------------------------
+// 🚀 Mount Routes
+// ----------------------------------------------------
 app.use("/api/auth", authRoutes);
 app.use("/api/yonchif", yonChifRoutes);
 app.use("/api/maryaj", maryajRoutes);
@@ -87,12 +90,14 @@ app.use("/api/bets", betsRoutes);
 app.use("/api/points", pwenRoutes);
 app.use("/api/pix", pixRoutes);
 
-// ⚠️ MUST COME BEFORE /api/admin so it doesn't get overridden
+// MUST COME BEFORE /api/admin
 app.use("/api/admin/bets", adminBetsRoutes);
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/claims", claimRoutes);
 
-// ---------- Export ----------
+// ----------------------------------------------------
+// Export App
+// ----------------------------------------------------
 module.exports = app;
