@@ -533,18 +533,20 @@
 // });
 
 // module.exports = router;
+// routes/pixRoutes.js
 const express = require("express");
 const axios = require("axios");
 const router = express.Router();
 const { User, PixPayment } = require("../models");
 
+// ---------------- CONFIG ----------------
 const ASAAS_BASE_URL =
   process.env.ASAAS_BASE_URL ||
   (process.env.ASAAS_ENV === "production"
     ? "https://www.asaas.com/api/v3"
     : "https://sandbox.asaas.com/api/v3");
 
-// ---- PHONE NORMALIZER ----
+// ---------------- HELPERS ----------------
 function normalizePhone(raw) {
   const d = String(raw || "").replace(/\D/g, "");
   const no55 = d.startsWith("55") && d.length > 11 ? d.slice(2) : d;
@@ -554,7 +556,6 @@ function normalizePhone(raw) {
   return {};
 }
 
-// ---- GET PIX QR ----
 async function getPixQrByPaymentId(paymentId) {
   const { data } = await axios.get(
     `${ASAAS_BASE_URL}/payments/${paymentId}/pixQrCode`,
@@ -570,9 +571,8 @@ async function getPixQrByPaymentId(paymentId) {
 
 router.get("/ping", (req, res) => res.json({ ok: "pix" }));
 
-// 🔥 CREATE PIX + CUSTOMER
+// ---------------- CREATE PIX ----------------
 router.post("/create", async (req, res) => {
-  // 👇 LOGS EXTRA IMPORTANTES
   console.log("========= PIX /create =========");
   console.log("Body recebido:", req.body);
   console.log("ASAAS_ENV:", process.env.ASAAS_ENV);
@@ -580,31 +580,30 @@ router.post("/create", async (req, res) => {
   console.log("ASAAS_API_KEY existe?", !!process.env.ASAAS_API_KEY);
 
   try {
-    const { userId, amountBRL, description, name, cpfCnpj, email, phone } = req.body;
+    const { userId, amountBRL, description, name, cpfCnpj, email, phone } =
+      req.body;
 
-    // ---- BASIC VALIDATION ----
-    if (!userId)
-      return res.status(400).json({ error: "userId is required" });
+    if (!userId) return res.status(400).json({ error: "userId is required" });
 
     const amount = Number(amountBRL);
     if (!amount || amount <= 0)
       return res.status(400).json({ error: "amountBRL must be > 0" });
 
     const user = await User.findByPk(userId);
-    if (!user)
-      return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-    // ---- CREATE CUSTOMER IF MISSING ----
+    // -------- CREATE CUSTOMER IF NEEDED --------
     if (!user.asaasCustomerId) {
       const digits = String(cpfCnpj || "").replace(/\D/g, "");
 
       if (!(digits.length === 11 || digits.length === 14)) {
         return res.status(400).json({
-          error: "CPF/CNPJ inválido. Deve conter 11 (CPF) ou 14 (CNPJ) dígitos."
+          error:
+            "CPF/CNPJ inválido. Deve conter 11 (CPF) ou 14 (CNPJ) dígitos.",
         });
       }
 
-      // 1️⃣ tenta achar cliente já existente
+      // 1️⃣ Try lookup existing customer
       try {
         const { data: list } = await axios.get(
           `${ASAAS_BASE_URL}/customers`,
@@ -615,14 +614,15 @@ router.post("/create", async (req, res) => {
         );
 
         if (Array.isArray(list?.data) && list.data.length) {
+          console.log("⚡ Cliente já existe no Asaas:", list.data[0].id);
           user.asaasCustomerId = list.data[0].id;
           await user.save();
         }
       } catch (err) {
-        console.error("ASAAS LOOKUP ERROR:", err?.response?.data || err);
+        console.error("❌ ASAAS LOOKUP ERROR:", err?.response?.data || err);
       }
 
-      // 2️⃣ se ainda não tiver, cria no Asaas
+      // 2️⃣ Create customer if missing
       if (!user.asaasCustomerId) {
         try {
           const payload = {
@@ -632,7 +632,8 @@ router.post("/create", async (req, res) => {
             ...normalizePhone(phone),
           };
 
-          console.log("📤 SENDING CUSTOMER TO ASAAS:", payload);
+          console.log("📤 Enviando payload para criar cliente Asaas:");
+          console.log(payload);
 
           const { data: cust } = await axios.post(
             `${ASAAS_BASE_URL}/customers`,
@@ -640,11 +641,15 @@ router.post("/create", async (req, res) => {
             { headers: { access_token: process.env.ASAAS_API_KEY } }
           );
 
+          console.log("✅ Cliente criado no Asaas:", cust);
+
           user.asaasCustomerId = cust.id;
           await user.save();
-
         } catch (err) {
-          console.error("🔥 ASAAS CUSTOMER ERROR RAW:", err?.response?.data || err);
+          console.error(
+            "🔥 ASAAS CUSTOMER ERROR RAW:",
+            err?.response?.data || err
+          );
 
           const provider = err?.response?.data;
 
@@ -659,7 +664,9 @@ router.post("/create", async (req, res) => {
       }
     }
 
-    // ---- CREATE PIX PAYMENT ----
+    // -------- CREATE PIX PAYMENT --------
+    console.log("📌 Criando cobrança PIX para customer:", user.asaasCustomerId);
+
     const { data: payment } = await axios.post(
       `${ASAAS_BASE_URL}/payments`,
       {
@@ -677,7 +684,11 @@ router.post("/create", async (req, res) => {
       }
     );
 
-    let qrCode = null, copyPaste = null, expirationDate = null;
+    console.log("💰 Pagamento criado:", payment);
+
+    let qrCode = null,
+      copyPaste = null,
+      expirationDate = null;
 
     try {
       const qr = await getPixQrByPaymentId(payment.id);
@@ -685,10 +696,10 @@ router.post("/create", async (req, res) => {
       copyPaste = qr.copyPaste;
       expirationDate = qr.expirationDate;
     } catch (e) {
-      console.error("QR Fetch error:", e?.response?.data || e);
+      console.error("⚠️ Erro ao buscar QR:", e?.response?.data || e);
     }
 
-    // save locally
+    // save in DB
     const expiresAt = new Date();
     expiresAt.setHours(23, 59, 0, 0);
 
@@ -715,7 +726,6 @@ router.post("/create", async (req, res) => {
         payment.bankSlipUrl ||
         null,
     });
-
   } catch (err) {
     console.error("🔥 GLOBAL PIX ERROR:", err?.response?.data || err);
 
@@ -728,7 +738,7 @@ router.post("/create", async (req, res) => {
   }
 });
 
-// ---- GET QR CODE ----
+// ---------------- GET QR ----------------
 router.get("/qr/:paymentId", async (req, res) => {
   try {
     const local = await PixPayment.findByPk(req.params.paymentId);
@@ -738,7 +748,6 @@ router.get("/qr/:paymentId", async (req, res) => {
     if (!qr.qrCode && !qr.copyPaste) return res.status(204).send();
 
     return res.json(qr);
-
   } catch (err) {
     return res.status(500).json({
       error:
@@ -749,7 +758,7 @@ router.get("/qr/:paymentId", async (req, res) => {
   }
 });
 
-// ---- STATUS POLLING ----
+// ---------------- CHECK PAYMENT STATUS ----------------
 router.get("/status/:paymentId", async (req, res) => {
   try {
     const local = await PixPayment.findByPk(req.params.paymentId);
@@ -761,7 +770,6 @@ router.get("/status/:paymentId", async (req, res) => {
     );
 
     return res.json({ status: p.status });
-
   } catch (err) {
     return res.status(500).json({
       error:
@@ -772,7 +780,7 @@ router.get("/status/:paymentId", async (req, res) => {
   }
 });
 
-// ---- WEBHOOK ----
+// ---------------- WEBHOOK ----------------
 router.post("/webhook", async (req, res) => {
   try {
     const body = req.body || {};
