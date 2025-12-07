@@ -144,7 +144,7 @@ const Header = ({ openLogin }) => {
               {/* ✅ BUY MORE POINTS */}
               <button
                 className={styles.buyButton}
-                onClick={() => navigate("/buy-credit")}
+                onClick={() => navigate("/buy-credits")}
               >
                 Achte Pwen
               </button>
