@@ -146,7 +146,7 @@ const Header = ({ openLogin }) => {
                 className={styles.buyButton}
                 onClick={() => navigate("/buy-credit")}
               >
-                Achte Plis Pwen
+                Achte Pwen
               </button>
 
               {/* ✅ WITHDRAW POINTS */}
@@ -154,7 +154,7 @@ const Header = ({ openLogin }) => {
                 className={styles.withdrawButton}
                 onClick={() => navigate("/withdraw")}
               >
-                Voye Pwen Sou Kont Ou
+                Retire Pwen
               </button>
 
               <button
