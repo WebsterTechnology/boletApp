@@ -182,3 +182,46 @@ button svg,
   border: none;
   box-shadow: none;
 }
+.buyButton {
+  background-color: #22c55e;
+  color: black;
+  border: none;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.withdrawButton {
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.buyButton:hover {
+  background-color: #16a34a;
+}
+
+.withdrawButton:hover {
+  background-color: #dc2626;
+}
+
+/* Mobile stacking */
+@media (max-width: 768px) {
+  .pointsContainer {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .buyButton,
+  .withdrawButton {
+    font-size: 0.65rem;
+    padding: 0.3rem 0.6rem;
+  }
+}
