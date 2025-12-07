@@ -1,347 +1,4 @@
 
-// const express = require("express");
-// const router = express.Router();
-// const axios = require("axios");
-// const { Op } = require("sequelize");
-// const fs = require("fs");
-// const path = require("path");
-
-// const {
-//   User,
-//   PixPayment,
-//   YonChif,
-//   Maryaj,
-//   TwaChif,
-//   WinClaim, // ✅ NEW: claims
-// } = require("../models");
-
-// const authenticate = require("../middleware/authenticate");
-// const adminOnly = require("../middleware/adminOnly");
-
-// /* -------------------- ASAAS base URL -------------------- */
-// const ASAAS_BASE_URL =
-//   process.env.ASAAS_BASE_URL ||
-//   (process.env.ASAAS_ENV === "production"
-//     ? "https://www.asaas.com/api/v3"
-//     : "https://sandbox.asaas.com/api/v3");
-
-// /* -------------------- Associations (safety) -------------- */
-// if (!PixPayment.associations?.User) PixPayment.belongsTo(User, { foreignKey: "userId" });
-// if (!YonChif.associations?.User) YonChif.belongsTo(User, { foreignKey: "userId" });
-// if (!Maryaj.associations?.User) Maryaj.belongsTo(User, { foreignKey: "userId" });
-// if (!TwaChif.associations?.User) TwaChif.belongsTo(User, { foreignKey: "userId" });
-// if (WinClaim && !WinClaim.associations?.User) WinClaim.belongsTo(User, { foreignKey: "userId" });
-
-// /* =========================================================
-//    USERS
-// ========================================================= */
-// router.get("/users", authenticate, adminOnly, async (_req, res) => {
-//   try {
-//     const users = await User.findAll({
-//       attributes: ["id", "phone", "points", "isAdmin"],
-//       order: [["id", "ASC"]],
-//     });
-//     res.json(users);
-//   } catch (err) {
-//     console.error("admin GET /users error:", err);
-//     res.status(500).json({ message: "Failed to fetch users" });
-//   }
-// });
-
-// router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => {
-//   const { id } = req.params;
-//   const toAdd = parseInt(req.body.amount, 10);
-//   if (!toAdd || Number.isNaN(toAdd)) {
-//     return res.status(400).json({ message: "Amount is required and must be a number" });
-//   }
-//   try {
-//     const user = await User.findByPk(id);
-//     if (!user) return res.status(404).json({ message: "User not found" });
-
-//     user.points += toAdd;
-//     await user.save();
-
-//     res.json({ message: `Added ${toAdd} pwen to ${user.phone}`, user });
-//   } catch (err) {
-//     console.error("admin POST /users/:id/add-pwen error:", err);
-//     res.status(500).json({ message: "Error adding pwen" });
-//   }
-// });
-
-// /* =========================================================
-//    PIX PAYMENTS
-// ========================================================= */
-// router.get("/payments", authenticate, adminOnly, async (req, res) => {
-//   try {
-//     const allowed = ["created", "pending", "paid", "credited", "failed", "expired"];
-//     const status = (req.query.status || "paid").toLowerCase();
-
-//     const where = {};
-//     if (allowed.includes(status)) where.status = status;
-//     if (req.query.userId) where.userId = req.query.userId;
-
-//     const rows = await PixPayment.findAll({
-//       where,
-//       order: [["createdAt", "DESC"]],
-//       include: [{ model: User, attributes: ["id", "phone", "points"] }],
-//     });
-
-//     const data = rows.map((p) => ({
-//       id: p.id,
-//       userId: p.userId,
-//       phone: p.User?.phone,
-//       providerRef: p.providerRef,
-//       amountBRL: p.amountBRL,
-//       netValueBRL: p.netValueBRL,
-//       feeBRL: p.feeBRL,
-//       points: p.points,
-//       status: p.status,
-//       createdAt: p.createdAt,
-//       updatedAt: p.updatedAt,
-//     }));
-
-//     res.json(data);
-//   } catch (e) {
-//     console.error("admin GET /payments error:", e);
-//     res.status(500).json({ message: "Failed to fetch payments" });
-//   }
-// });
-
-// router.post("/payments/:id/credit", authenticate, adminOnly, async (req, res) => {
-//   const { id } = req.params;
-
-//   const t = await User.sequelize.transaction();
-//   try {
-//     const pay = await PixPayment.findByPk(id, { transaction: t, lock: t.LOCK.UPDATE });
-//     if (!pay) {
-//       await t.rollback();
-//       return res.status(404).json({ message: "Payment not found" });
-//     }
-//     if (pay.status === "credited") {
-//       await t.commit();
-//       return res.json({ message: "Already credited", payment: pay });
-//     }
-//     if (pay.status !== "paid") {
-//       await t.rollback();
-//       return res.status(400).json({ message: `Cannot credit payment in status ${pay.status}` });
-//     }
-
-//     const user = await User.findByPk(pay.userId, { transaction: t, lock: t.LOCK.UPDATE });
-//     if (!user) {
-//       await t.rollback();
-//       return res.status(404).json({ message: "User not found for this payment" });
-//     }
-
-//     user.points += parseInt(pay.points, 10);
-//     await user.save({ transaction: t });
-
-//     pay.status = "credited";
-//     await pay.save({ transaction: t });
-
-//     await t.commit();
-//     res.json({ message: `Credited +${pay.points} P to ${user.phone}`, payment: pay, user });
-//   } catch (e) {
-//     await t.rollback();
-//     console.error("admin POST /payments/:id/credit error:", e);
-//     res.status(500).json({ message: "Failed to credit payment" });
-//   }
-// });
-
-// router.post("/payments/sync", authenticate, adminOnly, async (_req, res) => {
-//   try {
-//     const rows = await PixPayment.findAll({
-//       where: { status: { [Op.in]: ["pending", "created"] } },
-//       order: [["createdAt", "DESC"]],
-//     });
-
-//     let updated = 0;
-//     for (const row of rows) {
-//       try {
-//         const { data: p } = await axios.get(
-//           `${ASAAS_BASE_URL}/payments/${row.providerRef}`,
-//           { headers: { access_token: process.env.ASAAS_API_KEY } }
-//         );
-
-//         const s = (p.status || "").toUpperCase();
-//         if (["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(s)) {
-//           row.status = "paid";
-//           if (p.netValue != null) row.netValueBRL = p.netValue;
-//           if (p.value != null && p.netValue != null) {
-//             row.feeBRL = (Number(p.value) - Number(p.netValue)).toFixed(2);
-//           }
-//           await row.save();
-//           updated++;
-//         }
-//       } catch {
-//         /* ignore single-row errors */
-//       }
-//     }
-
-//     res.json({ updated, total: rows.length });
-//   } catch (e) {
-//     console.error("admin POST /payments/sync error:", e);
-//     res.status(500).json({ message: "Sync failed" });
-//   }
-// });
-
-// /* =========================================================
-//    BETS (yonchif / maryaj / twachif) — AdminBets.jsx
-// ========================================================= */
-// router.get("/bets", authenticate, adminOnly, async (req, res) => {
-//   try {
-//     const TYPES = {
-//       yonchif: { Model: YonChif, kind: "yonchif" },
-//       maryaj: { Model: Maryaj, kind: "maryaj" },
-//       twachif: { Model: TwaChif, kind: "twachif" },
-//     };
-
-//     const { type, status } = req.query;
-//     const selected = type && TYPES[type] ? { [type]: TYPES[type] } : TYPES;
-
-//     const where = {};
-//     if (status) where.status = status.toLowerCase();
-
-//     const out = [];
-
-//     for (const [t, cfg] of Object.entries(selected)) {
-//       const rows = await cfg.Model.findAll({
-//         where,
-//         order: [["createdAt", "DESC"]],
-//         include: [{ model: User, attributes: ["id", "phone"] }],
-//       });
-
-//       for (const r of rows) {
-//         let numbers = "-";
-//         if (t === "yonchif" || t === "twachif") numbers = r.number ?? "-";
-//         if (t === "maryaj") numbers = [r.part1, r.part2].filter(Boolean).join("-") || "-";
-
-//         out.push({
-//           id: r.id,
-//           type: t,
-//           userId: r.userId,
-//           phone: r.User?.phone,
-//           numbers,
-//           pwen: Number(r.pwen || 0),
-//           draw: r.location || null,
-//           status: (r.status || "pending").toLowerCase(),
-//           createdAt: r.createdAt,
-//         });
-//       }
-//     }
-
-//     res.json(out);
-//   } catch (e) {
-//     console.error("admin GET /bets error:", e);
-//     res.status(500).json({ message: "Failed to fetch bets" });
-//   }
-// });
-
-// router.patch("/bets/:type/:id/status", authenticate, adminOnly, async (req, res) => {
-//   try {
-//     const { type, id } = req.params;
-//     const status = String(req.body.status || "").toLowerCase();
-//     const allowed = ["pending", "won", "lost", "paid"];
-//     if (!allowed.includes(status)) {
-//       return res.status(400).json({ message: "Invalid status" });
-//     }
-
-//     const map = { yonchif: YonChif, maryaj: Maryaj, twachif: TwaChif };
-//     const Model = map[(type || "").toLowerCase()];
-//     if (!Model) return res.status(400).json({ message: "Invalid type" });
-
-//     const bet = await Model.findByPk(id);
-//     if (!bet) return res.status(404).json({ message: "Bet not found" });
-
-//     bet.status = status;
-//     await bet.save();
-
-//     res.json({ message: "Bet status updated", bet });
-//   } catch (e) {
-//     console.error("admin PATCH /bets/:type/:id/status error:", e);
-//     res.status(500).json({ message: "Failed to update bet" });
-//   }
-// });
-
-// /* =========================================================
-//    WIN CLAIMS
-// ========================================================= */
-// router.get("/claims", authenticate, adminOnly, async (req, res) => {
-//   try {
-//     if (!WinClaim) return res.json([]);
-//     const where = {};
-//     if (req.query.status) where.status = String(req.query.status).toLowerCase();
-
-//     const rows = await WinClaim.findAll({
-//       where,
-//       order: [["createdAt", "DESC"]],
-//       include: [{ model: User, attributes: ["id", "phone", "points"] }],
-//     });
-
-//     const data = rows.map((c) => ({
-//       id: c.id,
-//       userId: c.userId,
-//       phone: c.User?.phone,
-//       betType: c.betType,
-//       betId: c.betId,
-//       winAmount: Number(c.winAmount || 0),
-//       payoutMethod: c.payoutMethod,
-//       pixKey: c.pixKey || null,
-//       status: c.status,
-//       note: c.note || null,
-//       createdAt: c.createdAt,
-//       updatedAt: c.updatedAt,
-//     }));
-
-//     res.json(data);
-//   } catch (e) {
-//     console.error("admin GET /claims error:", e);
-//     res.status(500).json({ message: "Failed to fetch claims" });
-//   }
-// });
-
-// /* =========================================================
-//    DISABLE NUMBERS (Admin Control) — Persistent & Public
-// ========================================================= */
-// const filePath = path.join(__dirname, "../data/disabledNumbers.json");
-
-// if (!fs.existsSync(filePath)) {
-//   fs.mkdirSync(path.dirname(filePath), { recursive: true });
-//   fs.writeFileSync(filePath, JSON.stringify([]));
-// }
-
-// function readDisabled() {
-//   try {
-//     const data = fs.readFileSync(filePath, "utf8");
-//     return JSON.parse(data);
-//   } catch {
-//     return [];
-//   }
-// }
-// function saveDisabled(list) {
-//   fs.writeFileSync(filePath, JSON.stringify(list, null, 2));
-// }
-
-// // 🔐 Admin-only management
-// router.get("/disabled-numbers", authenticate, adminOnly, (req, res) => {
-//   res.json(readDisabled());
-// });
-
-// router.post("/disabled-numbers", authenticate, adminOnly, (req, res) => {
-//   const { numbers } = req.body;
-//   if (!Array.isArray(numbers)) {
-//     return res.status(400).json({ message: "numbers must be an array" });
-//   }
-//   const clean = [...new Set(numbers.map((n) => String(n).trim()))];
-//   saveDisabled(clean);
-//   res.json({ message: "Disabled numbers updated", disabledNumbers: clean });
-// });
-
-// // 🌍 Public route for player frontend
-// router.get("/public-disabled-numbers", (req, res) => {
-//   res.json(readDisabled());
-// });
-
-// module.exports = router;
 const express = require("express");
 const router = express.Router();
 const axios = require("axios");
@@ -410,6 +67,33 @@ router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => 
     res.status(500).json({ message: "Error adding pwen" });
   }
 });
+
+router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) => {
+  const { id } = req.params;
+  const toRemove = parseInt(req.body.amount, 10);
+
+  if (!toRemove || Number.isNaN(toRemove)) {
+    return res.status(400).json({ message: "Amount is required and must be a number" });
+  }
+
+  try {
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (user.points < toRemove) {
+      return res.status(400).json({ message: "User does not have enough points" });
+    }
+
+    user.points -= toRemove;
+    await user.save();
+
+    res.json({ message: `Removed ${toRemove} pwen from ${user.phone}`, user });
+  } catch (err) {
+    console.error("admin POST /users/:id/remove-pwen error:", err);
+    res.status(500).json({ message: "Error removing pwen" });
+  }
+});
+
 
 /* =========================================================
    PIX PAYMENTS
