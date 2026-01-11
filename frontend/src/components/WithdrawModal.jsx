@@ -2,10 +2,16 @@ import React, { useState } from "react";
 import emailjs from "@emailjs/browser";
 import styles from "../style/WithdrawModal.module.css";
 
-// ✅ EmailJS config (frontend only – OK)
+// ❗ DO NOT CHANGE (as requested)
 const SERVICE_ID = "service_lr5adiq";
 const TEMPLATE_ID = "template_vsokyke";
-const PUBLIC_KEY = "ZgNnVzZlDI3N9hwfj"; 
+const PUBLIC_KEY = "ZgNnVzZlDI3N9hwfj";
+
+// backend API
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+// rules
+const MIN_WITHDRAW = 30;
 
 const WithdrawModal = ({ onClose }) => {
   const [form, setForm] = useState({
@@ -26,26 +32,61 @@ const WithdrawModal = ({ onClose }) => {
     }));
   };
 
+  // 🔒 REAL SYSTEM CHECK (source of truth)
+  const fetchRealPoints = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Not authenticated");
+
+    const res = await fetch(`${API}/api/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch user");
+
+    const user = await res.json();
+    return Number(user.points || 0);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // ✅ basic validation
-    if (!form.name || !form.phone || !form.amount) {
-      alert("Tanpri ranpli tout chan obligatwa yo");
+    const amount = Number(form.amount);
+
+    // basic form validation
+    if (!form.name || !form.phone || !amount) {
+      alert("❌ Tanpri ranpli tout chan obligatwa yo");
       return;
     }
 
     setLoading(true);
 
     try {
+      // ✅ fetch REAL points from backend
+      const realPoints = await fetchRealPoints();
+
+      // ❌ rule 1: minimum withdraw
+      if (realPoints < MIN_WITHDRAW) {
+        alert(`❌ Ou bezwen omwen ${MIN_WITHDRAW} pwen pou retire`);
+        return;
+      }
+
+      // ❌ rule 2: cannot exceed balance
+      if (amount > realPoints) {
+        alert("❌ Ou pa gen ase pwen pou montan sa");
+        return;
+      }
+
+      // ✅ only now send EmailJS
       await emailjs.send(
         SERVICE_ID,
         TEMPLATE_ID,
         {
           name: form.name,
-          email: form.email || "N/A",
+          email: form.email || "Non fourni",
           phone: form.phone,
-          amount: form.amount,
+          amount: amount,
           message: form.message || "Aucun message",
         },
         PUBLIC_KEY
@@ -54,8 +95,8 @@ const WithdrawModal = ({ onClose }) => {
       alert("✅ Demande de retrait envoyée !");
       onClose();
     } catch (error) {
-      console.error("EmailJS error:", error);
-      alert("❌ Erreur lors de l'envoi. Réessayez.");
+      console.error("Withdraw error:", error);
+      alert("❌ Erè sistèm. Tanpri eseye ankò");
     } finally {
       setLoading(false);
     }
@@ -98,7 +139,7 @@ const WithdrawModal = ({ onClose }) => {
           <input
             type="number"
             name="amount"
-            placeholder="Montant à retirer"
+            placeholder="Montant à retirer (min 30)"
             value={form.amount}
             onChange={handleChange}
             required
@@ -112,7 +153,7 @@ const WithdrawModal = ({ onClose }) => {
           />
 
           <button type="submit" disabled={loading}>
-            {loading ? "Envoi..." : "Envoyer"}
+            {loading ? "Vérification..." : "Envoyer"}
           </button>
         </form>
       </div>
