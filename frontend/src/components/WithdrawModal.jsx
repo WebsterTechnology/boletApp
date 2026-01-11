@@ -1,5 +1,11 @@
 import React, { useState } from "react";
+import emailjs from "@emailjs/browser";
 import styles from "../style/WithdrawModal.module.css";
+
+// ✅ EmailJS config (frontend only – OK)
+const SERVICE_ID = "service_ejny1ri";
+const TEMPLATE_ID = "template_6sr0b7k";
+const PUBLIC_KEY = "ZgNnVzZlDI3N9hwfj"; 
 
 const WithdrawModal = ({ onClose }) => {
   const [form, setForm] = useState({
@@ -10,6 +16,8 @@ const WithdrawModal = ({ onClose }) => {
     message: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({
@@ -18,29 +26,45 @@ const WithdrawModal = ({ onClose }) => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // simple validation (safe, no regex)
+    // ✅ basic validation
     if (!form.name || !form.phone || !form.amount) {
       alert("Tanpri ranpli tout chan obligatwa yo");
       return;
     }
 
-    console.log("Withdraw request:", form);
+    setLoading(true);
 
-    // later: EmailJS or API call here
+    try {
+      await emailjs.send(
+        SERVICE_ID,
+        TEMPLATE_ID,
+        {
+          name: form.name,
+          email: form.email || "N/A",
+          phone: form.phone,
+          amount: form.amount,
+          message: form.message || "Aucun message",
+        },
+        PUBLIC_KEY
+      );
 
-    alert("Demann ou an voye ✔️");
-    onClose(); // close modal after submit
+      alert("✅ Demande de retrait envoyée !");
+      onClose();
+    } catch (error) {
+      console.error("EmailJS error:", error);
+      alert("❌ Erreur lors de l'envoi. Réessayez.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className={styles.overlay}>
       <div className={styles.modal}>
-        <button className={styles.close} onClick={onClose}>
-          ✕
-        </button>
+        <button className={styles.close} onClick={onClose}>✕</button>
 
         <h2>Retire Pwen</h2>
 
@@ -51,6 +75,7 @@ const WithdrawModal = ({ onClose }) => {
             placeholder="Nom complet"
             value={form.name}
             onChange={handleChange}
+            required
           />
 
           <input
@@ -67,6 +92,7 @@ const WithdrawModal = ({ onClose }) => {
             placeholder="Téléphone"
             value={form.phone}
             onChange={handleChange}
+            required
           />
 
           <input
@@ -75,6 +101,7 @@ const WithdrawModal = ({ onClose }) => {
             placeholder="Montant à retirer"
             value={form.amount}
             onChange={handleChange}
+            required
           />
 
           <textarea
@@ -84,7 +111,9 @@ const WithdrawModal = ({ onClose }) => {
             onChange={handleChange}
           />
 
-          <button type="submit">Envoyer</button>
+          <button type="submit" disabled={loading}>
+            {loading ? "Envoi..." : "Envoyer"}
+          </button>
         </form>
       </div>
     </div>
