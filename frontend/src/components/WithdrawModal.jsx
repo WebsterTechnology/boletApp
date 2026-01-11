@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import emailjs from "@emailjs/browser";
 import styles from "../style/WithdrawModal.module.css";
 
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+// ✅ EmailJS config (unchanged)
 const SERVICE_ID = "service_lr5adiq";
 const TEMPLATE_ID = "template_vsokyke";
 const PUBLIC_KEY = "ZgNnVzZlDI3N9hwfj";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const MIN_WITHDRAW = 30;
 
 const WithdrawModal = ({ onClose }) => {
   const [form, setForm] = useState({
@@ -17,33 +20,7 @@ const WithdrawModal = ({ onClose }) => {
     message: "",
   });
 
-  const [userPoints, setUserPoints] = useState(0);
   const [loading, setLoading] = useState(false);
-
-  // 🔒 FETCH REAL POINTS FROM BACKEND
-  useEffect(() => {
-    const fetchPoints = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const res = await fetch(`${API}/api/users/me`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) return;
-
-        const user = await res.json();
-        setUserPoints(Number(user.points || 0));
-      } catch (err) {
-        console.error("Failed to fetch points:", err);
-      }
-    };
-
-    fetchPoints();
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -55,33 +32,54 @@ const WithdrawModal = ({ onClose }) => {
 
     const amount = Number(form.amount);
 
-    // ❌ BASIC CHECKS
+    // 🧱 Basic form validation
     if (!form.name || !form.phone || !amount) {
-      alert("Tanpri ranpli tout chan obligatwa yo");
+      alert("❌ Tanpri ranpli tout chan obligatwa yo");
       return;
     }
 
-    // ❌ MINIMUM 30 PWEN
-    if (userPoints < 30) {
-      alert("❌ Ou bezwen omwen 30 pwen pou retire");
-      return;
-    }
-
-    // ❌ ASKING MORE THAN AVAILABLE
-    if (amount > userPoints) {
-      alert(`❌ Ou gen sèlman ${userPoints} pwen`);
-      return;
-    }
-
-    // ❌ ASKING LESS THAN 30
-    if (amount < 30) {
-      alert("❌ Retrait minimum: 30 pwen");
+    if (amount < MIN_WITHDRAW) {
+      alert(`❌ Retrait minimum: ${MIN_WITHDRAW} pwen`);
       return;
     }
 
     setLoading(true);
 
     try {
+      // 🔐 STEP 1 — Get REAL user from backend
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("❌ Vous n'êtes pas connecté");
+        return;
+      }
+
+      const res = await fetch(`${API}/api/users/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Impossible de vérifier les pwen");
+      }
+
+      const user = await res.json();
+      const userPoints = Number(user.points || 0);
+
+      // 🛑 HARD SECURITY CHECKS
+      if (userPoints < MIN_WITHDRAW) {
+        alert(`❌ Solde insuffisant. Vous avez ${userPoints} pwen`);
+        return;
+      }
+
+      if (amount > userPoints) {
+        alert(
+          `❌ Montant invalide.\nVous avez ${userPoints} pwen disponibles`
+        );
+        return;
+      }
+
+      // ✅ STEP 2 — Send Email (now safe)
       await emailjs.send(
         SERVICE_ID,
         TEMPLATE_ID,
@@ -97,9 +95,9 @@ const WithdrawModal = ({ onClose }) => {
 
       alert("✅ Demande de retrait envoyée !");
       onClose();
-    } catch (error) {
-      console.error("EmailJS error:", error);
-      alert("❌ Erreur lors de l'envoi. Réessayez.");
+    } catch (err) {
+      console.error("Withdraw error:", err);
+      alert("❌ Erreur lors de la demande de retrait");
     } finally {
       setLoading(false);
     }
@@ -109,21 +107,17 @@ const WithdrawModal = ({ onClose }) => {
     <div className={styles.overlay}>
       <div className={styles.modal}>
         <button className={styles.close} onClick={onClose}>✕</button>
-
         <h2>Retire Pwen</h2>
-        <p style={{ opacity: 0.7 }}>
-          Solde disponible : <strong>{userPoints} P</strong>
-        </p>
 
         <form onSubmit={handleSubmit}>
           <input name="name" placeholder="Nom complet" value={form.name} onChange={handleChange} required />
           <input name="email" type="email" placeholder="Email (optionnel)" value={form.email} onChange={handleChange} />
           <input name="phone" placeholder="Téléphone" value={form.phone} onChange={handleChange} required />
-          <input name="amount" type="number" placeholder="Montant à retirer" value={form.amount} onChange={handleChange} required />
+          <input name="amount" type="number" placeholder="Montant à retirer (min 30)" value={form.amount} onChange={handleChange} required />
           <textarea name="message" placeholder="Message (optionnel)" value={form.message} onChange={handleChange} />
 
           <button type="submit" disabled={loading}>
-            {loading ? "Envoi..." : "Envoyer"}
+            {loading ? "Vérification..." : "Envoyer"}
           </button>
         </form>
       </div>
