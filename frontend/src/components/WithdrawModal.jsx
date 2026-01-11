@@ -3,8 +3,8 @@ import emailjs from "@emailjs/browser";
 import styles from "../style/WithdrawModal.module.css";
 
 // ✅ EmailJS config (frontend only – OK)
-const SERVICE_ID = "service_ejny1ri";
-const TEMPLATE_ID = "template_6sr0b7k";
+const SERVICE_ID = "service_lr5adiq";
+const TEMPLATE_ID = "template_vsokyke";
 const PUBLIC_KEY = "ZgNnVzZlDI3N9hwfj"; 
 
 const WithdrawModal = ({ onClose }) => {
