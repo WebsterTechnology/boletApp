@@ -88,10 +88,12 @@ import logoSmall from "../assets/loto.png";
 import { FaBell } from "react-icons/fa";
 import NotificationPanel from "./NotificationPanel";
 import Pwen from "./Pwen";
+import WithdrawModal from "./WithdrawModal"; // ✅ ADD THIS
 
 const Header = ({ openLogin }) => {
   const [userPhone, setUserPhone] = useState(localStorage.getItem("userPhone"));
   const [showNotif, setShowNotif] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false); // ✅ ADD
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -141,7 +143,7 @@ const Header = ({ openLogin }) => {
             <div className={styles.pointsContainer}>
               <Pwen />
 
-              {/* ✅ BUY MORE POINTS */}
+              {/* BUY POINTS */}
               <button
                 className={styles.buyButton}
                 onClick={() => navigate("/buy-credits")}
@@ -149,10 +151,10 @@ const Header = ({ openLogin }) => {
                 Achte Pwen
               </button>
 
-              {/* ✅ WITHDRAW POINTS */}
+              {/* ✅ WITHDRAW → OPEN MODAL */}
               <button
                 className={styles.withdrawButton}
-                onClick={() => navigate("/withdraw")}
+                onClick={() => setShowWithdrawModal(true)}
               >
                 Retire Pwen
               </button>
@@ -169,6 +171,11 @@ const Header = ({ openLogin }) => {
       </div>
 
       {showNotif && <NotificationPanel onClose={() => setShowNotif(false)} />}
+
+      {/* ✅ WITHDRAW MODAL */}
+      {showWithdrawModal && (
+        <WithdrawModal onClose={() => setShowWithdrawModal(false)} />
+      )}
     </header>
   );
 };

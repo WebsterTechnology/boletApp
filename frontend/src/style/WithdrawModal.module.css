@@ -1,0 +1,133 @@
+/* Fullscreen dark overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: flex-end; /* mobile bottom sheet */
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Modal container */
+.modal {
+  width: 100%;
+  max-height: 92vh;
+  background: #111;
+  color: #fff;
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+
+/* Slide-up animation */
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Close button */
+.close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #fff;
+}
+
+/* Title */
+.modal h2 {
+  margin-bottom: 16px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Form */
+.modal form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Inputs */
+.modal input,
+.modal select,
+.modal textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: #1c1c1c;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.modal textarea {
+  resize: none;
+  min-height: 80px;
+}
+
+.modal input::placeholder,
+.modal textarea::placeholder {
+  color: #888;
+}
+
+/* Focus state */
+.modal input:focus,
+.modal select:focus,
+.modal textarea:focus {
+  outline: none;
+  border-color: #7c3aed;
+}
+
+/* Submit button */
+.modal button[type="submit"] {
+  margin-top: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.modal button[type="submit"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Success message */
+.success {
+  text-align: center;
+  color: #22c55e;
+  font-size: 15px;
+  padding: 20px 10px;
+}
+
+/* Desktop enhancement */
+@media (min-width: 768px) {
+  .overlay {
+    align-items: center;
+  }
+
+  .modal {
+    width: 420px;
+    border-radius: 16px;
+    max-height: unset;
+  }
+}
