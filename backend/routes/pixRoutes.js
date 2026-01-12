@@ -781,6 +781,31 @@ router.get("/status/:paymentId", async (req, res) => {
 });
 
 // ---------------- WEBHOOK ----------------
+// router.post("/webhook", async (req, res) => {
+//   try {
+//     const body = req.body || {};
+//     const p = body.payment || body;
+//     const providerId = p.id;
+
+//     if (!providerId) return res.sendStatus(200);
+
+//     const pay = await PixPayment.findOne({ where: { providerRef: providerId } });
+//     if (!pay) return res.sendStatus(200);
+
+//     const status = (p.status || "").toUpperCase();
+//     if (["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(status)) {
+//       pay.status = "paid";
+//       await pay.save();
+//     }
+
+//     return res.sendStatus(200);
+//   } catch (err) {
+//     console.error("Webhook error:", err.message);
+//     return res.sendStatus(200);
+//   }
+// });
+
+// ---------------- WEBHOOK ----------------
 router.post("/webhook", async (req, res) => {
   try {
     const body = req.body || {};
@@ -793,14 +818,34 @@ router.post("/webhook", async (req, res) => {
     if (!pay) return res.sendStatus(200);
 
     const status = (p.status || "").toUpperCase();
-    if (["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(status)) {
-      pay.status = "paid";
-      await pay.save();
-    }
+
+    // ✅ Asaas paid statuses
+    const isPaid = ["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"].includes(status);
+
+    if (!isPaid) return res.sendStatus(200);
+
+    // ✅ Idempotency: don’t credit twice
+    if (pay.status === "credited") return res.sendStatus(200);
+
+    // mark paid first (optional)
+    pay.status = "paid";
+    await pay.save();
+
+    // ✅ CREDIT THE CORRECT USER FROM pay.userId
+    const user = await User.findByPk(pay.userId);
+    if (!user) return res.sendStatus(200);
+
+    const pts = Number(pay.points || 0);
+    user.points = Number(user.points || 0) + pts;
+    await user.save();
+
+    // ✅ mark credited so webhook can’t double-credit
+    pay.status = "credited";
+    await pay.save();
 
     return res.sendStatus(200);
   } catch (err) {
-    console.error("Webhook error:", err.message);
+    console.error("Webhook error:", err?.response?.data || err.message);
     return res.sendStatus(200);
   }
 });

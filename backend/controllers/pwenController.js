@@ -26,27 +26,28 @@
 //     res.status(500).json({ message: "Server error", error: err.message });
 //   }
 // };
+// 
 const { User, Pwen, PixPaymentRequest } = require("../models");
 
 /**
  * BUY / CREDIT PWEN
- * - Supports PIX
- * - Credits the CORRECT user
+ * - Admin can credit any user (userId in body)
+ * - Normal users credit themselves
+ * - PIX credits the user linked to PixPaymentRequest
  */
 exports.buyPwen = async (req, res) => {
   try {
-    const { amount, pixRequestId } = req.body;
+    const { amount, pixRequestId, userId } = req.body;
 
-    if (!amount || amount <= 0) {
+    if (!amount || Number(amount) <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
     }
 
-    let user;
+    let targetUser;
 
-    /**
-     * ✅ PIX FLOW
-     * Credit user linked to PixPaymentRequest
-     */
+    /* ---------------------------------
+       ✅ PIX FLOW (SOURCE OF TRUTH)
+    --------------------------------- */
     if (pixRequestId) {
       const pix = await PixPaymentRequest.findByPk(pixRequestId);
 
@@ -58,42 +59,53 @@ exports.buyPwen = async (req, res) => {
         return res.status(400).json({ message: "PIX already processed" });
       }
 
-      user = await User.findByPk(pix.userId);
-      if (!user) {
+      targetUser = await User.findByPk(pix.userId);
+      if (!targetUser) {
         return res.status(404).json({ message: "User not found" });
       }
 
       pix.isPaid = true;
       await pix.save();
-    } 
-    /**
-     * ✅ NORMAL / AUTH FLOW
-     */
+    }
+
+    /* ---------------------------------
+       ✅ ADMIN / NORMAL FLOW
+    --------------------------------- */
     else {
-      user = await User.findByPk(req.user.id);
-      if (!user) {
+      const targetUserId = userId || req.user.id;
+
+      targetUser = await User.findByPk(targetUserId);
+      if (!targetUser) {
         return res.status(404).json({ message: "User not found" });
       }
     }
 
-    // ✅ CREDIT POINTS
-    user.points += Number(amount);
-    await user.save();
+    /* ---------------------------------
+       ✅ CREDIT POINTS
+    --------------------------------- */
+    targetUser.points = Number(targetUser.points || 0) + Number(amount);
+    await targetUser.save();
 
-    // ✅ LOG TRANSACTION
+    /* ---------------------------------
+       ✅ LOG TRANSACTION
+    --------------------------------- */
     await Pwen.create({
-      amount,
-      userId: user.id,
+      amount: Number(amount),
+      userId: targetUser.id,
       stripePaymentId: pixRequestId ? "pix" : "manual",
     });
 
-    res.status(200).json({
-      message: "Pwen added",
-      balance: user.points,
+    return res.status(200).json({
+      message: "Pwen added successfully",
+      balance: targetUser.points,
+      userId: targetUser.id,
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    console.error("buyPwen error:", err);
+    return res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 };
