@@ -46,66 +46,89 @@ export default function PixPayment() {
     } catch {}
   }
 
-  const handleGenerate = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const userId = 1; // TODO: real logged-in id
+ const handleGenerate = async (e) => {
+  e.preventDefault();
+  setLoading(true);
 
-      const payload = {
-        userId,
-        amountBRL: Number(amount),
-        description: "Lotto payment",
-        name: name?.trim(),
-        cpfCnpj: digits(cpfCnpj),
-        email: email?.trim(),
-        phone: phone?.trim(),
-      };
+  try {
+    // ✅ GET REAL LOGGED-IN USER
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const userId = user.id;
 
-      const res = await fetch(`${API_BASE}/api/pix/create`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const raw = await res.text();
-      let data = null;
-      try { data = raw ? JSON.parse(raw) : null; } catch {}
-
-      if (!res.ok) {
-        const msg = (data && (data.error || data.detail || data.message)) || raw || res.statusText;
-        throw new Error(msg);
-      }
-      if (!data) throw new Error("Empty response from server.");
-
-      const base64 = data.qrCode || data.qrBase64 || data.pixQrCode;
-      const emv = data.copyPaste || data.pixCopyPasteKey;
-
-      if (base64) setQrDataUrl(`data:image/png;base64,${base64}`);
-      if (emv) {
-        setCopyPaste(emv);
-        if (!base64) {
-          const url = await QRCode.toDataURL(emv, { errorCorrectionLevel: "M" });
-          setQrDataUrl(url);
-        }
-      }
-      if (data.invoiceUrl) setInvoiceUrl(data.invoiceUrl);
-
-      setPaymentId(data.paymentId || data.id || "");
-      setStatus(data.status || "PENDING");
-      setShowReceipt(true);
-
-      // if we didn't get QR yet, try to fetch again after a few seconds
-      if (!base64 && !emv && (data.paymentId || data.id)) {
-        setTimeout(() => tryFetchQrAgain(data.paymentId || data.id), 3000);
-      }
-    } catch (err) {
-      alert(`Erro ao gerar PIX: ${err.message}`);
-      console.error(err);
-    } finally {
-      setLoading(false);
+    if (!userId) {
+      throw new Error("Utilisateur non connecté");
     }
-  };
+
+    const payload = {
+      userId, // ✅ REAL USER ID (NO MORE HARD-CODED 1)
+      amountBRL: Number(amount),
+      description: "Lotto payment",
+      name: name?.trim(),
+      cpfCnpj: digits(cpfCnpj),
+      email: email?.trim(),
+      phone: phone?.trim(),
+    };
+
+    const res = await fetch(`${API_BASE}/api/pix/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const raw = await res.text();
+    let data = null;
+    try {
+      data = raw ? JSON.parse(raw) : null;
+    } catch {}
+
+    if (!res.ok) {
+      const msg =
+        (data && (data.error || data.detail || data.message)) ||
+        raw ||
+        res.statusText;
+      throw new Error(msg);
+    }
+
+    if (!data) throw new Error("Empty response from server.");
+
+    // ✅ HANDLE QR / COPY-PASTE
+    const base64 = data.qrCode || data.qrBase64 || data.pixQrCode;
+    const emv = data.copyPaste || data.pixCopyPasteKey;
+
+    if (base64) {
+      setQrDataUrl(`data:image/png;base64,${base64}`);
+    }
+
+    if (emv) {
+      setCopyPaste(emv);
+      if (!base64) {
+        const url = await QRCode.toDataURL(emv, {
+          errorCorrectionLevel: "M",
+        });
+        setQrDataUrl(url);
+      }
+    }
+
+    if (data.invoiceUrl) setInvoiceUrl(data.invoiceUrl);
+
+    setPaymentId(data.paymentId || data.id || "");
+    setStatus(data.status || "PENDING");
+    setShowReceipt(true);
+
+    // 🔁 Try fetching QR again if not ready
+    if (!base64 && !emv && (data.paymentId || data.id)) {
+      setTimeout(
+        () => tryFetchQrAgain(data.paymentId || data.id),
+        3000
+      );
+    }
+  } catch (err) {
+    alert(`Erro ao gerar PIX: ${err.message}`);
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     if (!paymentId) return;
