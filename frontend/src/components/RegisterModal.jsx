@@ -27,38 +27,13 @@ const RegisterModal = ({ onClose }) => {
 
   const fullPhone = `${selectedCountry.code}${phone}`;
 
-//   const handleRegister = async () => {
-//   try {
-//     const res = await fetch("http://localhost:3001/api/auth/register", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({
-//         phone: fullPhone.trim(),
-//         password: password.toString().trim(),
-//       }),
-//     });
 
-//     const data = await res.json();
-//     if (res.ok) {
-//       // ✅ Save both full phone & user object
-//       localStorage.setItem("user", JSON.stringify({ phone: fullPhone }));
-//       localStorage.setItem("userPhone", fullPhone); // ✅ Needed by Header
-//       window.dispatchEvent(new Event("userLoggedIn")); // ✅ Let Header know
-      
-    
-//       window.location.href = "/game"; // ✅ You can change this if needed
-//     } else {
-//       alert("❌ " + data.message);
-//     }
-//   } catch (err) {
-//     console.error("Register error:", err);
-//     alert("❌ Erè pandan ou te kreye kont la");
-//   }
-// };
 
 const API = import.meta.env.VITE_API_URL;
 
 const handleRegister = async () => {
+  if (!isAdult) return alert("Ou dwe gen 18 lane oswa plis.");
+
   try {
     const res = await fetch(`${API}/api/auth/register`, {
       method: "POST",
@@ -70,19 +45,32 @@ const handleRegister = async () => {
     });
 
     const data = await res.json();
-    if (res.ok) {
-      localStorage.setItem("user", JSON.stringify({ phone: fullPhone }));
-      localStorage.setItem("userPhone", fullPhone);
-      window.dispatchEvent(new Event("userLoggedIn"));
-      window.location.href = "/game";
-    } else {
-      alert("❌ " + data.message);
+
+    if (!res.ok) {
+      alert("❌ " + (data.message || "Enskripsyon echwe"));
+      return;
     }
+
+    // ✅ SAVE FULL AUTH SESSION (SAME AS LOGIN)
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("userId", String(data.user.id));
+    localStorage.setItem("userPhone", data.user.phone || fullPhone);
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("isAdmin", JSON.stringify(!!data.user?.isAdmin));
+    localStorage.setItem("userPoints", String(data.user?.points ?? 0));
+
+    // notify app
+    window.dispatchEvent(new Event("userLoggedIn"));
+    window.dispatchEvent(new Event("pointsUpdated"));
+
+    // go to game
+    window.location.href = "/game";
   } catch (err) {
     console.error("Register error:", err);
     alert("❌ Erè pandan ou te kreye kont la");
   }
 };
+
 
   return (
     <div className={styles.overlay}>
