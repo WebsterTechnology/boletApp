@@ -7,5 +7,6 @@ router.post("/", authenticate, deChifController.createDeChif);
 router.get("/", authenticate, deChifController.getMyDeChifBets);
 router.put("/:id", authenticate, deChifController.updateDeChif);
 router.delete("/:id", authenticate, deChifController.deleteDeChif);
+// Additional route to get all DeChif bets (admin only)
 
 module.exports = router;
