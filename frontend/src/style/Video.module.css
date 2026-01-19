@@ -132,3 +132,16 @@
     border-radius: 16px;
   }
 }
+.videoWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.videoImage {
+  display: block;        /* 👈 important */
+  width: 100%;
+  max-width: 320px;      /* mobile first */
+  height: auto;          /* 👈 important */
+  border-radius: 12px;
+}
