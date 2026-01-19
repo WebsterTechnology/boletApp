@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const deChifController = require("../controllers/deChifController");
+const deChifController = require("../controllers/dechifControllerrr");
 const authenticate = require("../middleware/authenticate");
 
 router.post("/", authenticate, deChifController.createDeChif);
