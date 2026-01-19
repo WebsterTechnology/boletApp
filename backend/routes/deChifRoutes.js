@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 // ✅ MUST MATCH FILE NAME EXACTLY
-const deChifController = require("../controllers/dechifController");
+const deChifController = require("../controllers/deChifController");
 
 const authenticate = require("../middleware/authenticate");
 
