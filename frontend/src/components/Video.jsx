@@ -5,7 +5,7 @@ import htImage from "../assets/ht.png";
 const Video = () => {
   return (
     <div className={styles.videoContainer}>
-      <h3 className={styles.videoTitle}>Kijan pou w jwe bòlèt la</h3>
+      <h3 className={styles.videoTitle}>HAITI LOTO DIGITAL</h3>
 
       <div className={styles.videoWrapper}>
         <img
