@@ -67,3 +67,68 @@
   height: 100%;
   border: 0;
 }
+/* =========================
+   MOBILE FIRST (default)
+   ========================= */
+
+.videoContainer {
+  padding: 16px;
+  text-align: center;
+}
+
+.videoTitle {
+  font-size: 18px;
+  font-weight: bold;
+  animation: flash 1s infinite alternate;
+  margin-bottom: 10px;
+}
+
+/* Flashing title animation */
+@keyframes flash {
+  0% {
+    color: #fff700;
+    text-shadow: 0 0 4px #fff700;
+  }
+  100% {
+    color: #ffffff;
+    text-shadow: 0 0 8px #ff0000;
+  }
+}
+
+/* Image wrapper */
+.videoWrapper {
+  display: flex;
+  justify-content: center;
+}
+
+/* Image */
+.videoImage {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+@media (min-width: 768px) {
+  .videoContainer {
+    padding: 24px;
+  }
+
+  .videoTitle {
+    font-size: 20px;
+  }
+
+  .videoImage {
+    max-width: 520px;
+    border-radius: 14px;
+  }
+}
+@media (min-width: 1024px) {
+  .videoTitle {
+    font-size: 22px;
+  }
+
+  .videoImage {
+    max-width: 600px;
+    border-radius: 16px;
+  }
+}

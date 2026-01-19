@@ -1,20 +1,18 @@
 import React from "react";
 import styles from "../style/Video.module.css";
+import htImage from "../assets/ht.png"; // ✅ your image
 
 const Video = () => {
   return (
     <div className={styles.videoContainer}>
-      <h3 className={styles.videoTitle}>Kijan pou w jwe bòlèt la</h3>
+      <h3 className={styles.videoTitle}>HT - LOTO DIGITAL</h3>
+
       <div className={styles.videoWrapper}>
-        <iframe
-          width="100%"
-          height="315"
-          src="https://www.youtube.com/embed/KJSevfN_sWM?autoplay=1&rel=0"
-          title="YouTube video player"
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        ></iframe>
+        <img
+          src={htImage}
+          alt="Kijan pou w jwe bòlèt"
+          className={styles.videoImage}
+        />
       </div>
     </div>
   );
