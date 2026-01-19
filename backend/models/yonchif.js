@@ -1,28 +1,4 @@
-// // models/yonchif.js
-// module.exports = (sequelize, DataTypes) => {
-//   const YonChif = sequelize.define("YonChif", {
-//     number: {
-//       type: DataTypes.STRING,
-//       allowNull: false,
-//     },
-//     pwen: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     },
-//     location: {
-//       type: DataTypes.STRING,
-//       allowNull: false,
-//     },
-//     userId: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     },
-//   });
 
-//   return YonChif;
-// };
-
-// models/yonchif.js
 module.exports = (sequelize, DataTypes) => {
   const YonChif = sequelize.define(
     "YonChif",

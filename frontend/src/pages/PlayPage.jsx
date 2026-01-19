@@ -53,6 +53,7 @@
 import React, { useState } from "react";
 import styles from "./PlayPage.module.css";
 import YonChif from "../components/YonChif";
+import DeChif from "../components/DeChif"; // ✅ NEW
 import Maryaj from "../components/Maryaj";
 import TwaChif from "../components/TwaChif";
 import Katchif from "../components/Katchif"; // ✅ NEW
@@ -70,6 +71,13 @@ const PlayPage = () => {
           onClick={() => setMode("yon_chif")}
         >
           Yon Chif
+        </button>
+
+        <button
+          className={mode === "de_chif" ? styles.active : ""}
+          onClick={() => setMode("de_chif")}
+        >
+          De Chif
         </button>
 
         <button
@@ -96,6 +104,7 @@ const PlayPage = () => {
 
       <div className={styles.content}>
         {mode === "yon_chif" && <YonChif />}
+        {mode === "de_chif" && <DeChif />}
         {mode === "maryaj" && <Maryaj />}
         {mode === "twa_chif" && <TwaChif />}
         {mode === "katchif" && <Katchif />}
