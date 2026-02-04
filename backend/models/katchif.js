@@ -1,13 +1,12 @@
-
 module.exports = (sequelize, DataTypes) => {
-  const TwaChif = sequelize.define(
-    "TwaChif",
+  const Katchif = sequelize.define(
+    "Katchif",
     {
       number: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-          is: /^\d{3}$/, // exactly 3 digits
+          is: /^\d{4}$/, // ✅ exactly 4 digits
         },
       },
       pwen: {
@@ -23,16 +22,23 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
 
-      // ✅ NEW: persists admin decisions
+      // ✅ Admin decision persistence
       status: {
-        type: DataTypes.ENUM("pending", "won", "lost", "paid", "void", "cancelled"),
+        type: DataTypes.ENUM(
+          "pending",
+          "won",
+          "lost",
+          "paid",
+          "void",
+          "cancelled"
+        ),
         allowNull: false,
         defaultValue: "pending",
       },
     },
     {
-      tableName: "twa_chif",     // keep or remove if you use default pluralization
-      timestamps: true,          // createdAt / updatedAt
+      tableName: "katchif", // ✅ explicit table name (recommended)
+      timestamps: true,     // createdAt / updatedAt
       indexes: [
         { fields: ["userId"] },
         { fields: ["status"] },
@@ -40,9 +46,9 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
-  TwaChif.associate = (models) => {
-    TwaChif.belongsTo(models.User, { foreignKey: "userId" });
+  Katchif.associate = (models) => {
+    Katchif.belongsTo(models.User, { foreignKey: "userId" });
   };
 
-  return TwaChif;
+  return Katchif;
 };

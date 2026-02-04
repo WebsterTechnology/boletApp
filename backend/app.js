@@ -30,6 +30,7 @@ const betsRoutes = require("./routes/betsRoutes");
 const pwenRoutes = require("./routes/pwenRoutes");
 const pixRoutes = require("./routes/pixRoutes");
 const claimRoutes = require("./routes/claimRoutes");
+const katchifRoutes = require("./routes/katchifRoutes");
 
 const adminBetsRoutes = require("./routes/adminBetsRoutes");
 const adminRoutes = require("./routes/adminRoutes");
@@ -42,6 +43,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/yonchif", yonChifRoutes);
 app.use("/api/dechif", deChifRoutes);
 app.use("/api/maryaj", maryajRoutes);
+app.use("/api/katchif", katchifRoutes);
 app.use("/api/twachif", twaChifRoutes);
 app.use("/api/bets", betsRoutes);
 app.use("/api/points", pwenRoutes);

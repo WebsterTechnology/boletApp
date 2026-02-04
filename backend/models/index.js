@@ -13,6 +13,7 @@ const PixPayment = require("./PixPayment")(sequelize, DataTypes);
 const WinClaim = require("./winclaim")(sequelize, DataTypes);
 const PixPaymentRequest = require("./PixPaymentRequest")(sequelize, DataTypes);
 const DeChif = require("./dechif")(sequelize, DataTypes);
+const Katchif = require("./katchif")(sequelize, DataTypes);
 
 // ==================== ASSOCIATIONS ====================
 // User -> YonChif
@@ -30,6 +31,9 @@ TwaChif.belongsTo(User, { foreignKey: "userId" });
 // User -> DeChif
 User.hasMany(DeChif, { foreignKey: "userId" });
 DeChif.belongsTo(User, { foreignKey: "userId" });
+
+User.hasMany(Katchif, { foreignKey: "userId" });
+Katchif.belongsTo(User, { foreignKey: "userId" });
 
 // User -> PixPayment (CRITICAL!)
 User.hasMany(PixPayment, { 
@@ -70,6 +74,7 @@ const models = {
   WinClaim,
   DeChif,
   PixPaymentRequest,
+  Katchif,
 };
 
 // Call associate method if it exists
