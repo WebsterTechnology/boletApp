@@ -8,7 +8,7 @@
 
 // const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
-// /* ----------------------- Helper Functions ----------------------- */
+// /* ---------------- Helper functions ---------------- */
 // async function syncUserFromServer() {
 //   const token = localStorage.getItem("token");
 //   if (!token) return null;
@@ -38,7 +38,7 @@
 //   }
 // }
 
-// /* ----------------------- Component ----------------------- */
+// /* ---------------- Component ---------------- */
 // const Maryaj = () => {
 //   const [part1, setPart1] = useState("");
 //   const [part2, setPart2] = useState("");
@@ -47,25 +47,32 @@
 //   const [nyTime, setNyTime] = useState("");
 //   const [flTime, setFlTime] = useState("");
 
-//   const [disabledNumbers, setDisabledNumbers] = useState([]); // 🆕 from admin
+//   const [disabledNumbers, setDisabledNumbers] = useState([]);
+//   const [disabledLocations, setDisabledLocations] = useState([]);
+
 //   const { bets, addBet, deleteBet, total } = useBet();
 //   const navigate = useNavigate();
 
-//   /* ----------------------- Effects ----------------------- */
+//   /* ---------------- Effects ---------------- */
 //   useEffect(() => {
 //     syncUserFromServer();
 
-//     // fetch disabled numbers from backend
-//     axios
-//       .get(`${API}/api/admin/public-disabled-numbers`)
-//       .then((res) => {
-//         setDisabledNumbers(res.data.map(String)); // store as strings
+//     // fetch disabled numbers & locations
+//     Promise.all([
+//       axios.get(`${API}/api/admin/public-disabled-numbers`),
+//       axios.get(`${API}/api/admin/public-disabled-locations`),
+//     ])
+//       .then(([numsRes, locRes]) => {
+//         const nums = (numsRes.data || []).map((n) => String(n).trim());
+//         const locs = (locRes.data || []).map((l) =>
+//           String(l).trim().toLowerCase()
+//         );
+//         setDisabledNumbers(nums);
+//         setDisabledLocations(locs);
 //       })
-//       .catch((err) => {
-//         console.error("Failed to load disabled numbers:", err);
-//       });
+//       .catch((err) => console.error("Failed to load disabled data:", err));
 
-//     // clock
+//     // live clock
 //     const updateTimes = () => {
 //       const now = new Date();
 //       const options = {
@@ -84,7 +91,7 @@
 //     return () => clearInterval(interval);
 //   }, []);
 
-//   /* ----------------------- Add Bet ----------------------- */
+//   /* ---------------- Add Bet ---------------- */
 //   const handleAdd = () => {
 //     const betAmount = parseInt(amount, 10);
 //     const { points: userPoints } = getUserAndPoints();
@@ -94,15 +101,23 @@
 //       return alert("Tanpri antre 2 chif nan chak bwat ak kantite pwen.");
 //     }
 
-//     // 🆕 check if any number is disabled
+//     const p1 = part1.trim();
+//     const p2 = part2.trim();
+//     const locNorm = location.trim().toLowerCase();
+
+//     // 🚫 block disabled numbers
 //     if (
-//       disabledNumbers.includes(part1) ||
-//       disabledNumbers.includes(part2)
+//       disabledNumbers.includes(p1) ||
+//       disabledNumbers.includes(p2)
 //     ) {
-//       return alert(`Nimewo ${part1} oswa ${part2} dezaktive. Ou pa ka parye sou li.`);
+//       return alert(`Nimewo ${p1} oswa ${p2} dezaktive. Ou pa ka parye sou li.`);
 //     }
 
-//     // check available points
+//     // 🚫 block disabled location
+//     if (disabledLocations.includes(locNorm)) {
+//       return alert(`Lokasyon ${location} dezaktive. Ou pa ka parye la a.`);
+//     }
+
 //     const willBeTotal = pendingTotal + betAmount;
 //     if (willBeTotal > userPoints) {
 //       const confirmBuy = window.confirm("Ou pa gen ase pwen. Ou vle achte plis?");
@@ -110,9 +125,8 @@
 //       return;
 //     }
 
-//     const numbers = part1 + part2; // e.g., "1256"
-//     const display = `${part1} ${part2}`;
-
+//     const numbers = p1 + p2;
+//     const display = `${p1} ${p2}`;
 //     addBet({ number: numbers, display, amount: betAmount, type: "Maryaj", location });
 
 //     setPart1("");
@@ -120,7 +134,7 @@
 //     setAmount("");
 //   };
 
-//   /* ----------------------- Edit Bet ----------------------- */
+//   /* ---------------- Edit Bet ---------------- */
 //   const handleEdit = (id) => {
 //     const b = bets.find((x) => x.id === id);
 //     if (b && b.type === "Maryaj") {
@@ -132,13 +146,14 @@
 //     }
 //   };
 
-//   /* ----------------------- Submit Bets ----------------------- */
+//   /* ---------------- Submit Bets ---------------- */
 //   const handleSubmit = async () => {
 //     const { id: userId, points: currentPoints } = getUserAndPoints();
-
-//     // Only Maryaj items
 //     const maryajBets = bets.filter((b) => b.type === "Maryaj");
-//     const totalMaryaj = maryajBets.reduce((sum, b) => sum + parseInt(b.amount, 10), 0);
+//     const totalMaryaj = maryajBets.reduce(
+//       (sum, b) => sum + parseInt(b.amount, 10),
+//       0
+//     );
 
 //     if (maryajBets.length === 0) {
 //       alert("Ou pa mete okenn pari pou 'Maryaj'.");
@@ -154,12 +169,19 @@
 
 //     try {
 //       for (const bet of maryajBets) {
-//         const p1 = bet.number.slice(0, 2);
-//         const p2 = bet.number.slice(2, 4);
+//         const p1 = bet.number.slice(0, 2).trim();
+//         const p2 = bet.number.slice(2, 4).trim();
+//         const locNorm = bet.location.trim().toLowerCase();
 
-//         // 🆕 skip sending if disabled
+//         // skip disabled numbers
 //         if (disabledNumbers.includes(p1) || disabledNumbers.includes(p2)) {
 //           alert(`Nimewo ${p1} oswa ${p2} dezaktive. Pari sa a sote.`);
+//           continue;
+//         }
+
+//         // skip disabled location
+//         if (disabledLocations.includes(locNorm)) {
+//           alert(`Lokasyon ${bet.location} dezaktive. Pari sa a sote.`);
 //           continue;
 //         }
 
@@ -172,11 +194,15 @@
 //             location: bet.location,
 //             userId,
 //           },
-//           { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
+//           {
+//             headers: {
+//               Authorization: `Bearer ${localStorage.getItem("token")}`,
+//             },
+//           }
 //         );
 //       }
 
-//       // Deduct points locally
+//       // update user points
 //       const userObj = JSON.parse(localStorage.getItem("user") || "{}");
 //       const updatedUser = { ...userObj, points: remaining };
 //       localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -190,7 +216,7 @@
 //     }
 //   };
 
-//   /* ----------------------- Render ----------------------- */
+//   /* ---------------- UI ---------------- */
 //   return (
 //     <div className={styles.container}>
 //       <div className={styles.entryRow}>
@@ -224,18 +250,12 @@
 //           <option value="Florida">Florida</option>
 //         </select>
 
-//         <button className={styles.plusBtn} onClick={handleAdd}>
-//           +
-//         </button>
+//         <button className={styles.plusBtn} onClick={handleAdd}>+</button>
 //       </div>
 
 //       <div className={styles.timeRow}>
-//         <p>
-//           <strong>🕐 New York:</strong> {nyTime}
-//         </p>
-//         <p>
-//           <strong>🕐 Florida:</strong> {flTime}
-//         </p>
+//         <p><strong>🕐 New York:</strong> {nyTime}</p>
+//         <p><strong>🕐 Florida:</strong> {flTime}</p>
 //       </div>
 
 //       <ul className={styles.betsList}>
@@ -247,12 +267,8 @@
 //               <span className={styles.amt}>{b.amount} p</span>
 //               <span className={styles.location}>{b.location}</span>
 //               <div className={styles.actions}>
-//                 <button onClick={() => handleEdit(b.id)}>
-//                   <FaEdit />
-//                 </button>
-//                 <button onClick={() => deleteBet(b.id)}>
-//                   <FaTrash />
-//                 </button>
+//                 <button onClick={() => handleEdit(b.id)}><FaEdit /></button>
+//                 <button onClick={() => deleteBet(b.id)}><FaTrash /></button>
 //               </div>
 //             </li>
 //           ))}
@@ -280,6 +296,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const MAX_MARYAJ_POINTS = 15;
 
 /* ---------------- Helper functions ---------------- */
 async function syncUserFromServer() {
@@ -330,22 +347,18 @@ const Maryaj = () => {
   useEffect(() => {
     syncUserFromServer();
 
-    // fetch disabled numbers & locations
     Promise.all([
       axios.get(`${API}/api/admin/public-disabled-numbers`),
       axios.get(`${API}/api/admin/public-disabled-locations`),
     ])
       .then(([numsRes, locRes]) => {
-        const nums = (numsRes.data || []).map((n) => String(n).trim());
-        const locs = (locRes.data || []).map((l) =>
-          String(l).trim().toLowerCase()
+        setDisabledNumbers((numsRes.data || []).map(String));
+        setDisabledLocations(
+          (locRes.data || []).map((l) => l.toLowerCase())
         );
-        setDisabledNumbers(nums);
-        setDisabledLocations(locs);
       })
-      .catch((err) => console.error("Failed to load disabled data:", err));
+      .catch(console.error);
 
-    // live clock
     const updateTimes = () => {
       const now = new Date();
       const options = {
@@ -359,6 +372,7 @@ const Maryaj = () => {
       setNyTime(ny);
       setFlTime(ny);
     };
+
     updateTimes();
     const interval = setInterval(updateTimes, 1000);
     return () => clearInterval(interval);
@@ -368,102 +382,88 @@ const Maryaj = () => {
   const handleAdd = () => {
     const betAmount = parseInt(amount, 10);
     const { points: userPoints } = getUserAndPoints();
-    const pendingTotal = Number(total) || 0;
 
     if (part1.length !== 2 || part2.length !== 2 || !betAmount) {
-      return alert("Tanpri antre 2 chif nan chak bwat ak kantite pwen.");
+      return alert("Tanpri antre 2 chif + kantite pwen.");
+    }
+
+    // 🔒 LIMIT TOTAL MARYAJ = 15
+    const currentMaryajTotal = bets
+      .filter((b) => b.type === "Maryaj")
+      .reduce((sum, b) => sum + parseInt(b.amount, 10), 0);
+
+    if (currentMaryajTotal + betAmount > MAX_MARYAJ_POINTS) {
+      return alert("❌ Total Maryaj pa ka depase 15 pwen.");
+    }
+
+    if (currentMaryajTotal + betAmount > userPoints) {
+      alert("Ou pa gen ase pwen.");
+      return;
     }
 
     const p1 = part1.trim();
     const p2 = part2.trim();
-    const locNorm = location.trim().toLowerCase();
+    const locNorm = location.toLowerCase();
 
-    // 🚫 block disabled numbers
-    if (
-      disabledNumbers.includes(p1) ||
-      disabledNumbers.includes(p2)
-    ) {
-      return alert(`Nimewo ${p1} oswa ${p2} dezaktive. Ou pa ka parye sou li.`);
+    if (disabledNumbers.includes(p1) || disabledNumbers.includes(p2)) {
+      return alert("❌ Nimewo dezaktive.");
     }
 
-    // 🚫 block disabled location
     if (disabledLocations.includes(locNorm)) {
-      return alert(`Lokasyon ${location} dezaktive. Ou pa ka parye la a.`);
+      return alert("❌ Lokasyon dezaktive.");
     }
 
-    const willBeTotal = pendingTotal + betAmount;
-    if (willBeTotal > userPoints) {
-      const confirmBuy = window.confirm("Ou pa gen ase pwen. Ou vle achte plis?");
-      if (confirmBuy) window.location.href = "/buy-credits";
-      return;
-    }
-
-    const numbers = p1 + p2;
-    const display = `${p1} ${p2}`;
-    addBet({ number: numbers, display, amount: betAmount, type: "Maryaj", location });
+    addBet({
+      number: p1 + p2,
+      display: `${p1} ${p2}`,
+      amount: betAmount,
+      type: "Maryaj",
+      location,
+    });
 
     setPart1("");
     setPart2("");
     setAmount("");
   };
 
-  /* ---------------- Edit Bet ---------------- */
+  /* ---------------- Edit ---------------- */
   const handleEdit = (id) => {
     const b = bets.find((x) => x.id === id);
-    if (b && b.type === "Maryaj") {
-      setPart1(b.number.slice(0, 2));
-      setPart2(b.number.slice(2));
-      setAmount(b.amount);
-      setLocation(b.location || "New York");
-      deleteBet(id);
-    }
+    if (!b) return;
+    setPart1(b.number.slice(0, 2));
+    setPart2(b.number.slice(2));
+    setAmount(b.amount);
+    setLocation(b.location);
+    deleteBet(id);
   };
 
-  /* ---------------- Submit Bets ---------------- */
+  /* ---------------- Submit ---------------- */
   const handleSubmit = async () => {
-    const { id: userId, points: currentPoints } = getUserAndPoints();
+    const { id: userId, points } = getUserAndPoints();
     const maryajBets = bets.filter((b) => b.type === "Maryaj");
+
     const totalMaryaj = maryajBets.reduce(
       (sum, b) => sum + parseInt(b.amount, 10),
       0
     );
 
-    if (maryajBets.length === 0) {
-      alert("Ou pa mete okenn pari pou 'Maryaj'.");
-      return;
+    if (totalMaryaj > MAX_MARYAJ_POINTS) {
+      return alert("❌ Total Maryaj depase 15 pwen.");
     }
 
-    const remaining = currentPoints - totalMaryaj;
-    if (remaining < 0) {
-      alert("Ou pa gen ase Pwen! Nap mennen w sou paj Achte Pwen an.");
+    if (points - totalMaryaj < 0) {
       navigate("/buy-credits");
       return;
     }
 
     try {
       for (const bet of maryajBets) {
-        const p1 = bet.number.slice(0, 2).trim();
-        const p2 = bet.number.slice(2, 4).trim();
-        const locNorm = bet.location.trim().toLowerCase();
-
-        // skip disabled numbers
-        if (disabledNumbers.includes(p1) || disabledNumbers.includes(p2)) {
-          alert(`Nimewo ${p1} oswa ${p2} dezaktive. Pari sa a sote.`);
-          continue;
-        }
-
-        // skip disabled location
-        if (disabledLocations.includes(locNorm)) {
-          alert(`Lokasyon ${bet.location} dezaktive. Pari sa a sote.`);
-          continue;
-        }
-
         await axios.post(
           `${API}/api/maryaj`,
           {
-            part1: p1,
-            part2: p2,
-            pwen: parseInt(bet.amount, 10),
+            part1: bet.number.slice(0, 2),
+            part2: bet.number.slice(2),
+            pwen: bet.amount,
             location: bet.location,
             userId,
           },
@@ -475,17 +475,19 @@ const Maryaj = () => {
         );
       }
 
-      // update user points
-      const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-      const updatedUser = { ...userObj, points: remaining };
+      const updatedUser = {
+        ...JSON.parse(localStorage.getItem("user")),
+        points: points - totalMaryaj,
+      };
+
       localStorage.setItem("user", JSON.stringify(updatedUser));
-      localStorage.setItem("userPoints", String(remaining));
+      localStorage.setItem("userPoints", String(updatedUser.points));
       window.dispatchEvent(new Event("pointsUpdated"));
 
-      alert("Pari 'Maryaj' soumèt ak siksè!");
-    } catch (error) {
-      console.error("Submit error:", error.response?.data || error.message);
-      alert("Erè soumèt pari: " + (error.response?.data?.message || error.message));
+      alert("✅ Maryaj soumèt ak siksè!");
+    } catch (err) {
+      alert("❌ Erè soumèt Maryaj.");
+      console.error(err);
     }
   };
 
@@ -493,71 +495,30 @@ const Maryaj = () => {
   return (
     <div className={styles.container}>
       <div className={styles.entryRow}>
-        <div className={styles.doubleInput}>
-          <input
-            type="text"
-            placeholder="XX"
-            maxLength={2}
-            value={part1}
-            onChange={(e) => setPart1(e.target.value.replace(/\D/g, ""))}
-          />
-          <input
-            type="text"
-            placeholder="XX"
-            maxLength={2}
-            value={part2}
-            onChange={(e) => setPart2(e.target.value.replace(/\D/g, ""))}
-          />
-        </div>
-
-        <input
-          type="number"
-          placeholder="Pwen"
-          min="0"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-        />
-
+        <input maxLength={2} value={part1} onChange={(e) => setPart1(e.target.value.replace(/\D/g, ""))} />
+        <input maxLength={2} value={part2} onChange={(e) => setPart2(e.target.value.replace(/\D/g, ""))} />
+        <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
         <select value={location} onChange={(e) => setLocation(e.target.value)}>
-          <option value="New York">New York</option>
-          <option value="Florida">Florida</option>
+          <option>New York</option>
+          <option>Florida</option>
         </select>
-
-        <button className={styles.plusBtn} onClick={handleAdd}>+</button>
+        <button onClick={handleAdd}>+</button>
       </div>
 
-      <div className={styles.timeRow}>
-        <p><strong>🕐 New York:</strong> {nyTime}</p>
-        <p><strong>🕐 Florida:</strong> {flTime}</p>
-      </div>
-
-      <ul className={styles.betsList}>
-        {bets
-          .filter((b) => b.type === "Maryaj")
-          .map((b) => (
-            <li key={b.id}>
-              <span className={styles.num}>{b.display || b.number}</span>
-              <span className={styles.amt}>{b.amount} p</span>
-              <span className={styles.location}>{b.location}</span>
-              <div className={styles.actions}>
-                <button onClick={() => handleEdit(b.id)}><FaEdit /></button>
-                <button onClick={() => deleteBet(b.id)}><FaTrash /></button>
-              </div>
-            </li>
-          ))}
+      <ul>
+        {bets.filter(b => b.type === "Maryaj").map(b => (
+          <li key={b.id}>
+            {b.display} - {b.amount}p ({b.location})
+            <button onClick={() => handleEdit(b.id)}><FaEdit /></button>
+            <button onClick={() => deleteBet(b.id)}><FaTrash /></button>
+          </li>
+        ))}
       </ul>
 
-      <div className={styles.footer}>
-        <button
-          className={styles.submitBtn}
-          onClick={handleSubmit}
-          disabled={bets.filter((b) => b.type === "Maryaj").length === 0}
-        >
-          Soumèt Pari
-        </button>
-      </div>
+      <button onClick={handleSubmit}>Soumèt Maryaj</button>
     </div>
   );
 };
 
 export default Maryaj;
+
