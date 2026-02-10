@@ -10,13 +10,15 @@ const app = express();
 // ----------------------------------------------------
 app.use(
   cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    origin: "*", // OK for now (tighten later)
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // ✅ PATCH ADDED
     allowedHeaders: ["Content-Type", "Authorization", "access_token"],
+    credentials: false,
   })
 );
 
-app.use(express.json()); // Parse JSON bodies
+// ✅ VERY IMPORTANT: allow preflight for ALL routes
+app.options("*", cors());
 
 // ----------------------------------------------------
 // 🔗 Import Routes
