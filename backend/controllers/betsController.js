@@ -1,9 +1,17 @@
+const {
+  YonChif,
+  DeChif,
+  TwaChif,
+  Maryaj,
+  Katchif,
+} = require("../models");
+
 exports.getAllMyBets = async (req, res) => {
   try {
-    // ✅ Get authenticated user id
+    // 🔐 Authenticated user id (from middleware)
     const userId = req.user.id;
 
-    // ✅ Fetch all bet types in parallel
+    // 📥 Fetch ALL bet types in parallel
     const [yonchif, dechif, twachif, maryaj, katchif] = await Promise.all([
       YonChif.findAll({ where: { userId }, order: [["createdAt", "DESC"]] }),
       DeChif.findAll({ where: { userId }, order: [["createdAt", "DESC"]] }),
@@ -12,7 +20,7 @@ exports.getAllMyBets = async (req, res) => {
       Katchif.findAll({ where: { userId }, order: [["createdAt", "DESC"]] }),
     ]);
 
-    // 🔢 Total points bet (ALL types)
+    // 🔢 TOTAL points bet (ALL types)
     const totalPwen =
       yonchif.reduce((s, b) => s + Number(b.pwen || 0), 0) +
       dechif.reduce((s, b) => s + Number(b.pwen || 0), 0) +
@@ -20,16 +28,20 @@ exports.getAllMyBets = async (req, res) => {
       maryaj.reduce((s, b) => s + Number(b.pwen || 0), 0) +
       katchif.reduce((s, b) => s + Number(b.pwen || 0), 0);
 
-    // ✅ Helper to safely read different column names
-    const pick = (o, ...keys) =>
-      keys.find((k) => o[k] != null) && o[keys.find((k) => o[k] != null)];
+    // 🧠 SAFE helper: returns first existing field OR "-"
+    const pick = (obj, ...keys) => {
+      for (const k of keys) {
+        if (obj[k] !== undefined && obj[k] !== null) return obj[k];
+      }
+      return "-";
+    };
 
-    // ✅ Unified list for frontend (ONE LOOP)
+    // 📦 Unified list for frontend (ONE loop)
     const items = [
       ...yonchif.map((b) => ({
         id: b.id,
         type: "yonchif",
-        numbers: pick(b, "nimewo", "number", "numbers") ?? "-",
+        numbers: pick(b, "nimewo", "number", "numbers"),
         pwen: Number(b.pwen || 0),
         draw: pick(b, "ville", "city", "lokal"),
         status: b.status || "pending",
@@ -39,7 +51,7 @@ exports.getAllMyBets = async (req, res) => {
       ...dechif.map((b) => ({
         id: b.id,
         type: "dechif",
-        numbers: pick(b, "number", "nimewo") ?? "-",
+        numbers: pick(b, "number", "nimewo"),
         pwen: Number(b.pwen || 0),
         draw: pick(b, "ville", "city", "lokal"),
         status: b.status || "pending",
@@ -49,7 +61,7 @@ exports.getAllMyBets = async (req, res) => {
       ...twachif.map((b) => ({
         id: b.id,
         type: "twachif",
-        numbers: pick(b, "number", "twachif", "nimewo") ?? "-",
+        numbers: pick(b, "number", "twachif", "nimewo"),
         pwen: Number(b.pwen || 0),
         draw: pick(b, "ville", "city", "lokal"),
         status: b.status || "pending",
@@ -59,7 +71,7 @@ exports.getAllMyBets = async (req, res) => {
       ...maryaj.map((b) => ({
         id: b.id,
         type: "maryaj",
-        numbers: pick(b, "maryaj", "number", "numbers") ?? "-",
+        numbers: pick(b, "maryaj", "number", "numbers"),
         pwen: Number(b.pwen || 0),
         draw: pick(b, "ville", "city", "lokal"),
         status: b.status || "pending",
@@ -69,7 +81,7 @@ exports.getAllMyBets = async (req, res) => {
       ...katchif.map((b) => ({
         id: b.id,
         type: "katchif",
-        numbers: pick(b, "number", "numbers") ?? "-",
+        numbers: pick(b, "number", "numbers"),
         pwen: Number(b.pwen || 0),
         draw: pick(b, "ville", "city", "lokal"),
         status: b.status || "pending",
@@ -79,8 +91,8 @@ exports.getAllMyBets = async (req, res) => {
 
     // ✅ Send response
     res.json({
-      items,       // frontend should use this
-      totalPwen,   // total points bet
+      items,        // 👈 frontend MUST use this
+      totalPwen,
       yonchif,
       dechif,
       twachif,

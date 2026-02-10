@@ -357,22 +357,254 @@
 //     </div>
 //   );
 // }
+// import React, { useEffect, useRef, useState } from "react";
+// import axios from "axios";
+
+// const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+// const badgeColor = (status) => {
+//   switch ((status || "").toLowerCase()) {
+//     case "won": return "#16a34a";
+//     case "lost": return "#dc2626";
+//     case "paid": return "#2563eb";
+//     case "pending": return "#9ca3af";
+//     default: return "#6b7280";
+//   }
+// };
+
+// const fmt = (d) => {
+//   const dt = new Date(d);
+//   return `${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], {
+//     hour: "2-digit",
+//     minute: "2-digit",
+//   })}`;
+// };
+
+// export default function Fich() {
+//   const [loading, setLoading] = useState(true);
+//   const [items, setItems] = useState([]);
+//   const [totalPwen, setTotalPwen] = useState(0);
+//   const [claimBusy, setClaimBusy] = useState({});
+//   const [claimed, setClaimed] = useState({});
+//   const mounted = useRef(true);
+
+//   useEffect(() => () => { mounted.current = false; }, []);
+
+//   /* ---------------- FIXED FLATTEN ---------------- */
+//   const flattenIfNeeded = (data) => {
+//     if (Array.isArray(data.items)) return data.items;
+
+//     const safeArr = (arr) => (Array.isArray(arr) ? arr : []);
+
+//     const mapBet = (arr, type) =>
+//       safeArr(arr).map((b) => ({
+//         id: b.id,
+//         type,
+//         numbers: b.nimewo ?? b.numbers ?? b.number ?? b.maryaj ?? "-",
+//         pwen: Number(b.pwen || 0),
+//         draw: b.ville ?? b.city ?? b.lokal ?? b.draw ?? null,
+//         status: b.status || "pending",
+//         createdAt: b.createdAt,
+//       }));
+
+//     const Y = mapBet(data.yonchif, "yonchif");
+//     const M = mapBet(data.maryaj, "maryaj");
+//     const T = mapBet(data.twachif, "twachif");
+//     const K = mapBet(data.katchif, "katchif"); // ✅ ADDED
+
+//     return [...Y, ...M, ...T, ...K].sort(
+//       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+//     );
+//   };
+
+//   /* ---------------- LOAD ---------------- */
+//   const load = async ({ silent = false } = {}) => {
+//     if (!silent) setLoading(true);
+//     try {
+//       const token = localStorage.getItem("token");
+//       if (!token) {
+//         if (mounted.current) {
+//           setItems([]);
+//           setTotalPwen(0);
+//         }
+//         return;
+//       }
+
+//       const headers = { Authorization: `Bearer ${token}` };
+//       let res;
+
+//       try {
+//         res = await axios.get(`${API}/api/bets/me`, { headers });
+//       } catch (err) {
+//         if (err?.response?.status === 404) {
+//           res = await axios.get(`${API}/api/bets/shared`, { headers });
+//         } else {
+//           throw err;
+//         }
+//       }
+
+//       const data = res?.data || {};
+//       if (mounted.current) {
+//         setTotalPwen(Number(data.totalPwen || 0));
+//         setItems(flattenIfNeeded(data));
+//       }
+//     } catch (e) {
+//       if (mounted.current) {
+//         setItems([]);
+//         setTotalPwen(0);
+//       }
+//     } finally {
+//       if (!silent && mounted.current) setLoading(false);
+//     }
+//   };
+
+//   /* ---------------- EFFECTS ---------------- */
+//   useEffect(() => {
+//     load();
+//   }, []);
+
+//   useEffect(() => {
+//     const tick = () => {
+//       if (document.visibilityState === "visible") {
+//         load({ silent: true });
+//       }
+//     };
+//     const iv = setInterval(tick, 7000);
+//     window.addEventListener("focus", tick);
+//     document.addEventListener("visibilitychange", tick);
+//     return () => {
+//       clearInterval(iv);
+//       window.removeEventListener("focus", tick);
+//       document.removeEventListener("visibilitychange", tick);
+//     };
+//   }, []);
+
+//   const claimKey = (b) => `${b.type}-${b.id}`;
+
+//   /* ---------------- CLAIM ---------------- */
+//   const submitClaim = async (b, method) => {
+//     const token = localStorage.getItem("token");
+//     if (!token) return alert("Please sign in again.");
+
+//     const key = claimKey(b);
+//     if (claimBusy[key]) return;
+
+//     let winAmount = Number(b.winAmount || b.pwen || 0);
+//     if (!Number.isFinite(winAmount) || winAmount <= 0) {
+//       const inp = window.prompt("Antre kantite lajan/pwen pou reklame:", "0");
+//       if (!inp) return;
+//       winAmount = parseInt(inp, 10);
+//       if (!Number.isFinite(winAmount) || winAmount <= 0) {
+//         return alert("Kantite pa valab.");
+//       }
+//     }
+
+//     let pixKey = null;
+//     if (method === "pix") {
+//       pixKey = window.prompt("Antre PIX key ou:", "");
+//       if (!pixKey) return;
+//     }
+
+//     try {
+//       setClaimBusy((m) => ({ ...m, [key]: true }));
+//       await axios.post(
+//         `${API}/api/claims`,
+//         {
+//           betType: b.type,
+//           betId: b.id,
+//           winAmount,
+//           payoutMethod: method,
+//           pixKey,
+//         },
+//         { headers: { Authorization: `Bearer ${token}` } }
+//       );
+
+//       setClaimed((m) => ({ ...m, [key]: true }));
+//       alert("Demann lan voye bay admin lan. Mèsi!");
+//     } catch (e) {
+//       alert(e.response?.data?.message || "Claim failed");
+//     } finally {
+//       if (mounted.current) {
+//         setClaimBusy((m) => ({ ...m, [key]: false }));
+//       }
+//     }
+//   };
+
+//   /* ---------------- UI ---------------- */
+//   return (
+//     <div style={{ padding: "16px" }}>
+//       <h2>🧾 Fich — Mes paris</h2>
+
+//       <div style={{ margin: "8px 0 16px", display: "flex", gap: 12 }}>
+//         <button onClick={() => load()} disabled={loading}>
+//           {loading ? "Loading..." : "Refresh"}
+//         </button>
+//         <div style={{ background: "#1f2937", color: "#d1d5db", padding: "6px 10px", borderRadius: 8 }}>
+//           Total pwen parye: <strong style={{ color: "#fff" }}>{totalPwen}</strong>
+//         </div>
+//       </div>
+
+//       {loading ? (
+//         <p>Loading...</p>
+//       ) : items.length === 0 ? (
+//         <p>No bets yet.</p>
+//       ) : (
+//         <div style={{ display: "grid", gap: 12 }}>
+//           {items.map((b) => {
+//             const key = claimKey(b);
+//             const won = (b.status || "").toLowerCase() === "won";
+
+//             return (
+//               <div key={`${key}-${b.createdAt}`} style={{
+//                 background: "#0f172a",
+//                 color: "#e5e7eb",
+//                 borderRadius: 12,
+//                 padding: "12px 14px",
+//                 border: "1px solid #1f2937",
+//               }}>
+//                 <strong>#{b.id} • {b.type}</strong>
+//                 <div>Numbers: <strong>{b.numbers}</strong></div>
+//                 <div>Pwen: <strong>{b.pwen}</strong></div>
+//                 <div style={{ opacity: 0.7 }}>{fmt(b.createdAt)}</div>
+
+//                 {won && !claimed[key] && (
+//                   <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
+//                     <button onClick={() => submitClaim(b, "points")}>➕ Add to Points</button>
+//                     <button onClick={() => submitClaim(b, "pix")}>💸 Cashout PIX</button>
+//                   </div>
+//                 )}
+//               </div>
+//             );
+//           })}
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
+/* ---------------- HELPERS ---------------- */
+
 const badgeColor = (status) => {
   switch ((status || "").toLowerCase()) {
-    case "won": return "#16a34a";
-    case "lost": return "#dc2626";
-    case "paid": return "#2563eb";
-    case "pending": return "#9ca3af";
-    default: return "#6b7280";
+    case "won":
+      return "#16a34a";
+    case "lost":
+      return "#dc2626";
+    case "paid":
+      return "#2563eb";
+    case "pending":
+      return "#9ca3af";
+    default:
+      return "#6b7280";
   }
 };
 
 const fmt = (d) => {
+  if (!d) return "-";
   const dt = new Date(d);
   return `${dt.toLocaleDateString()} ${dt.toLocaleTimeString([], {
     hour: "2-digit",
@@ -388,10 +620,13 @@ export default function Fich() {
   const [claimed, setClaimed] = useState({});
   const mounted = useRef(true);
 
-  useEffect(() => () => { mounted.current = false; }, []);
+  useEffect(() => () => {
+    mounted.current = false;
+  }, []);
 
-  /* ---------------- FIXED FLATTEN ---------------- */
+  /* ---------------- FLATTEN (SAFE) ---------------- */
   const flattenIfNeeded = (data) => {
+    // ✅ If backend already sends unified items, just use it
     if (Array.isArray(data.items)) return data.items;
 
     const safeArr = (arr) => (Array.isArray(arr) ? arr : []);
@@ -400,26 +635,33 @@ export default function Fich() {
       safeArr(arr).map((b) => ({
         id: b.id,
         type,
-        numbers: b.nimewo ?? b.numbers ?? b.number ?? b.maryaj ?? "-",
+        numbers:
+          b.nimewo ??
+          b.maryaj ??
+          b.number ??
+          b.numbers ??
+          "-",
         pwen: Number(b.pwen || 0),
-        draw: b.ville ?? b.city ?? b.lokal ?? b.draw ?? null,
+        draw: b.ville ?? b.city ?? b.lokal ?? null,
         status: b.status || "pending",
         createdAt: b.createdAt,
       }));
 
     const Y = mapBet(data.yonchif, "yonchif");
+    const D = mapBet(data.dechif, "dechif");
     const M = mapBet(data.maryaj, "maryaj");
     const T = mapBet(data.twachif, "twachif");
-    const K = mapBet(data.katchif, "katchif"); // ✅ ADDED
+    const K = mapBet(data.katchif, "katchif");
 
-    return [...Y, ...M, ...T, ...K].sort(
+    return [...Y, ...D, ...M, ...T, ...K].sort(
       (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
     );
   };
 
-  /* ---------------- LOAD ---------------- */
+  /* ---------------- LOAD DATA ---------------- */
   const load = async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -431,24 +673,16 @@ export default function Fich() {
       }
 
       const headers = { Authorization: `Bearer ${token}` };
-      let res;
 
-      try {
-        res = await axios.get(`${API}/api/bets/me`, { headers });
-      } catch (err) {
-        if (err?.response?.status === 404) {
-          res = await axios.get(`${API}/api/bets/shared`, { headers });
-        } else {
-          throw err;
-        }
-      }
-
+      const res = await axios.get(`${API}/api/bets/me`, { headers });
       const data = res?.data || {};
+
       if (mounted.current) {
         setTotalPwen(Number(data.totalPwen || 0));
         setItems(flattenIfNeeded(data));
       }
-    } catch (e) {
+    } catch (err) {
+      console.error("Fich load error:", err);
       if (mounted.current) {
         setItems([]);
         setTotalPwen(0);
@@ -491,7 +725,7 @@ export default function Fich() {
 
     let winAmount = Number(b.winAmount || b.pwen || 0);
     if (!Number.isFinite(winAmount) || winAmount <= 0) {
-      const inp = window.prompt("Antre kantite lajan/pwen pou reklame:", "0");
+      const inp = window.prompt("Antre kantite pwen:", "0");
       if (!inp) return;
       winAmount = parseInt(inp, 10);
       if (!Number.isFinite(winAmount) || winAmount <= 0) {
@@ -507,6 +741,7 @@ export default function Fich() {
 
     try {
       setClaimBusy((m) => ({ ...m, [key]: true }));
+
       await axios.post(
         `${API}/api/claims`,
         {
@@ -539,8 +774,17 @@ export default function Fich() {
         <button onClick={() => load()} disabled={loading}>
           {loading ? "Loading..." : "Refresh"}
         </button>
-        <div style={{ background: "#1f2937", color: "#d1d5db", padding: "6px 10px", borderRadius: 8 }}>
-          Total pwen parye: <strong style={{ color: "#fff" }}>{totalPwen}</strong>
+
+        <div
+          style={{
+            background: "#1f2937",
+            color: "#d1d5db",
+            padding: "6px 10px",
+            borderRadius: 8,
+          }}
+        >
+          Total pwen parye:{" "}
+          <strong style={{ color: "#fff" }}>{totalPwen}</strong>
         </div>
       </div>
 
@@ -555,22 +799,31 @@ export default function Fich() {
             const won = (b.status || "").toLowerCase() === "won";
 
             return (
-              <div key={`${key}-${b.createdAt}`} style={{
-                background: "#0f172a",
-                color: "#e5e7eb",
-                borderRadius: 12,
-                padding: "12px 14px",
-                border: "1px solid #1f2937",
-              }}>
-                <strong>#{b.id} • {b.type}</strong>
+              <div
+                key={key}
+                style={{
+                  background: "#0f172a",
+                  color: "#e5e7eb",
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  border: "1px solid #1f2937",
+                }}
+              >
+                <strong>
+                  #{b.id} • {b.type}
+                </strong>
                 <div>Numbers: <strong>{b.numbers}</strong></div>
                 <div>Pwen: <strong>{b.pwen}</strong></div>
                 <div style={{ opacity: 0.7 }}>{fmt(b.createdAt)}</div>
 
                 {won && !claimed[key] && (
                   <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
-                    <button onClick={() => submitClaim(b, "points")}>➕ Add to Points</button>
-                    <button onClick={() => submitClaim(b, "pix")}>💸 Cashout PIX</button>
+                    <button onClick={() => submitClaim(b, "points")}>
+                      ➕ Add to Points
+                    </button>
+                    <button onClick={() => submitClaim(b, "pix")}>
+                      💸 Cashout PIX
+                    </button>
                   </div>
                 )}
               </div>
