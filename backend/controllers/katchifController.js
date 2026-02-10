@@ -98,5 +98,22 @@ exports.updateKatchif = async (req, res) => {
   }
 };
 
-// ✅ Delete my own Katchif bet
-exports
+// ✅ Delete your own Katchif bet
+exports.deleteKatchif = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const bet = await Katchif.findOne({
+      where: { id, userId: req.user.id },
+    });
+    if (!bet) {
+      return res.status(404).json({ message: "Bet not found" });
+    }
+
+    await bet.destroy();
+    res.json({ message: "Bet deleted" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
