@@ -18,7 +18,7 @@ app.use(
 );
 
 // ✅ VERY IMPORTANT: allow preflight for ALL routes
-app.options("*", cors());
+app.use(cors());
 app.use(express.json());
 
 // ----------------------------------------------------
