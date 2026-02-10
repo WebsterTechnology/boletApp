@@ -646,7 +646,7 @@ export default function Fich() {
         status: b.status || "pending",
         createdAt: b.createdAt,
       }));
-
+//new
     const Y = mapBet(data.yonchif, "yonchif");
     const D = mapBet(data.dechif, "dechif");
     const M = mapBet(data.maryaj, "maryaj");
