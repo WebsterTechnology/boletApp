@@ -262,6 +262,174 @@
 //     </div>
 //   );
 // }
+// import React, { useEffect, useMemo, useState } from "react";
+// import axios from "axios";
+
+// const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+// export default function AdminDashboard() {
+//   const [users, setUsers] = useState([]);
+//   const [paidPayments, setPaidPayments] = useState([]); // keep name as you want
+//   const [amounts, setAmounts] = useState({});
+//   const [loading, setLoading] = useState(false);
+
+//   const token = localStorage.getItem("token") || "";
+//   const auth = useMemo(
+//     () => ({ headers: { Authorization: `Bearer ${token}` } }),
+//     [token]
+//   );
+
+//   /* ================= FETCH DATA ================= */
+
+//   const fetchUsers = async () => {
+//     const res = await axios.get(`${API}/api/admin/users`, auth);
+//     setUsers(res.data);
+//   };
+
+//   // 🔥 ONLY PAID PIX → shown in Pending PIX column
+//   const fetchPaidPayments = async () => {
+//     const res = await axios.get(
+//       `${API}/api/admin/payments?status=credited`, // 🔴 IMPORTANT
+//       auth
+//     );
+//     setPaidPayments(res.data);
+//   };
+
+//   const refreshAll = async () => {
+//     setLoading(true);
+//     await Promise.all([fetchUsers(), fetchPaidPayments()]);
+//     setLoading(false);
+//   };
+
+//   useEffect(() => {
+//     refreshAll().catch(console.error);
+//   }, [token]);
+
+//   /* ================= POINTS ================= */
+
+//   const handleAddPwen = async (userId) => {
+//     const amount = parseInt(amounts[userId], 10);
+//     if (!amount) return alert("Enter amount");
+
+//     await axios.post(
+//       `${API}/api/admin/users/${userId}/add-pwen`,
+//       { amount },
+//       auth
+//     );
+
+//     refreshAll();
+//     setAmounts((s) => ({ ...s, [userId]: "" }));
+//   };
+
+//   const handleRemovePwen = async (userId) => {
+//     const amount = parseInt(amounts[userId], 10);
+//     if (!amount) return alert("Enter amount");
+
+//     await axios.post(
+//       `${API}/api/admin/users/${userId}/remove-pwen`,
+//       { amount },
+//       auth
+//     );
+
+//     refreshAll();
+//     setAmounts((s) => ({ ...s, [userId]: "" }));
+//   };
+
+//   /* ================= PIX ================= */
+
+//   // group PAID pix by user
+//   const grouped = useMemo(() => {
+//     return paidPayments.reduce((acc, p) => {
+//       (acc[p.userId] ||= []).push(p);
+//       return acc;
+//     }, {});
+//   }, [paidPayments]);
+
+//   // credit pix → adds points + removes from pending
+//   const creditPayment = async (paymentId) => {
+//     await axios.post(
+//       `${API}/api/admin/payments/${paymentId}/credit`,
+//       {},
+//       auth
+//     );
+//     refreshAll(); // PIX disappears after this
+//   };
+
+//   /* ================= UI ================= */
+
+//   return (
+//     <div style={{ padding: 24 }}>
+//       <h2>👑 Admin Dashboard</h2>
+
+//       <table border="1" width="100%">
+//         <thead>
+//           <tr>
+//             <th>ID</th>
+//             <th>Phone</th>
+//             <th>Points</th>
+//             <th>PIX Receive (PAID)</th>
+//             <th>Amount</th>
+//             <th>Actions</th>
+//           </tr>
+//         </thead>
+
+//         <tbody>
+//           {users.map((u) => {
+//             const pendingPix = grouped[u.id] || [];
+
+//             return (
+//               <tr key={u.id}>
+//                 <td>{u.id}</td>
+//                 <td>{u.phone}</td>
+//                 <td>{u.points}</td>
+
+//                 {/* 🔥 ONLY PAID PIX SHOWS HERE */}
+//                 <td>
+//                   {pendingPix.map((p) => (
+//                     <button
+//                       key={p.id}
+//                       onClick={() => creditPayment(p.id)}
+//                       style={{ margin: 4 }}
+//                     >
+//                       +{p.points} PIX
+//                     </button>
+//                   ))}
+//                 </td>
+
+//                 <td>
+//                   <input
+//                     type="number"
+//                     value={amounts[u.id] || ""}
+//                     onChange={(e) =>
+//                       setAmounts((s) => ({
+//                         ...s,
+//                         [u.id]: e.target.value,
+//                       }))
+//                     }
+//                     style={{ width: 80 }}
+//                   />
+//                 </td>
+
+//                 <td>
+//                   <button onClick={() => handleAddPwen(u.id)}>➕ Add</button>
+//                   <button
+//                     onClick={() => handleRemovePwen(u.id)}
+//                     style={{ marginLeft: 6, background: "red", color: "#fff" }}
+//                   >
+//                     ➖ Remove
+//                   </button>
+//                 </td>
+//               </tr>
+//             );
+//           })}
+//         </tbody>
+//       </table>
+
+//       {loading && <p>Loading…</p>}
+//     </div>
+//   );
+// }
+
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 
@@ -269,7 +437,6 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
-  const [paidPayments, setPaidPayments] = useState([]); // keep name as you want
   const [amounts, setAmounts] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -279,25 +446,16 @@ export default function AdminDashboard() {
     [token]
   );
 
-  /* ================= FETCH DATA ================= */
+  /* ================= FETCH USERS ================= */
 
   const fetchUsers = async () => {
     const res = await axios.get(`${API}/api/admin/users`, auth);
     setUsers(res.data);
   };
 
-  // 🔥 ONLY PAID PIX → shown in Pending PIX column
-  const fetchPaidPayments = async () => {
-    const res = await axios.get(
-      `${API}/api/admin/payments?status=credited`, // 🔴 IMPORTANT
-      auth
-    );
-    setPaidPayments(res.data);
-  };
-
   const refreshAll = async () => {
     setLoading(true);
-    await Promise.all([fetchUsers(), fetchPaidPayments()]);
+    await fetchUsers();
     setLoading(false);
   };
 
@@ -335,26 +493,6 @@ export default function AdminDashboard() {
     setAmounts((s) => ({ ...s, [userId]: "" }));
   };
 
-  /* ================= PIX ================= */
-
-  // group PAID pix by user
-  const grouped = useMemo(() => {
-    return paidPayments.reduce((acc, p) => {
-      (acc[p.userId] ||= []).push(p);
-      return acc;
-    }, {});
-  }, [paidPayments]);
-
-  // credit pix → adds points + removes from pending
-  const creditPayment = async (paymentId) => {
-    await axios.post(
-      `${API}/api/admin/payments/${paymentId}/credit`,
-      {},
-      auth
-    );
-    refreshAll(); // PIX disappears after this
-  };
-
   /* ================= UI ================= */
 
   return (
@@ -367,61 +505,43 @@ export default function AdminDashboard() {
             <th>ID</th>
             <th>Phone</th>
             <th>Points</th>
-            <th>PIX Receive (PAID)</th>
             <th>Amount</th>
             <th>Actions</th>
           </tr>
         </thead>
 
         <tbody>
-          {users.map((u) => {
-            const pendingPix = grouped[u.id] || [];
+          {users.map((u) => (
+            <tr key={u.id}>
+              <td>{u.id}</td>
+              <td>{u.phone}</td>
+              <td>{u.points}</td>
 
-            return (
-              <tr key={u.id}>
-                <td>{u.id}</td>
-                <td>{u.phone}</td>
-                <td>{u.points}</td>
+              <td>
+                <input
+                  type="number"
+                  value={amounts[u.id] || ""}
+                  onChange={(e) =>
+                    setAmounts((s) => ({
+                      ...s,
+                      [u.id]: e.target.value,
+                    }))
+                  }
+                  style={{ width: 80 }}
+                />
+              </td>
 
-                {/* 🔥 ONLY PAID PIX SHOWS HERE */}
-                <td>
-                  {pendingPix.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => creditPayment(p.id)}
-                      style={{ margin: 4 }}
-                    >
-                      +{p.points} PIX
-                    </button>
-                  ))}
-                </td>
-
-                <td>
-                  <input
-                    type="number"
-                    value={amounts[u.id] || ""}
-                    onChange={(e) =>
-                      setAmounts((s) => ({
-                        ...s,
-                        [u.id]: e.target.value,
-                      }))
-                    }
-                    style={{ width: 80 }}
-                  />
-                </td>
-
-                <td>
-                  <button onClick={() => handleAddPwen(u.id)}>➕ Add</button>
-                  <button
-                    onClick={() => handleRemovePwen(u.id)}
-                    style={{ marginLeft: 6, background: "red", color: "#fff" }}
-                  >
-                    ➖ Remove
-                  </button>
-                </td>
-              </tr>
-            );
-          })}
+              <td>
+                <button onClick={() => handleAddPwen(u.id)}>➕ Add</button>
+                <button
+                  onClick={() => handleRemovePwen(u.id)}
+                  style={{ marginLeft: 6, background: "red", color: "#fff" }}
+                >
+                  ➖ Remove
+                </button>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
 
@@ -429,4 +549,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
