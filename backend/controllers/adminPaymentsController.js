@@ -1,19 +1,47 @@
 const { PixPayment, User } = require("../models");
 
 /**
- * GET all RECEIVED PIX
- * In your system: RECEIVED = credited (webhook already ran)
+ * GET PIX PAYMENTS (with query parameter support)
+ * Accepts: ?status=credited (default) OR ?status=pending OR ?status=all
+ * Your frontend sends: ?status=credited
  */
 exports.getPaidPixPayments = async (req, res) => {
   try {
-    const payments = await PixPayment.findAll({
-      where: { status: "credited" }, // 🔥 FIX HERE
-      order: [["createdAt", "ASC"]],
+    const { status } = req.query; // ✅ Get the query parameter
+    
+    // Build where clause based on query
+    let where = {};
+    
+    // Default behavior: if no query or status=credited, show credited
+    if (!status || status === 'credited') {
+      where.status = 'credited';
+    } else if (status === 'pending') {
+      where.status = 'pending';
+    } else if (status === 'all') {
+      // Show all - empty where clause
+      where = {};
+    }
+    // Any other status value will use empty where (shows all)
+
+    console.log("📊 Fetching PIX payments with filter:", { 
+      query: status, 
+      where: where 
     });
 
+    const payments = await PixPayment.findAll({
+      where: where,
+      order: [["createdAt", "DESC"]], // Changed to DESC for newest first
+      include: [{ 
+        model: User, 
+        attributes: ['id', 'phone'] 
+      }]
+    });
+
+    console.log(`✅ Found ${payments.length} payments with status: ${status || 'credited'}`);
+    
     res.json(payments);
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error fetching PIX payments:", err);
     res.status(500).json({ message: "Failed to fetch PIX payments" });
   }
 };
