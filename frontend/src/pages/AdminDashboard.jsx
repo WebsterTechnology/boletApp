@@ -28,10 +28,14 @@ export default function AdminDashboard() {
     setUsers(res.data);
   };
 
-  const fetchPaidPayments = async () => {
-    const res = await axios.get(`${API}/api/admin/payments?status=paid`, auth);
-    setPaidPayments(res.data);
-  };
+ const fetchPaidPayments = async () => {
+  const res = await axios.get(
+    `${API}/api/admin/payments?status=paid`,
+    auth
+  );
+  setPaidPayments(res.data);
+};
+
 
   const fetchDisabledNumbers = async () => {
     const res = await axios.get(`${API}/api/admin/disabled-numbers`, auth);

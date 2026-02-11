@@ -38,6 +38,7 @@ const katchifRoutes = require("./routes/katchifRoutes");
 const adminBetsRoutes = require("./routes/adminBetsRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const userRoutes = require("./routes/userRoutes");
+const adminPaymentsRoutes = require("./routes/adminPaymentsRoutes");
 
 // ----------------------------------------------------
 // 🚀 Mount Routes
@@ -58,6 +59,7 @@ app.use("/api/admin/bets", adminBetsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/claims", claimRoutes);
+app.use("/api/admin", adminPaymentsRoutes);
 
 // ----------------------------------------------------
 // Export App
