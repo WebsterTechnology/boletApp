@@ -1,12 +1,13 @@
 const { PixPayment, User } = require("../models");
 
 /**
- * GET all PAID PIX → shown in "Pending PIX"
+ * GET all RECEIVED PIX
+ * In your system: RECEIVED = credited (webhook already ran)
  */
 exports.getPaidPixPayments = async (req, res) => {
   try {
     const payments = await PixPayment.findAll({
-      where: { status: "paid" },
+      where: { status: "credited" }, // 🔥 FIX HERE
       order: [["createdAt", "ASC"]],
     });
 
@@ -18,7 +19,8 @@ exports.getPaidPixPayments = async (req, res) => {
 };
 
 /**
- * CREDIT PIX → add points + remove from Pending PIX
+ * CREDIT PIX
+ * (optional – mostly redundant since webhook already credits)
  */
 exports.creditPixPayment = async (req, res) => {
   try {
@@ -29,9 +31,9 @@ exports.creditPixPayment = async (req, res) => {
       return res.status(404).json({ message: "Payment not found" });
     }
 
-    if (payment.status !== "paid") {
+    if (payment.status !== "credited") {
       return res.status(400).json({
-        message: "Only PAID PIX can be credited",
+        message: "PIX not credited yet",
       });
     }
 
@@ -40,17 +42,11 @@ exports.creditPixPayment = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ add points
-    user.points += payment.points;
-    await user.save();
-
-    // ✅ mark as credited → disappears from Pending PIX
-    payment.status = "credited";
-    await payment.save();
-
-    res.json({ message: "PIX credited successfully" });
+    return res.json({
+      message: "PIX already credited via webhook",
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to credit PIX" });
+    res.status(500).json({ message: "Failed to process PIX" });
   }
 };

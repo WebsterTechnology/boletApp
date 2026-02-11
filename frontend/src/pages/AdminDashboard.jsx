@@ -289,7 +289,7 @@ export default function AdminDashboard() {
   // 🔥 ONLY PAID PIX → shown in Pending PIX column
   const fetchPaidPayments = async () => {
     const res = await axios.get(
-      `${API}/api/admin/payments?status=paid`, // 🔴 IMPORTANT
+      `${API}/api/admin/payments?status=credited`, // 🔴 IMPORTANT
       auth
     );
     setPaidPayments(res.data);
