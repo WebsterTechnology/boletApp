@@ -59,7 +59,7 @@ app.use("/api/admin/bets", adminBetsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/claims", claimRoutes);
-app.use("/api/admin", adminPaymentsRoutes);
+app.use("/api/admin/payments", adminPaymentsRoutes);
 
 // ----------------------------------------------------
 // Export App

@@ -1,22 +1,18 @@
 const express = require("express");
 const router = express.Router();
 
+const {
+  getPaidPixPayments,
+  creditPixPayment,
+} = require("../controllers/adminPaymentsController");
+
 const authenticate = require("../middleware/authenticate");
 const adminOnly = require("../middleware/adminOnly");
-const controller = require("../controllers/adminPaymentsController");
 
-router.get(
-  "/payments",
-  authenticate,
-  adminOnly,
-  controller.getPaidPixPayments
-);
+// 🔥 PENDING PIX (PAID PIX)
+router.get("/", authenticate, adminOnly, getPaidPixPayments);
 
-router.post(
-  "/payments/:id/credit",
-  authenticate,
-  adminOnly,
-  controller.creditPixPayment
-);
+// 🔥 CREDIT PIX
+router.post("/:id/credit", authenticate, adminOnly, creditPixPayment);
 
 module.exports = router;
