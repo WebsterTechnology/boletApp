@@ -269,14 +269,9 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
-  const [paidPayments, setPaidPayments] = useState([]); // keep name ✅
+  const [paidPayments, setPaidPayments] = useState([]); // keep name as you want
   const [amounts, setAmounts] = useState({});
   const [loading, setLoading] = useState(false);
-
-  const [disabledNumbers, setDisabledNumbers] = useState([]);
-  const [disabledLocations, setDisabledLocations] = useState([]);
-  const [inputNumbers, setInputNumbers] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState("");
 
   const token = localStorage.getItem("token") || "";
   const auth = useMemo(
@@ -291,33 +286,18 @@ export default function AdminDashboard() {
     setUsers(res.data);
   };
 
-  // 🔧 FIX: this endpoint returns ONLY status="paid"
+  // 🔥 ONLY PAID PIX → shown in Pending PIX column
   const fetchPaidPayments = async () => {
     const res = await axios.get(
-      `${API}/api/admin/payments`, // backend filters status=paid
+      `${API}/api/admin/payments?status=paid`, // 🔴 IMPORTANT
       auth
     );
     setPaidPayments(res.data);
   };
 
-  const fetchDisabledNumbers = async () => {
-    const res = await axios.get(`${API}/api/admin/disabled-numbers`, auth);
-    setDisabledNumbers(res.data);
-  };
-
-  const fetchDisabledLocations = async () => {
-    const res = await axios.get(`${API}/api/admin/disabled-locations`, auth);
-    setDisabledLocations(res.data);
-  };
-
   const refreshAll = async () => {
     setLoading(true);
-    await Promise.all([
-      fetchUsers(),
-      fetchPaidPayments(), // ✅ shows Pending PIX
-      fetchDisabledNumbers(),
-      fetchDisabledLocations(),
-    ]);
+    await Promise.all([fetchUsers(), fetchPaidPayments()]);
     setLoading(false);
   };
 
@@ -329,7 +309,7 @@ export default function AdminDashboard() {
 
   const handleAddPwen = async (userId) => {
     const amount = parseInt(amounts[userId], 10);
-    if (!amount) return alert("Enter a valid number");
+    if (!amount) return alert("Enter amount");
 
     await axios.post(
       `${API}/api/admin/users/${userId}/add-pwen`,
@@ -343,7 +323,7 @@ export default function AdminDashboard() {
 
   const handleRemovePwen = async (userId) => {
     const amount = parseInt(amounts[userId], 10);
-    if (!amount) return alert("Enter a valid number");
+    if (!amount) return alert("Enter amount");
 
     await axios.post(
       `${API}/api/admin/users/${userId}/remove-pwen`,
@@ -355,95 +335,39 @@ export default function AdminDashboard() {
     setAmounts((s) => ({ ...s, [userId]: "" }));
   };
 
-  /* ================= PIX LOGIC ================= */
+  /* ================= PIX ================= */
 
-  // 🔧 FIX: group PAID pix by user → Pending PIX column
+  // group PAID pix by user
   const grouped = useMemo(() => {
     return paidPayments.reduce((acc, p) => {
-      if (!acc[p.userId]) acc[p.userId] = [];
-      acc[p.userId].push(p);
+      (acc[p.userId] ||= []).push(p);
       return acc;
     }, {});
   }, [paidPayments]);
 
-  // ✅ CREDIT PIX → status becomes "credited" → disappears
+  // credit pix → adds points + removes from pending
   const creditPayment = async (paymentId) => {
     await axios.post(
       `${API}/api/admin/payments/${paymentId}/credit`,
       {},
       auth
     );
-    refreshAll(); // 🔥 refresh removes it from Pending PIX
-  };
-
-  /* ================= DISABLE NUMBERS ================= */
-
-  const saveDisabledNumbers = async () => {
-    const merged = Array.from(
-      new Set(
-        [...disabledNumbers, ...inputNumbers.split(",")]
-          .map((n) => n.trim())
-          .filter(Boolean)
-      )
-    );
-
-    const res = await axios.post(
-      `${API}/api/admin/disabled-numbers`,
-      { numbers: merged },
-      auth
-    );
-
-    setDisabledNumbers(res.data.disabledNumbers);
-    setInputNumbers("");
-  };
-
-  const enableNumber = async (num) => {
-    const updated = disabledNumbers.filter((n) => n !== num);
-    setDisabledNumbers(updated);
-    await axios.post(
-      `${API}/api/admin/disabled-numbers`,
-      { numbers: updated },
-      auth
-    );
-  };
-
-  /* ================= DISABLE LOCATIONS ================= */
-
-  const addDisabledLocation = async () => {
-    const merged = Array.from(new Set([...disabledLocations, selectedLocation]));
-
-    const res = await axios.post(
-      `${API}/api/admin/disabled-locations`,
-      { locations: merged },
-      auth
-    );
-
-    setDisabledLocations(res.data.disabledLocations);
-  };
-
-  const enableLocation = async (loc) => {
-    const updated = disabledLocations.filter((l) => l !== loc);
-    setDisabledLocations(updated);
-    await axios.post(
-      `${API}/api/admin/disabled-locations`,
-      { locations: updated },
-      auth
-    );
+    refreshAll(); // PIX disappears after this
   };
 
   /* ================= UI ================= */
 
   return (
-    <div style={{ padding: "2rem" }}>
+    <div style={{ padding: 24 }}>
       <h2>👑 Admin Dashboard</h2>
 
-      <table border="1" width="100%" style={{ marginTop: 12 }}>
+      <table border="1" width="100%">
         <thead>
           <tr>
             <th>ID</th>
             <th>Phone</th>
             <th>Points</th>
-            <th>PIX  Receive</th>
+            <th>PIX Receive (PAID)</th>
             <th>Amount</th>
             <th>Actions</th>
           </tr>
@@ -451,7 +375,7 @@ export default function AdminDashboard() {
 
         <tbody>
           {users.map((u) => {
-            const pending = grouped[u.id] || []; // ✅ PAID PIX ONLY
+            const pendingPix = grouped[u.id] || [];
 
             return (
               <tr key={u.id}>
@@ -459,14 +383,15 @@ export default function AdminDashboard() {
                 <td>{u.phone}</td>
                 <td>{u.points}</td>
 
+                {/* 🔥 ONLY PAID PIX SHOWS HERE */}
                 <td>
-                  {pending.map((p) => (
+                  {pendingPix.map((p) => (
                     <button
                       key={p.id}
                       onClick={() => creditPayment(p.id)}
-                      style={{ margin: 2 }}
+                      style={{ margin: 4 }}
                     >
-                      +{p.points} Credit
+                      +{p.points} PIX
                     </button>
                   ))}
                 </td>
@@ -485,11 +410,11 @@ export default function AdminDashboard() {
                   />
                 </td>
 
-                <td style={{ display: "flex", gap: 6 }}>
+                <td>
                   <button onClick={() => handleAddPwen(u.id)}>➕ Add</button>
                   <button
                     onClick={() => handleRemovePwen(u.id)}
-                    style={{ background: "#dc2626", color: "#fff" }}
+                    style={{ marginLeft: 6, background: "red", color: "#fff" }}
                   >
                     ➖ Remove
                   </button>
@@ -500,38 +425,8 @@ export default function AdminDashboard() {
         </tbody>
       </table>
 
-      <hr />
-
-      <h3>🚫 Disable Numbers</h3>
-      <input
-        value={inputNumbers}
-        onChange={(e) => setInputNumbers(e.target.value)}
-        placeholder="2,5,10"
-      />
-      <button onClick={saveDisabledNumbers}>Save</button>
-
-      {disabledNumbers.map((n) => (
-        <button key={n} onClick={() => enableNumber(n)}>
-          ❌ {n}
-        </button>
-      ))}
-
-      <hr />
-
-      <h3>🌎 Disable Locations</h3>
-      <select onChange={(e) => setSelectedLocation(e.target.value)}>
-        <option value="">Select</option>
-        <option value="New York">New York</option>
-        <option value="Florida">Florida</option>
-      </select>
-
-      <button onClick={addDisabledLocation}>Save</button>
-
-      {disabledLocations.map((l) => (
-        <button key={l} onClick={() => enableLocation(l)}>
-          ❌ {l}
-        </button>
-      ))}
+      {loading && <p>Loading…</p>}
     </div>
   );
 }
+
