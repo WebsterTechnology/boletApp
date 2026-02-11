@@ -443,7 +443,7 @@ export default function AdminDashboard() {
             <th>ID</th>
             <th>Phone</th>
             <th>Points</th>
-            <th>Pending PIX</th>
+            <th>PIX  Receive</th>
             <th>Amount</th>
             <th>Actions</th>
           </tr>
