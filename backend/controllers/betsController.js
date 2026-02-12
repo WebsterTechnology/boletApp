@@ -8,19 +8,38 @@ const {
 
 exports.getAllMyBets = async (req, res) => {
   try {
-    // 🔐 Authenticated user id (from middleware)
     const userId = req.user.id;
 
-    // 📥 Fetch ALL bet types in parallel
+    // 🔥 IMPORTANT: raw: true gives plain objects
     const [yonchif, dechif, twachif, maryaj, katchif] = await Promise.all([
-      YonChif.findAll({ where: { userId }, order: [["createdAt", "DESC"]] }),
-      DeChif.findAll({ where: { userId }, order: [["createdAt", "DESC"]] }),
-      TwaChif.findAll({ where: { userId }, order: [["createdAt", "DESC"]] }),
-      Maryaj.findAll({ where: { userId }, order: [["createdAt", "DESC"]] }),
-      Katchif.findAll({ where: { userId }, order: [["createdAt", "DESC"]] }),
+      YonChif.findAll({
+        where: { userId },
+        order: [["createdAt", "DESC"]],
+        raw: true,
+      }),
+      DeChif.findAll({
+        where: { userId },
+        order: [["createdAt", "DESC"]],
+        raw: true,
+      }),
+      TwaChif.findAll({
+        where: { userId },
+        order: [["createdAt", "DESC"]],
+        raw: true,
+      }),
+      Maryaj.findAll({
+        where: { userId },
+        order: [["createdAt", "DESC"]],
+        raw: true,
+      }),
+      Katchif.findAll({
+        where: { userId },
+        order: [["createdAt", "DESC"]],
+        raw: true,
+      }),
     ]);
 
-    // 🔢 TOTAL points bet (ALL types)
+    // 🔢 TOTAL Pwen
     const totalPwen =
       yonchif.reduce((s, b) => s + Number(b.pwen || 0), 0) +
       dechif.reduce((s, b) => s + Number(b.pwen || 0), 0) +
@@ -28,22 +47,14 @@ exports.getAllMyBets = async (req, res) => {
       maryaj.reduce((s, b) => s + Number(b.pwen || 0), 0) +
       katchif.reduce((s, b) => s + Number(b.pwen || 0), 0);
 
-    // 🧠 SAFE helper: returns first existing field OR "-"
-    const pick = (obj, ...keys) => {
-      for (const k of keys) {
-        if (obj[k] !== undefined && obj[k] !== null) return obj[k];
-      }
-      return "-";
-    };
-
-    // 📦 Unified list for frontend (ONE loop)
+    // 📦 Build unified list
     const items = [
       ...yonchif.map((b) => ({
         id: b.id,
         type: "yonchif",
-        numbers: pick(b, "nimewo", "number", "numbers"),
+        numbers: b.nimewo || b.number || b.numbers || "-",
         pwen: Number(b.pwen || 0),
-       draw: pick(b, "draw", "ville", "city", "lokal"),
+        draw: b.draw || b.ville || b.city || b.lokal || "-",
         status: b.status || "pending",
         createdAt: b.createdAt,
       })),
@@ -51,9 +62,9 @@ exports.getAllMyBets = async (req, res) => {
       ...dechif.map((b) => ({
         id: b.id,
         type: "dechif",
-        numbers: pick(b, "number", "nimewo"),
+        numbers: b.number || b.nimewo || "-",
         pwen: Number(b.pwen || 0),
-        draw: pick(b, "draw", "ville", "city", "lokal"),
+        draw: b.draw || b.ville || b.city || b.lokal || "-",
         status: b.status || "pending",
         createdAt: b.createdAt,
       })),
@@ -61,44 +72,43 @@ exports.getAllMyBets = async (req, res) => {
       ...twachif.map((b) => ({
         id: b.id,
         type: "twachif",
-        numbers: pick(b, "number", "twachif", "nimewo"),
+        numbers: b.number || b.nimewo || "-",
         pwen: Number(b.pwen || 0),
-        draw: pick(b, "draw", "ville", "city", "lokal"),
+        draw: b.draw || b.ville || b.city || b.lokal || "-",
         status: b.status || "pending",
         createdAt: b.createdAt,
       })),
+
       ...maryaj.map((b) => ({
         id: b.id,
         type: "maryaj",
         part1: b.part1 || "-",
         part2: b.part2 || "-",
-        numbers: b.part1 && b.part2 ? `${b.part1}${b.part2}` : "-",
+        numbers:
+          b.part1 && b.part2 ? `${b.part1}${b.part2}` : "-",
         pwen: Number(b.pwen || 0),
-        draw: pick(b, "draw", "ville", "city", "lokal"),
+        draw: b.draw || b.ville || b.city || b.lokal || "-",
         status: b.status || "pending",
         createdAt: b.createdAt,
       })),
+
       ...katchif.map((b) => ({
         id: b.id,
         type: "katchif",
-        numbers: pick(b, "number", "numbers"),
+        numbers: b.number || b.numbers || "-",
         pwen: Number(b.pwen || 0),
-        draw: pick(b, "draw", "ville", "city", "lokal"),
+        draw: b.draw || b.ville || b.city || b.lokal || "-",
         status: b.status || "pending",
         createdAt: b.createdAt,
       })),
     ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    // ✅ Send response
+    // ✅ Send to frontend
     res.json({
-      items,        // 👈 frontend MUST use this
+      items,
       totalPwen,
-      yonchif,
-      dechif,
-      twachif,
-      maryaj,
-      katchif,
     });
+
   } catch (err) {
     console.error("Bet fetch error:", err);
     res.status(500).json({ message: "Server error" });
