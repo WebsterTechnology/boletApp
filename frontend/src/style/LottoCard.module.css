@@ -1,59 +1,84 @@
-@keyframes zoomFadeIn {
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Page Setup */
+body {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #0f0f0f, #1a1a1a);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow: hidden; /* prevents scrollbar */
+}
+
+/* ===== Entrance Animation ===== */
+@keyframes smoothZoomReveal {
   0% {
     opacity: 0;
-    transform: scale(1.2);
+    transform: scale(1.15) translateY(40px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(0.98) translateY(-5px);
   }
   100% {
-    opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
+/* ===== Card Styling ===== */
 .card {
-  background: #1f1f1f;
-  border-radius: 16px;
-  overflow: hidden;
-  width: 300px;
+  width: 320px;
   max-width: 90%;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+  border-radius: 18px;
+  overflow: hidden;
+  background: #1f1f1f;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   cursor: pointer;
 
-  animation: zoomFadeIn 1s ease forwards;
-  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  animation: smoothZoomReveal 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+
+  transition: 
+    transform 0.4s ease,
+    box-shadow 0.4s ease;
 }
 
+/* Hover Effect */
 .card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+  transform: translateY(-10px) scale(1.04);
+  box-shadow: 
+    0 30px 70px rgba(0, 0, 0, 0.8);
 }
 
+/* ===== Image Styling ===== */
 .image {
   width: 100%;
   height: auto;
   display: block;
-  border-radius: 16px;
+  transition: transform 0.5s ease;
 }
 
-
+/* Smooth image zoom on hover */
 .card:hover .image {
-  transform: scale(1.06);
+  transform: scale(1.08);
 }
 
-/* === Mobile responsiveness === */
+/* ===== Mobile Responsiveness ===== */
 @media (max-width: 480px) {
   .card {
-    width: 90%;
-    border-radius: 14px;
-  }
-
-  .image {
-    border-radius: 14px;
+    width: 92%;
+    border-radius: 16px;
   }
 }
 
-/* Tablet and up */
+/* ===== Tablet & Larger ===== */
 @media (min-width: 768px) {
   .card {
-    width: 320px;
+    width: 350px;
   }
 }
