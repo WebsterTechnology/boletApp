@@ -1,61 +1,39 @@
-/* Page Load Animation */
-@keyframes fadeSlideUp {
-  from {
+@keyframes zoomFadeIn {
+  0% {
     opacity: 0;
-    transform: translateY(40px) scale(0.95);
+    transform: scale(1.2);
   }
-  to {
+  100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1);
   }
-}
-
-/* Soft Floating Effect */
-@keyframes floatCard {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
-  100% { transform: translateY(0px); }
 }
 
 .card {
-  background: linear-gradient(145deg, #1f1f1f, #2a2a2a);
+  background: #1f1f1f;
   border-radius: 16px;
   overflow: hidden;
+  width: 300px;
+  max-width: 90%;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
   cursor: pointer;
-  width: 280px;
-  max-width: 100%;
-  margin: 60px auto;
-  
-  /* Professional Shadow */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 
-  /* Smooth transitions */
-  transition: 
-    transform 0.4s ease,
-    box-shadow 0.4s ease;
-
-  /* Entrance animation */
-  animation: fadeSlideUp 1s ease forwards,
-             floatCard 6s ease-in-out infinite;
+  animation: zoomFadeIn 1s ease forwards;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
-/* Hover Effect */
 .card:hover {
-  transform: translateY(-12px) scale(1.04);
-  box-shadow: 
-    0 20px 50px rgba(0, 0, 0, 0.6),
-    0 0 25px rgba(0, 123, 255, 0.3); /* soft glow */
+  transform: scale(1.05);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
 }
 
-/* Image Styling */
 .image {
   width: 100%;
   height: auto;
-  object-fit: cover;
   display: block;
   border-radius: 16px;
-  transition: transform 0.4s ease;
 }
+
 
 .card:hover .image {
   transform: scale(1.06);
