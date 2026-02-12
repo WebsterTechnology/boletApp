@@ -796,13 +796,14 @@ export default function Fich() {
 
   /* ---------------- UI ---------------- */
   /* ---------------- UI ---------------- */
+/* ---------------- UI ---------------- */
 return (
   <div style={{ padding: "16px" }}>
-    <h2>🧾 Fich — Mes paris</h2>
+    <h2>🧾 Fich — Paris mwen yo</h2>
 
     <div style={{ margin: "8px 0 16px", display: "flex", gap: 12 }}>
       <button onClick={() => load()} disabled={loading}>
-        {loading ? "Loading..." : "Refresh"}
+        {loading ? "Chajman..." : "Rafrechi"}
       </button>
 
       <div
@@ -819,9 +820,9 @@ return (
     </div>
 
     {loading ? (
-      <p>Loading...</p>
+      <p>Chajman...</p>
     ) : items.length === 0 ? (
-      <p>No bets yet.</p>
+      <p>Pa gen pari ankò.</p>
     ) : (
       <div style={{ display: "grid", gap: 12 }}>
         {items.map((b) => {
@@ -842,6 +843,17 @@ return (
             }
           };
 
+          // Translate status for display
+          const getStatusText = () => {
+            switch(status) {
+              case "won": return "GENYEN";
+              case "lost": return "PÈDI";
+              case "paid": return "PÈYE";
+              case "pending": return "ANNATANT";
+              default: return status;
+            }
+          };
+
           return (
             <div
               key={key}
@@ -851,7 +863,7 @@ return (
                 borderRadius: 12,
                 padding: "12px 14px",
                 border: "1px solid #1f2937",
-                opacity: lost || paid ? 0.8 : 1, // Fade lost/paid bets slightly
+                opacity: lost || paid ? 0.8 : 1,
               }}
             >
               {/* Header with ID, type AND status badge */}
@@ -865,7 +877,6 @@ return (
                   #{b.id} • {b.type}
                 </strong>
                 
-                {/* ✅ ADD STATUS BADGE HERE */}
                 <span
                   style={{
                     background: getStatusColor(),
@@ -878,13 +889,13 @@ return (
                     letterSpacing: "0.5px"
                   }}
                 >
-                  {status}
+                  {getStatusText()}
                 </span>
               </div>
 
-              <div>Numbers: <strong>{b.numbers}</strong></div>
+              <div>Nimewo: <strong>{b.numbers}</strong></div>
               <div>Pwen: <strong>{b.pwen}</strong></div>
-              {b.draw && <div>Draw: <strong>{b.draw}</strong></div>}
+              {b.draw && <div>Lokasyon: <strong>{b.draw}</strong></div>}
               <div style={{ opacity: 0.7 }}>{fmt(b.createdAt)}</div>
 
               {/* Show loss message for lost bets */}
@@ -897,7 +908,7 @@ return (
                   alignItems: "center",
                   gap: 4
                 }}>
-                  ❌ This bet lost
+                  ❌ Pari sa a pèdi
                 </div>
               )}
 
@@ -911,7 +922,7 @@ return (
                   alignItems: "center",
                   gap: 4
                 }}>
-                  💰 Prize paid
+                  💰 Pri pèye
                 </div>
               )}
 
@@ -919,10 +930,10 @@ return (
               {won && !claimed[key] && (
                 <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
                   <button onClick={() => submitClaim(b, "points")}>
-                    ➕ Add to Points
+                    ➕ Ajoute nan Pwen
                   </button>
                   <button onClick={() => submitClaim(b, "pix")}>
-                    💸 Cashout PIX
+                    💸 Retire lajan PIX
                   </button>
                 </div>
               )}
@@ -934,7 +945,7 @@ return (
                   color: "#9ca3af", 
                   fontSize: 14 
                 }}>
-                  ✓ Claim submitted
+                  ✓ Reklamasyon voye
                 </div>
               )}
             </div>
