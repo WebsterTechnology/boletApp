@@ -22,6 +22,7 @@ if (Maryaj && !Maryaj.associations?.User) Maryaj.belongsTo(User, { foreignKey: "
 if (Katchif && !Katchif.associations?.User) Katchif.belongsTo(User, { foreignKey: "userId" });
 
 /* -------- helpers -------- */
+/* -------- helpers -------- */
 const mapRow = (type, r) => ({
   id: r.id,
   type,
@@ -31,14 +32,13 @@ const mapRow = (type, r) => ({
     type === "yonchif" ? (r.nimewo ?? r.number)
     : type === "dechif" ? (r.number)
     : type === "twachif" ? (r.number ?? r.twachif)
-    : type === "maryaj" ? (r.maryaj)
+    : type === "maryaj" ? (r.part1 && r.part2 ? `${r.part1}${r.part2}` : "-")  // ✅ FIX HERE
     : /* katchif */       (r.number),
   pwen: Number(r.pwen || 0),
-  draw: r.ville ?? r.city ?? r.lokal ?? null,
+  draw: r.ville ?? r.city ?? r.lokal ?? r.location ?? null,
   status: r.status || "pending",
   createdAt: r.createdAt,
 });
-
 const allowedStatuses = new Set([
   "pending",
   "won",
