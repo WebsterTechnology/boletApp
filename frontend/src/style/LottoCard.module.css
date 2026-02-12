@@ -32,25 +32,14 @@ body {
 }
 
 /* ===== Card Styling ===== */
-
 .card {
   width: 320px;
   max-width: 90%;
-  height: 420px; /* Needed for background to show properly */
   border-radius: 18px;
   overflow: hidden;
-
-  /* ✅ BACKGROUND IMAGE SETTINGS */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-
+  background: #1f1f1f;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
   cursor: pointer;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
 
   animation: smoothZoomReveal 1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 
@@ -68,11 +57,10 @@ body {
 
 /* ===== Image Styling ===== */
 .image {
-  width: 70%;
+  width: 100%;
   height: auto;
   display: block;
   transition: transform 0.5s ease;
-  z-index: 2;
 }
 
 /* Smooth image zoom on hover */
