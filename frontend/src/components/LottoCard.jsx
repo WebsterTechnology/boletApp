@@ -15,7 +15,7 @@
 // export default LottoCard;
 import React from "react";
 import styles from "../style/LottoCard.module.css";
-import lotoImg from "../assets/loto.png";
+
 import htloto from "../assets/htloto.png";
 
 const LottoCard = ({ openLogin }) => {
@@ -25,7 +25,7 @@ const LottoCard = ({ openLogin }) => {
       onClick={openLogin}
       style={{ backgroundImage: `url(${htloto})` }}
     >
-      <img src={lotoImg} alt="Lotto" className={styles.image} />
+   
     </div>
   );
 };
