@@ -67,17 +67,17 @@ exports.getAllMyBets = async (req, res) => {
         status: b.status || "pending",
         createdAt: b.createdAt,
       })),
-
       ...maryaj.map((b) => ({
         id: b.id,
         type: "maryaj",
-        numbers: pick(b, "maryaj", "number", "numbers"),
+        part1: b.part1 || "-",
+        part2: b.part2 || "-",
+        numbers: b.part1 && b.part2 ? `${b.part1}${b.part2}` : "-",
         pwen: Number(b.pwen || 0),
         draw: pick(b, "ville", "city", "lokal"),
         status: b.status || "pending",
         createdAt: b.createdAt,
       })),
-
       ...katchif.map((b) => ({
         id: b.id,
         type: "katchif",

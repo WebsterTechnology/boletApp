@@ -651,25 +651,16 @@ export default function Fich() {
  const mapBet = (arr, type) =>
   safeArr(arr).map((b) => {
     let numbers = "-";
-
-    // ✅ FIX FOR MARYAJ - handle both storage formats
+    
     if (type === "maryaj") {
+      // If we have part1 and part2, display with space
       if (b.part1 && b.part2) {
-        // Format as "11 11" with space
         numbers = `${b.part1} ${b.part2}`;
-      } else if (b.numbers && b.numbers.length === 4) {
-        // If stored as "1111" (concatenated), split into "11 11"
-        numbers = `${b.numbers.slice(0, 2)} ${b.numbers.slice(2)}`;
       } else {
-        numbers = b.nimewo ?? b.maryaj ?? b.number ?? b.numbers ?? "-";
+        numbers = b.numbers || "-";
       }
     } else {
-      numbers =
-        b.nimewo ??
-        b.maryaj ??
-        b.number ??
-        b.numbers ??
-        "-";
+      numbers = b.nimewo ?? b.maryaj ?? b.number ?? b.numbers ?? "-";
     }
 
     return {
