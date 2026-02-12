@@ -795,71 +795,153 @@ export default function Fich() {
   };
 
   /* ---------------- UI ---------------- */
-  return (
-    <div style={{ padding: "16px" }}>
-      <h2>🧾 Fich — Mes paris</h2>
+  /* ---------------- UI ---------------- */
+return (
+  <div style={{ padding: "16px" }}>
+    <h2>🧾 Fich — Mes paris</h2>
 
-      <div style={{ margin: "8px 0 16px", display: "flex", gap: 12 }}>
-        <button onClick={() => load()} disabled={loading}>
-          {loading ? "Loading..." : "Refresh"}
-        </button>
+    <div style={{ margin: "8px 0 16px", display: "flex", gap: 12 }}>
+      <button onClick={() => load()} disabled={loading}>
+        {loading ? "Loading..." : "Refresh"}
+      </button>
 
-        <div
-          style={{
-            background: "#1f2937",
-            color: "#d1d5db",
-            padding: "6px 10px",
-            borderRadius: 8,
-          }}
-        >
-          Total pwen parye:{" "}
-          <strong style={{ color: "#fff" }}>{totalPwen}</strong>
-        </div>
+      <div
+        style={{
+          background: "#1f2937",
+          color: "#d1d5db",
+          padding: "6px 10px",
+          borderRadius: 8,
+        }}
+      >
+        Total pwen parye:{" "}
+        <strong style={{ color: "#fff" }}>{totalPwen}</strong>
       </div>
+    </div>
 
-      {loading ? (
-        <p>Loading...</p>
-      ) : items.length === 0 ? (
-        <p>No bets yet.</p>
-      ) : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {items.map((b) => {
-            const key = claimKey(b);
-            const won = (b.status || "").toLowerCase() === "won";
+    {loading ? (
+      <p>Loading...</p>
+    ) : items.length === 0 ? (
+      <p>No bets yet.</p>
+    ) : (
+      <div style={{ display: "grid", gap: 12 }}>
+        {items.map((b) => {
+          const key = claimKey(b);
+          const status = (b.status || "pending").toLowerCase();
+          const won = status === "won";
+          const lost = status === "lost";
+          const paid = status === "paid";
 
-            return (
-              <div
-                key={key}
-                style={{
-                  background: "#0f172a",
-                  color: "#e5e7eb",
-                  borderRadius: 12,
-                  padding: "12px 14px",
-                  border: "1px solid #1f2937",
-                }}
-              >
+          // Status badge colors
+          const getStatusColor = () => {
+            switch(status) {
+              case "won": return "#16a34a";
+              case "lost": return "#dc2626";
+              case "paid": return "#2563eb";
+              case "pending": return "#9ca3af";
+              default: return "#6b7280";
+            }
+          };
+
+          return (
+            <div
+              key={key}
+              style={{
+                background: "#0f172a",
+                color: "#e5e7eb",
+                borderRadius: 12,
+                padding: "12px 14px",
+                border: "1px solid #1f2937",
+                opacity: lost || paid ? 0.8 : 1, // Fade lost/paid bets slightly
+              }}
+            >
+              {/* Header with ID, type AND status badge */}
+              <div style={{ 
+                display: "flex", 
+                justifyContent: "space-between", 
+                alignItems: "center",
+                marginBottom: 8 
+              }}>
                 <strong>
                   #{b.id} • {b.type}
                 </strong>
-                <div>Numbers: <strong>{b.numbers}</strong></div>
-                <div>Pwen: <strong>{b.pwen}</strong></div>
-                <div style={{ opacity: 0.7 }}>{fmt(b.createdAt)}</div>
-
-                {won && !claimed[key] && (
-                  <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
-                    <button onClick={() => submitClaim(b, "points")}>
-                      ➕ Add to Points
-                    </button>
-                    <button onClick={() => submitClaim(b, "pix")}>
-                      💸 Cashout PIX
-                    </button>
-                  </div>
-                )}
+                
+                {/* ✅ ADD STATUS BADGE HERE */}
+                <span
+                  style={{
+                    background: getStatusColor(),
+                    color: "#fff",
+                    padding: "4px 12px",
+                    borderRadius: 999,
+                    fontSize: 12,
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.5px"
+                  }}
+                >
+                  {status}
+                </span>
               </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+
+              <div>Numbers: <strong>{b.numbers}</strong></div>
+              <div>Pwen: <strong>{b.pwen}</strong></div>
+              {b.draw && <div>Draw: <strong>{b.draw}</strong></div>}
+              <div style={{ opacity: 0.7 }}>{fmt(b.createdAt)}</div>
+
+              {/* Show loss message for lost bets */}
+              {lost && (
+                <div style={{ 
+                  marginTop: 10, 
+                  color: "#dc2626", 
+                  fontSize: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4
+                }}>
+                  ❌ This bet lost
+                </div>
+              )}
+
+              {/* Show paid message for paid bets */}
+              {paid && (
+                <div style={{ 
+                  marginTop: 10, 
+                  color: "#2563eb", 
+                  fontSize: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4
+                }}>
+                  💰 Prize paid
+                </div>
+              )}
+
+              {/* Claim buttons only for won bets */}
+              {won && !claimed[key] && (
+                <div style={{ marginTop: 10, display: "flex", gap: 10 }}>
+                  <button onClick={() => submitClaim(b, "points")}>
+                    ➕ Add to Points
+                  </button>
+                  <button onClick={() => submitClaim(b, "pix")}>
+                    💸 Cashout PIX
+                  </button>
+                </div>
+              )}
+
+              {/* Show message for already claimed bets */}
+              {won && claimed[key] && (
+                <div style={{ 
+                  marginTop: 10, 
+                  color: "#9ca3af", 
+                  fontSize: 14 
+                }}>
+                  ✓ Claim submitted
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+);
 }
