@@ -648,12 +648,13 @@ export default function Fich() {
   //   createdAt: b.createdAt,
   // }));
 
-  const mapBet = (arr, type) =>
+ const mapBet = (arr, type) =>
   safeArr(arr).map((b) => {
     let numbers = "-";
 
-    if (b.part1 && b.part2) {
-      numbers = `${b.part1}${b.part2}`; // ✅ FIX FOR MARYAJ
+    // ✅ FIX FOR MARYAJ
+    if (type === "maryaj" && b.part1 && b.part2) {
+      numbers = `${b.part1}${b.part2}`;
     } else {
       numbers =
         b.nimewo ??
