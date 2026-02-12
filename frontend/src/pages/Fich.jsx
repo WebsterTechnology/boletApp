@@ -631,22 +631,49 @@ export default function Fich() {
 
     const safeArr = (arr) => (Array.isArray(arr) ? arr : []);
 
-   const mapBet = (arr, type) =>
-  safeArr(arr).map((b) => ({
-    id: b.id,
-    type,
-    numbers:
-      type === "maryaj"
-        ? `${b.part1 ?? ""} ${b.part2 ?? ""}`.trim() || "-"
-        : b.nimewo ??
-          b.number ??
-          b.numbers ??
-          "-",
-    pwen: Number(b.pwen || 0),
-    draw: b.ville ?? b.city ?? b.lokal ?? null,
-    status: b.status || "pending",
-    createdAt: b.createdAt,
-  }));
+  //  const mapBet = (arr, type) =>
+  // safeArr(arr).map((b) => ({
+  //   id: b.id,
+  //   type,
+  //   numbers:
+  //     type === "maryaj"
+  //       ? `${b.part1 ?? ""} ${b.part2 ?? ""}`.trim() || "-"
+  //       : b.nimewo ??
+  //         b.number ??
+  //         b.numbers ??
+  //         "-",
+  //   pwen: Number(b.pwen || 0),
+  //   draw: b.ville ?? b.city ?? b.lokal ?? null,
+  //   status: b.status || "pending",
+  //   createdAt: b.createdAt,
+  // }));
+
+  const mapBet = (arr, type) =>
+  safeArr(arr).map((b) => {
+    let numbers = "-";
+
+    if (b.part1 && b.part2) {
+      numbers = `${b.part1}${b.part2}`; // ✅ FIX FOR MARYAJ
+    } else {
+      numbers =
+        b.nimewo ??
+        b.maryaj ??
+        b.number ??
+        b.numbers ??
+        "-";
+    }
+
+    return {
+      id: b.id,
+      type,
+      numbers,
+      pwen: Number(b.pwen || 0),
+      draw: b.ville ?? b.city ?? b.lokal ?? null,
+      status: b.status || "pending",
+      createdAt: b.createdAt,
+    };
+  });
+
 
 //new
     const Y = mapBet(data.yonchif, "yonchif");
