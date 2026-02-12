@@ -652,9 +652,17 @@ export default function Fich() {
   safeArr(arr).map((b) => {
     let numbers = "-";
 
-    // ✅ FIX FOR MARYAJ
-    if (type === "maryaj" && b.part1 && b.part2) {
-      numbers = `${b.part1}${b.part2}`;
+    // ✅ FIX FOR MARYAJ - handle both storage formats
+    if (type === "maryaj") {
+      if (b.part1 && b.part2) {
+        // Format as "11 11" with space
+        numbers = `${b.part1} ${b.part2}`;
+      } else if (b.numbers && b.numbers.length === 4) {
+        // If stored as "1111" (concatenated), split into "11 11"
+        numbers = `${b.numbers.slice(0, 2)} ${b.numbers.slice(2)}`;
+      } else {
+        numbers = b.nimewo ?? b.maryaj ?? b.number ?? b.numbers ?? "-";
+      }
     } else {
       numbers =
         b.nimewo ??
