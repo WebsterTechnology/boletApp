@@ -631,21 +631,23 @@ export default function Fich() {
 
     const safeArr = (arr) => (Array.isArray(arr) ? arr : []);
 
-    const mapBet = (arr, type) =>
-      safeArr(arr).map((b) => ({
-        id: b.id,
-        type,
-        numbers:
-          b.nimewo ??
-          b.maryaj ??
+   const mapBet = (arr, type) =>
+  safeArr(arr).map((b) => ({
+    id: b.id,
+    type,
+    numbers:
+      type === "maryaj"
+        ? `${b.part1 ?? ""} ${b.part2 ?? ""}`.trim() || "-"
+        : b.nimewo ??
           b.number ??
           b.numbers ??
           "-",
-        pwen: Number(b.pwen || 0),
-        draw: b.ville ?? b.city ?? b.lokal ?? null,
-        status: b.status || "pending",
-        createdAt: b.createdAt,
-      }));
+    pwen: Number(b.pwen || 0),
+    draw: b.ville ?? b.city ?? b.lokal ?? null,
+    status: b.status || "pending",
+    createdAt: b.createdAt,
+  }));
+
 //new
     const Y = mapBet(data.yonchif, "yonchif");
     const D = mapBet(data.dechif, "dechif");
