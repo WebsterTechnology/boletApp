@@ -1,37 +1,4 @@
-// module.exports = (sequelize, DataTypes) => {
-//   const Maryaj = sequelize.define("Maryaj", {
-//     part1: {
-//       type: DataTypes.STRING,
-//       allowNull: false,
-//       validate: {
-//         is: /^\d{2}$/, // must be 2 digits
-//       },
-//     },
-//     part2: {
-//       type: DataTypes.STRING,
-//       allowNull: false,
-//       validate: {
-//         is: /^\d{2}$/, // must be 2 digits
-//       },
-//     },
-//     pwen: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     },
-//     location: {
-//       type: DataTypes.ENUM("New York", "Florida"),
-//       allowNull: false,
-//     },
-//     userId: {
-//       type: DataTypes.INTEGER,
-//       allowNull: false,
-//     }
-//   }, {
-//     timestamps: true,
-//   });
 
-//   return Maryaj;
-// };
 module.exports = (sequelize, DataTypes) => {
   const Maryaj = sequelize.define(
     "Maryaj",
@@ -51,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       location: {
-        type: DataTypes.ENUM("New York", "Florida"),
+        type: DataTypes.ENUM("New York", "Florida", "Georgia"),
         allowNull: false,
       },
       userId: {
