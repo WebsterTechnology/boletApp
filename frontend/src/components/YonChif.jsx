@@ -45,6 +45,7 @@ const YonChif = () => {
   const [location, setLocation] = useState("New York");
   const [nyTime, setNyTime] = useState("");
   const [flTime, setFlTime] = useState("");
+  const [gaTime, setGaTime] = useState("");
   const [disabledNumbers, setDisabledNumbers] = useState([]);
   const [disabledLocations, setDisabledLocations] = useState([]);
 
@@ -72,7 +73,7 @@ const YonChif = () => {
       .catch((err) => console.error("Failed to load disabled data:", err));
 
     // Clock
-    const updateTimes = () => {
+      const updateTimes = () => {
       const now = new Date();
       const options = {
         timeZone: "America/New_York",
@@ -81,9 +82,12 @@ const YonChif = () => {
         second: "2-digit",
         hour12: false,
       };
-      const ny = new Intl.DateTimeFormat("en-US", options).format(now);
-      setNyTime(ny);
-      setFlTime(ny);
+
+      const eastern = new Intl.DateTimeFormat("en-US", options).format(now);
+
+      setNyTime(eastern);
+      setFlTime(eastern);   // Eastern Florida
+      setGaTime(eastern);   // Georgia
     };
     updateTimes();
     const interval = setInterval(updateTimes, 1000);
@@ -227,6 +231,7 @@ const YonChif = () => {
         >
           <option value="New York">New York</option>
           <option value="Florida">Florida</option>
+          <option value="Georgia">Georgia</option>
         </select>
         <button className={styles.plusBtn} onClick={handleAdd}>
           +
@@ -240,6 +245,11 @@ const YonChif = () => {
         <p>
           <strong>🕐 Florida:</strong> {flTime}
         </p>
+        <p>
+          <strong>🕐 Georgia:</strong> {gaTime}
+        </p>
+       
+
       </div>
 
       <ul className={styles.betsList}>

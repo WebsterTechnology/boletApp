@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const API =
-  import.meta.env.VITE_API_URL || "boletapp-production.up.railway.app";
+  import.meta.env.VITE_API_URL || "https://boletapp-production.up.railway.app";
 
 /* ---------------- Helpers ---------------- */
 async function syncUserFromServer() {
@@ -45,6 +45,7 @@ const DeChif = () => {
   const [location, setLocation] = useState("New York");
   const [nyTime, setNyTime] = useState("");
   const [flTime, setFlTime] = useState("");
+  const [gaTime, setGaTime] = useState("");
   const [disabledNumbers, setDisabledNumbers] = useState([]);
   const [disabledLocations, setDisabledLocations] = useState([]);
 
@@ -78,9 +79,12 @@ const DeChif = () => {
         second: "2-digit",
         hour12: false,
       };
-      const ny = new Intl.DateTimeFormat("en-US", options).format(now);
-      setNyTime(ny);
-      setFlTime(ny);
+
+      const eastern = new Intl.DateTimeFormat("en-US", options).format(now);
+
+      setNyTime(eastern);
+      setFlTime(eastern);   // Eastern Florida
+      setGaTime(eastern);   // Georgia
     };
     updateTimes();
     const interval = setInterval(updateTimes, 1000);
@@ -203,10 +207,17 @@ const DeChif = () => {
         <select value={location} onChange={(e) => setLocation(e.target.value)}>
           <option value="New York">New York</option>
           <option value="Florida">Florida</option>
+          <option value="Georgia">Georgia</option>
         </select>
         <button className={styles.plusBtn} onClick={handleAdd}>
           +
         </button>
+      </div>
+
+      <div className={styles.timeRow}>
+        <p><strong>🕐 New York:</strong> {nyTime}</p>
+        <p><strong>🕐 Florida:</strong> {flTime}</p>
+        <p><strong>🕐 Georgia:</strong> {gaTime}</p>
       </div>
 
       <ul className={styles.betsList}>
