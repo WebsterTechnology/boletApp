@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "../style/Video.module.css";
-import htImage from "../assets/ht.png";
+import htImage from "../assets/loto.jpg";
 
 const Video = () => {
   return (
