@@ -48,10 +48,9 @@ const { Maryaj, User } = require("../models");
 // };
 
 
-
 const MAX_MARYAJ_POINTS = 20;
 
-// ✅ CREATE MARYAJ (PER NUMBER LIMIT)
+// ✅ CREATE MARYAJ (PAIR LIMIT)
 exports.createMaryaj = async (req, res) => {
   try {
     const { part1, part2, pwen, location } = req.body;
@@ -91,34 +90,26 @@ exports.createMaryaj = async (req, res) => {
       });
     }
 
-    // 🔥 LIMIT PER NUMBER
+    // 🔥 IMPORTANT: SORT PAIR (so 56-46 = 46-56)
+    const [p1, p2] = [part1, part2].sort();
 
-    // total for part1
-    const totalPart1 = await Maryaj.sum("pwen", {
-      where: { part1, location }
+    // 🔥 TOTAL FOR THIS PAIR ONLY
+    const totalPair = await Maryaj.sum("pwen", {
+      where: {
+        part1: p1,
+        part2: p2,
+        location
+      }
     }) || 0;
 
-    // total for part2
-    const totalPart2 = await Maryaj.sum("pwen", {
-      where: { part2, location }
-    }) || 0;
+    // 🔥 REMAINING
+    const remaining = Math.max(0, MAX_MARYAJ_POINTS - totalPair);
 
-    // remaining
-    const remainingPart1 = Math.max(0, MAX_MARYAJ_POINTS - totalPart1);
-    const remainingPart2 = Math.max(0, MAX_MARYAJ_POINTS - totalPart2);
-
-    // ❌ Block if exceeded
-    if (betPwen > remainingPart1) {
+    // ❌ BLOCK IF EXCEEDED
+    if (betPwen > remaining) {
       return res.status(400).json({
-        message: `❌ Nimewo ${part1} gen sèlman ${remainingPart1} pwen ki rete.`,
-        remaining: remainingPart1
-      });
-    }
-
-    if (betPwen > remainingPart2) {
-      return res.status(400).json({
-        message: `❌ Nimewo ${part2} gen sèlman ${remainingPart2} pwen ki rete.`,
-        remaining: remainingPart2
+        message: `❌ Maryaj ${p1}-${p2} gen sèlman ${remaining} pwen ki rete.`,
+        remaining
       });
     }
 
@@ -126,10 +117,10 @@ exports.createMaryaj = async (req, res) => {
     user.points -= betPwen;
     await user.save();
 
-    // ✅ Create bet
+    // ✅ Save SORTED values (VERY IMPORTANT)
     const bet = await Maryaj.create({
-      part1,
-      part2,
+      part1: p1,
+      part2: p2,
       pwen: betPwen,
       location,
       userId
@@ -139,8 +130,7 @@ exports.createMaryaj = async (req, res) => {
       message: "Maryaj soumèt avèk siksè",
       bet,
       newBalance: user.points,
-      remainingPart1: remainingPart1 - betPwen,
-      remainingPart2: remainingPart2 - betPwen
+      remaining: remaining - betPwen
     });
 
   } catch (err) {
@@ -151,7 +141,9 @@ exports.createMaryaj = async (req, res) => {
   }
 };
 
-// ✅ GET REMAINING PER NUMBER (FOR FRONTEND DISPLAY)
+
+
+// ✅ GET REMAINING FOR PAIR (FOR FRONTEND)
 exports.getMaryajRemaining = async (req, res) => {
   try {
     const { part1, part2, location } = req.query;
@@ -162,25 +154,24 @@ exports.getMaryajRemaining = async (req, res) => {
       });
     }
 
-    // total for part1
-    const totalPart1 = await Maryaj.sum("pwen", {
-      where: { part1, location }
+    // 🔥 SORT PAIR
+    const [p1, p2] = [part1, part2].sort();
+
+    // 🔥 TOTAL FOR THIS PAIR
+    const totalPair = await Maryaj.sum("pwen", {
+      where: {
+        part1: p1,
+        part2: p2,
+        location
+      }
     }) || 0;
 
-    // total for part2
-    const totalPart2 = await Maryaj.sum("pwen", {
-      where: { part2, location }
-    }) || 0;
-
-    // remaining
-    const remainingPart1 = Math.max(0, MAX_MARYAJ_POINTS - totalPart1);
-    const remainingPart2 = Math.max(0, MAX_MARYAJ_POINTS - totalPart2);
+    // 🔥 REMAINING
+    const remaining = Math.max(0, MAX_MARYAJ_POINTS - totalPair);
 
     res.json({
-      part1,
-      remainingPart1,
-      part2,
-      remainingPart2
+      pair: `${p1}-${p2}`,
+      remaining
     });
 
   } catch (err) {

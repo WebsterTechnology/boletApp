@@ -55,8 +55,7 @@ const Maryaj = () => {
 
   const { bets, addBet, deleteBet, total } = useBet();
   const navigate = useNavigate();
-  const [remaining1, setRemaining1] = useState(null);
-  const [remaining2, setRemaining2] = useState(null);
+  const [remaining, setRemaining] = useState(null);
   /* ---------------- Effects ---------------- */
 
 
@@ -66,17 +65,13 @@ const Maryaj = () => {
         params: { part1, part2, location }
       })
         .then(res => {
-          setRemaining1(res.data.remainingPart1);
-          setRemaining2(res.data.remainingPart2);
+          setRemaining(res.data.remaining); // ✅ FIX
         })
         .catch(() => {
-          setRemaining1(null);
-          setRemaining2(null);
+          setRemaining(null);
         });
     } else {
-      // 🔥 ADD THIS
-      setRemaining1(null);
-      setRemaining2(null);
+      setRemaining(null);
     }
   }, [part1, part2, location]);
 
@@ -190,9 +185,10 @@ const Maryaj = () => {
   const handleAdd = () => {
     const betAmount = parseInt(amount, 10);
 
-    const { points: userPoints } = getUserAndPoints(); // ✅ FIX
-    const pendingTotal = Number(total) || 0;           // ✅ FIX
+    const { points: userPoints } = getUserAndPoints();
+    const pendingTotal = Number(total) || 0;
 
+    // ✅ Validate inputs
     if (part1.length !== 2 || part2.length !== 2) {
       return alert("Tanpri antre 2 chif nan chak bwat.");
     }
@@ -201,19 +197,18 @@ const Maryaj = () => {
       return alert("Tanpri antre yon kantite pwen valab.");
     }
 
-    // ✅ remaining checks
-    if (remaining1 !== null && betAmount > remaining1) {
-      return alert(`❌ ${part1} gen sèlman ${remaining1} pwen ki rete.`);
-    }
-
-    if (remaining2 !== null && betAmount > remaining2) {
-      return alert(`❌ ${part2} gen sèlman ${remaining2} pwen ki rete.`);
+    // 🔥 PAIR remaining check (FIXED)
+    if (remaining !== null && betAmount > remaining) {
+      return alert(
+        `❌ Maryaj ${part1}-${part2} gen sèlman ${remaining} pwen ki rete.`
+      );
     }
 
     const p1 = part1.trim();
     const p2 = part2.trim();
     const locNorm = location.trim().toLowerCase();
 
+    // ✅ Disabled checks
     if (disabledNumbers.includes(p1) || disabledNumbers.includes(p2)) {
       return alert(`Nimewo ${p1} oswa ${p2} dezaktive.`);
     }
@@ -222,13 +217,17 @@ const Maryaj = () => {
       return alert(`Lokasyon ${location} dezaktive.`);
     }
 
+    // ✅ User balance check
     const willBeTotal = pendingTotal + betAmount;
     if (willBeTotal > userPoints) {
-      const confirmBuy = window.confirm("Ou pa gen ase pwen. Ou vle achte plis?");
+      const confirmBuy = window.confirm(
+        "Ou pa gen ase pwen. Ou vle achte plis?"
+      );
       if (confirmBuy) window.location.href = "/buy-credits";
       return;
     }
 
+    // ✅ Add bet
     addBet({
       number: p1 + p2,
       display: `${p1} ${p2}`,
@@ -237,6 +236,7 @@ const Maryaj = () => {
       location,
     });
 
+    // ✅ Reset inputs
     setPart1("");
     setPart2("");
     setAmount("");
@@ -359,12 +359,9 @@ const Maryaj = () => {
           onChange={(e) => setAmount(e.target.value)}
         />
 
-        <div style={{ marginTop: "10px", minHeight: "40px" }}>
-          {remaining1 !== null && (
-            <p>{part1} → {remaining1} pwen rete</p>
-          )}
-          {remaining2 !== null && (
-            <p>{part2} → {remaining2} pwen rete</p>
+        <div >
+          {remaining !== null && (
+            <p style={{ color: remaining <= 5 ? "red" : "white" }}>{part1}-{part2} → {remaining} pwen rete</p>
           )}
         </div>
 
