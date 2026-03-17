@@ -47,8 +47,11 @@ const { Maryaj, User } = require("../models");
 //   }
 // };
 
+
+
 const MAX_MARYAJ_POINTS = 20;
 
+// ✅ CREATE MARYAJ (PER NUMBER LIMIT)
 exports.createMaryaj = async (req, res) => {
   try {
     const { part1, part2, pwen, location } = req.body;
@@ -61,7 +64,7 @@ exports.createMaryaj = async (req, res) => {
       });
     }
 
-    // ✅ Validate pwen (VERY IMPORTANT FIX)
+    // ✅ Validate pwen
     const betPwen = parseInt(pwen, 10);
 
     if (!betPwen || betPwen <= 0 || !location) {
@@ -78,7 +81,7 @@ exports.createMaryaj = async (req, res) => {
       });
     }
 
-    // ✅ Check if user has enough pwen
+    // ✅ Check user balance
     if (user.points < betPwen) {
       return res.status(403).json({
         message: "Ou pa gen ase pwen pou mete Maryaj la.",
@@ -88,28 +91,42 @@ exports.createMaryaj = async (req, res) => {
       });
     }
 
-    // 🔥 GLOBAL LIMIT (ALL USERS)
-    const totalMaryaj = await Maryaj.sum("pwen", {
-      where: { location } // remove if you want global (all locations together)
-    });
+    // 🔥 LIMIT PER NUMBER
 
-    const currentTotal = totalMaryaj || 0;
+    // total for part1
+    const totalPart1 = await Maryaj.sum("pwen", {
+      where: { part1, location }
+    }) || 0;
 
-    // ✅ Prevent negative remaining (FIX)
-    const remaining = Math.max(0, MAX_MARYAJ_POINTS - currentTotal);
+    // total for part2
+    const totalPart2 = await Maryaj.sum("pwen", {
+      where: { part2, location }
+    }) || 0;
 
-    if (betPwen > remaining) {
+    // remaining
+    const remainingPart1 = Math.max(0, MAX_MARYAJ_POINTS - totalPart1);
+    const remainingPart2 = Math.max(0, MAX_MARYAJ_POINTS - totalPart2);
+
+    // ❌ Block if exceeded
+    if (betPwen > remainingPart1) {
       return res.status(400).json({
-        message: `❌ Limit Maryaj rive. Rete sèlman ${remaining} pwen.`,
-        remaining
+        message: `❌ Nimewo ${part1} gen sèlman ${remainingPart1} pwen ki rete.`,
+        remaining: remainingPart1
       });
     }
 
-    // ✅ Deduct pwen
+    if (betPwen > remainingPart2) {
+      return res.status(400).json({
+        message: `❌ Nimewo ${part2} gen sèlman ${remainingPart2} pwen ki rete.`,
+        remaining: remainingPart2
+      });
+    }
+
+    // ✅ Deduct points
     user.points -= betPwen;
     await user.save();
 
-    // ✅ Create the bet
+    // ✅ Create bet
     const bet = await Maryaj.create({
       part1,
       part2,
@@ -122,7 +139,8 @@ exports.createMaryaj = async (req, res) => {
       message: "Maryaj soumèt avèk siksè",
       bet,
       newBalance: user.points,
-      remaining: remaining - betPwen
+      remainingPart1: remainingPart1 - betPwen,
+      remainingPart2: remainingPart2 - betPwen
     });
 
   } catch (err) {
@@ -132,6 +150,47 @@ exports.createMaryaj = async (req, res) => {
     });
   }
 };
+
+// ✅ GET REMAINING PER NUMBER (FOR FRONTEND DISPLAY)
+exports.getMaryajRemaining = async (req, res) => {
+  try {
+    const { part1, part2, location } = req.query;
+
+    if (!part1 || !part2 || !location) {
+      return res.status(400).json({
+        message: "Missing parameters"
+      });
+    }
+
+    // total for part1
+    const totalPart1 = await Maryaj.sum("pwen", {
+      where: { part1, location }
+    }) || 0;
+
+    // total for part2
+    const totalPart2 = await Maryaj.sum("pwen", {
+      where: { part2, location }
+    }) || 0;
+
+    // remaining
+    const remainingPart1 = Math.max(0, MAX_MARYAJ_POINTS - totalPart1);
+    const remainingPart2 = Math.max(0, MAX_MARYAJ_POINTS - totalPart2);
+
+    res.json({
+      part1,
+      remainingPart1,
+      part2,
+      remainingPart2
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      message: "Error fetching remaining",
+      error: err.message
+    });
+  }
+};
+
 // ✅ Get current user's Maryaj bets
 exports.getMyMaryajBets = async (req, res) => {
   try {

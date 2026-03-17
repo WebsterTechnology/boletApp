@@ -55,8 +55,32 @@ const Maryaj = () => {
 
   const { bets, addBet, deleteBet, total } = useBet();
   const navigate = useNavigate();
-
+  const [remaining1, setRemaining1] = useState(null);
+  const [remaining2, setRemaining2] = useState(null);
   /* ---------------- Effects ---------------- */
+
+
+  useEffect(() => {
+    if (part1.length === 2 && part2.length === 2) {
+      axios.get(`${API}/api/maryaj/remaining`, {
+        params: { part1, part2, location }
+      })
+        .then(res => {
+          setRemaining1(res.data.remainingPart1);
+          setRemaining2(res.data.remainingPart2);
+        })
+        .catch(() => {
+          setRemaining1(null);
+          setRemaining2(null);
+        });
+    } else {
+      // 🔥 ADD THIS
+      setRemaining1(null);
+      setRemaining2(null);
+    }
+  }, [part1, part2, location]);
+
+
   useEffect(() => {
     syncUserFromServer();
 
@@ -95,63 +119,128 @@ const Maryaj = () => {
     return () => clearInterval(interval);
   }, []);
 
+
   /* ---------------- Add Bet ---------------- */
+  // const handleAdd = () => {
+  //   const betAmount = parseInt(amount, 10);
+
+  //   if (part1.length !== 2 || part2.length !== 2) {
+  //     return alert("Tanpri antre 2 chif nan chak bwat.");
+  //   }
+
+  //   if (!betAmount || betAmount <= 0) {
+  //     return alert("Tanpri antre yon kantite pwen valab.");
+  //   }
+
+  //   // ✅ NOW it's safe to compare
+  //   if (remaining1 !== null && betAmount > remaining1) {
+  //     return alert(`❌ ${part1} gen sèlman ${remaining1} pwen ki rete.`);
+  //   }
+
+  //   if (remaining2 !== null && betAmount > remaining2) {
+  //     return alert(`❌ ${part2} gen sèlman ${remaining2} pwen ki rete.`);
+  //   }
+
+  //   /* 🔒 AJOUT: BLOKE SI TOTAL MARYAJ > 10 */
+  //   // const currentMaryajTotal = bets
+  //   //   .filter((b) => b.type === "Maryaj")
+  //   //   .reduce((sum, b) => sum + parseInt(b.amount, 10), 0);
+
+  //   // if (currentMaryajTotal + betAmount > MAX_MARYAJ_POINTS) {
+  //   //   return alert("❌ Ou pa ka jwe plis pase 10 pwen pou Maryaj.");
+  //   // }
+
+  //   const p1 = part1.trim();
+  //   const p2 = part2.trim();
+  //   const locNorm = location.trim().toLowerCase();
+
+  //   if (disabledNumbers.includes(p1) || disabledNumbers.includes(p2)) {
+  //     return alert(`Nimewo ${p1} oswa ${p2} dezaktive. Ou pa ka parye sou li.`);
+  //   }
+
+  //   if (disabledLocations.includes(locNorm)) {
+  //     return alert(`Lokasyon ${location} dezaktive. Ou pa ka parye la a.`);
+  //   }
+
+  //   const willBeTotal = pendingTotal + betAmount;
+  //   if (willBeTotal > userPoints) {
+  //     const confirmBuy = window.confirm(
+  //       "Ou pa gen ase pwen. Ou vle achte plis?"
+  //     );
+  //     if (confirmBuy) window.location.href = "/buy-credits";
+  //     return;
+  //   }
+
+  //   const numbers = p1 + p2;
+  //   const display = `${p1} ${p2}`;
+  //   addBet({
+  //     number: numbers,
+  //     display,
+  //     amount: betAmount,
+  //     type: "Maryaj",
+  //     location,
+  //   });
+
+  //   setPart1("");
+  //   setPart2("");
+  //   setAmount("");
+  // };
+
+
   const handleAdd = () => {
-    const betAmount = parseInt(amount, 10);
-    const { points: userPoints } = getUserAndPoints();
-    const pendingTotal = Number(total) || 0;
-    if (part1.length !== 2 || part2.length !== 2) {
-      return alert("Tanpri antre 2 chif nan chak bwat.");
-    }
+  const betAmount = parseInt(amount, 10);
 
-    if (!betAmount || betAmount <= 0) {
-      return alert("Tanpri antre yon kantite pwen valab.");
-    }
+  const { points: userPoints } = getUserAndPoints(); // ✅ FIX
+  const pendingTotal = Number(total) || 0;           // ✅ FIX
 
-    /* 🔒 AJOUT: BLOKE SI TOTAL MARYAJ > 10 */
-    // const currentMaryajTotal = bets
-    //   .filter((b) => b.type === "Maryaj")
-    //   .reduce((sum, b) => sum + parseInt(b.amount, 10), 0);
+  if (part1.length !== 2 || part2.length !== 2) {
+    return alert("Tanpri antre 2 chif nan chak bwat.");
+  }
 
-    // if (currentMaryajTotal + betAmount > MAX_MARYAJ_POINTS) {
-    //   return alert("❌ Ou pa ka jwe plis pase 10 pwen pou Maryaj.");
-    // }
+  if (!betAmount || betAmount <= 0) {
+    return alert("Tanpri antre yon kantite pwen valab.");
+  }
 
-    const p1 = part1.trim();
-    const p2 = part2.trim();
-    const locNorm = location.trim().toLowerCase();
+  // ✅ remaining checks
+  if (remaining1 !== null && betAmount > remaining1) {
+    return alert(`❌ ${part1} gen sèlman ${remaining1} pwen ki rete.`);
+  }
 
-    if (disabledNumbers.includes(p1) || disabledNumbers.includes(p2)) {
-      return alert(`Nimewo ${p1} oswa ${p2} dezaktive. Ou pa ka parye sou li.`);
-    }
+  if (remaining2 !== null && betAmount > remaining2) {
+    return alert(`❌ ${part2} gen sèlman ${remaining2} pwen ki rete.`);
+  }
 
-    if (disabledLocations.includes(locNorm)) {
-      return alert(`Lokasyon ${location} dezaktive. Ou pa ka parye la a.`);
-    }
+  const p1 = part1.trim();
+  const p2 = part2.trim();
+  const locNorm = location.trim().toLowerCase();
 
-    const willBeTotal = pendingTotal + betAmount;
-    if (willBeTotal > userPoints) {
-      const confirmBuy = window.confirm(
-        "Ou pa gen ase pwen. Ou vle achte plis?"
-      );
-      if (confirmBuy) window.location.href = "/buy-credits";
-      return;
-    }
+  if (disabledNumbers.includes(p1) || disabledNumbers.includes(p2)) {
+    return alert(`Nimewo ${p1} oswa ${p2} dezaktive.`);
+  }
 
-    const numbers = p1 + p2;
-    const display = `${p1} ${p2}`;
-    addBet({
-      number: numbers,
-      display,
-      amount: betAmount,
-      type: "Maryaj",
-      location,
-    });
+  if (disabledLocations.includes(locNorm)) {
+    return alert(`Lokasyon ${location} dezaktive.`);
+  }
 
-    setPart1("");
-    setPart2("");
-    setAmount("");
-  };
+  const willBeTotal = pendingTotal + betAmount;
+  if (willBeTotal > userPoints) {
+    const confirmBuy = window.confirm("Ou pa gen ase pwen. Ou vle achte plis?");
+    if (confirmBuy) window.location.href = "/buy-credits";
+    return;
+  }
+
+  addBet({
+    number: p1 + p2,
+    display: `${p1} ${p2}`,
+    amount: betAmount,
+    type: "Maryaj",
+    location,
+  });
+
+  setPart1("");
+  setPart2("");
+  setAmount("");
+};
 
   /* ---------------- Edit Bet ---------------- */
   const handleEdit = (id) => {
@@ -269,6 +358,15 @@ const Maryaj = () => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
+
+        <div style={{ marginTop: "10px" }}>
+          {remaining1 !== null && (
+            <p>🔢 {part1} → {remaining1} pwen rete</p>
+          )}
+          {remaining2 !== null && (
+            <p>🔢 {part2} → {remaining2} pwen rete</p>
+          )}
+        </div>
 
         <select value={location} onChange={(e) => setLocation(e.target.value)}>
           <option value="New York">New York</option>
