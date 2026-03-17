@@ -732,7 +732,7 @@ export default function AdminBets() {
         <select value={type} onChange={(e) => setType(e.target.value)}>
           <option value="all">All types</option>
           <option value="yonchif">Yon Chif</option>
-          <option value="dechif">De Chif</option>
+          <option value="dechif">Bòlèt</option>
           <option value="maryaj">Maryaj</option>
           <option value="twachif">Twa Chif</option>
           <option value="katchif">Kat Chif</option>
