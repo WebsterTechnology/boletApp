@@ -1,15 +1,26 @@
 /* Home.module.css - Yonchif Vibrant Theme (No Black Background!) */
+/* Home.module.css - Animated Background */
 
 .container {
   min-height: calc(100vh - 70px);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #6b8cff 100%);
+  background: linear-gradient(135deg, #667eea, #764ba2, #6b8cff, #ff6b6b, #4facfe);
+  background-size: 400% 400%;
   padding: 2rem 1rem;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   position: relative;
   overflow: hidden;
+  animation: gradientBG 15s ease infinite;
 }
 
-/* Animated background particles */
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  25% { background-position: 50% 100%; }
+  50% { background-position: 100% 50%; }
+  75% { background-position: 50% 0%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Animated particles overlay */
 .container::before {
   content: '';
   position: absolute;
@@ -17,14 +28,19 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%),
-              radial-gradient(circle at 80% 80%, rgba(255,255,255,0.1) 0%, transparent 50%);
-  animation: backgroundShift 15s ease infinite;
+  background: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.15) 0%, transparent 50%),
+              radial-gradient(circle at 80% 80%, rgba(255,255,255,0.15) 0%, transparent 50%),
+              radial-gradient(circle at 40% 20%, rgba(255,215,0,0.1) 0%, transparent 50%),
+              radial-gradient(circle at 90% 30%, rgba(255,255,255,0.1) 0%, transparent 50%);
+  animation: particlesMove 20s ease infinite;
+  pointer-events: none;
 }
 
-@keyframes backgroundShift {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.05); opacity: 0.8; }
+@keyframes particlesMove {
+  0% { transform: scale(1) rotate(0deg); opacity: 0.5; }
+  33% { transform: scale(1.1) rotate(120deg); opacity: 0.7; }
+  66% { transform: scale(0.9) rotate(240deg); opacity: 0.4; }
+  100% { transform: scale(1) rotate(360deg); opacity: 0.5; }
 }
 
 /* Hero section */

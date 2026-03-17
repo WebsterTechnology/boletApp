@@ -12,6 +12,7 @@
   backdrop-filter: blur(10px);
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+
 }
 
 /* Container to center the full layout */
