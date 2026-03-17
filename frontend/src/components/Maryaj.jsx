@@ -9,7 +9,7 @@ import axios from "axios";
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 /* 🔒 AJOUT: LIMIT TOTAL MARYAJ */
-const MAX_MARYAJ_POINTS = 10;
+//const MAX_MARYAJ_POINTS = 10;
 
 /* ---------------- Helper functions ---------------- */
 async function syncUserFromServer() {
@@ -74,7 +74,7 @@ const Maryaj = () => {
       })
       .catch((err) => console.error("Failed to load disabled data:", err));
 
-  const updateTimes = () => {
+    const updateTimes = () => {
       const now = new Date();
       const options = {
         timeZone: "America/New_York",
@@ -100,19 +100,22 @@ const Maryaj = () => {
     const betAmount = parseInt(amount, 10);
     const { points: userPoints } = getUserAndPoints();
     const pendingTotal = Number(total) || 0;
+    if (part1.length !== 2 || part2.length !== 2) {
+      return alert("Tanpri antre 2 chif nan chak bwat.");
+    }
 
-    if (part1.length !== 2 || part2.length !== 2 || !betAmount) {
-      return alert("Tanpri antre 2 chif nan chak bwat ak kantite pwen.");
+    if (!betAmount || betAmount <= 0) {
+      return alert("Tanpri antre yon kantite pwen valab.");
     }
 
     /* 🔒 AJOUT: BLOKE SI TOTAL MARYAJ > 10 */
-    const currentMaryajTotal = bets
-      .filter((b) => b.type === "Maryaj")
-      .reduce((sum, b) => sum + parseInt(b.amount, 10), 0);
+    // const currentMaryajTotal = bets
+    //   .filter((b) => b.type === "Maryaj")
+    //   .reduce((sum, b) => sum + parseInt(b.amount, 10), 0);
 
-    if (currentMaryajTotal + betAmount > MAX_MARYAJ_POINTS) {
-      return alert("❌ Ou pa ka jwe plis pase 10 pwen pou Maryaj.");
-    }
+    // if (currentMaryajTotal + betAmount > MAX_MARYAJ_POINTS) {
+    //   return alert("❌ Ou pa ka jwe plis pase 10 pwen pou Maryaj.");
+    // }
 
     const p1 = part1.trim();
     const p2 = part2.trim();
@@ -177,10 +180,10 @@ const Maryaj = () => {
     }
 
     /* 🔒 AJOUT: BLOKE SI TOTAL > 10 */
-    if (totalMaryaj > MAX_MARYAJ_POINTS) {
-      alert("❌ Ou pa ka jwe plis pase 10 pwen pou Maryaj.");
-      return;
-    }
+    // if (totalMaryaj > MAX_MARYAJ_POINTS) {
+    //   alert("❌ Ou pa ka jwe plis pase 10 pwen pou Maryaj.");
+    //   return;
+    // }
 
     const remaining = currentPoints - totalMaryaj;
     if (remaining < 0) {
@@ -233,7 +236,7 @@ const Maryaj = () => {
       console.error("Submit error:", error.response?.data || error.message);
       alert(
         "Erè soumèt pari: " +
-          (error.response?.data?.message || error.message)
+        (error.response?.data?.message || error.message)
       );
     }
   };
