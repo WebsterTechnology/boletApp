@@ -188,59 +188,59 @@ const Maryaj = () => {
 
 
   const handleAdd = () => {
-  const betAmount = parseInt(amount, 10);
+    const betAmount = parseInt(amount, 10);
 
-  const { points: userPoints } = getUserAndPoints(); // ✅ FIX
-  const pendingTotal = Number(total) || 0;           // ✅ FIX
+    const { points: userPoints } = getUserAndPoints(); // ✅ FIX
+    const pendingTotal = Number(total) || 0;           // ✅ FIX
 
-  if (part1.length !== 2 || part2.length !== 2) {
-    return alert("Tanpri antre 2 chif nan chak bwat.");
-  }
+    if (part1.length !== 2 || part2.length !== 2) {
+      return alert("Tanpri antre 2 chif nan chak bwat.");
+    }
 
-  if (!betAmount || betAmount <= 0) {
-    return alert("Tanpri antre yon kantite pwen valab.");
-  }
+    if (!betAmount || betAmount <= 0) {
+      return alert("Tanpri antre yon kantite pwen valab.");
+    }
 
-  // ✅ remaining checks
-  if (remaining1 !== null && betAmount > remaining1) {
-    return alert(`❌ ${part1} gen sèlman ${remaining1} pwen ki rete.`);
-  }
+    // ✅ remaining checks
+    if (remaining1 !== null && betAmount > remaining1) {
+      return alert(`❌ ${part1} gen sèlman ${remaining1} pwen ki rete.`);
+    }
 
-  if (remaining2 !== null && betAmount > remaining2) {
-    return alert(`❌ ${part2} gen sèlman ${remaining2} pwen ki rete.`);
-  }
+    if (remaining2 !== null && betAmount > remaining2) {
+      return alert(`❌ ${part2} gen sèlman ${remaining2} pwen ki rete.`);
+    }
 
-  const p1 = part1.trim();
-  const p2 = part2.trim();
-  const locNorm = location.trim().toLowerCase();
+    const p1 = part1.trim();
+    const p2 = part2.trim();
+    const locNorm = location.trim().toLowerCase();
 
-  if (disabledNumbers.includes(p1) || disabledNumbers.includes(p2)) {
-    return alert(`Nimewo ${p1} oswa ${p2} dezaktive.`);
-  }
+    if (disabledNumbers.includes(p1) || disabledNumbers.includes(p2)) {
+      return alert(`Nimewo ${p1} oswa ${p2} dezaktive.`);
+    }
 
-  if (disabledLocations.includes(locNorm)) {
-    return alert(`Lokasyon ${location} dezaktive.`);
-  }
+    if (disabledLocations.includes(locNorm)) {
+      return alert(`Lokasyon ${location} dezaktive.`);
+    }
 
-  const willBeTotal = pendingTotal + betAmount;
-  if (willBeTotal > userPoints) {
-    const confirmBuy = window.confirm("Ou pa gen ase pwen. Ou vle achte plis?");
-    if (confirmBuy) window.location.href = "/buy-credits";
-    return;
-  }
+    const willBeTotal = pendingTotal + betAmount;
+    if (willBeTotal > userPoints) {
+      const confirmBuy = window.confirm("Ou pa gen ase pwen. Ou vle achte plis?");
+      if (confirmBuy) window.location.href = "/buy-credits";
+      return;
+    }
 
-  addBet({
-    number: p1 + p2,
-    display: `${p1} ${p2}`,
-    amount: betAmount,
-    type: "Maryaj",
-    location,
-  });
+    addBet({
+      number: p1 + p2,
+      display: `${p1} ${p2}`,
+      amount: betAmount,
+      type: "Maryaj",
+      location,
+    });
 
-  setPart1("");
-  setPart2("");
-  setAmount("");
-};
+    setPart1("");
+    setPart2("");
+    setAmount("");
+  };
 
   /* ---------------- Edit Bet ---------------- */
   const handleEdit = (id) => {
@@ -359,9 +359,9 @@ const Maryaj = () => {
           onChange={(e) => setAmount(e.target.value)}
         />
 
-        <div>
+        <div style={{ marginTop: "10px", minHeight: "40px" }}>
           {remaining1 !== null && (
-            <p> {part1} → {remaining1} pwen rete</p>
+            <p>{part1} → {remaining1} pwen rete</p>
           )}
           {remaining2 !== null && (
             <p>{part2} → {remaining2} pwen rete</p>
