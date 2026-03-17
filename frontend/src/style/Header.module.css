@@ -1,10 +1,17 @@
+/* Header.module.css - Yonchif Style Theme (Mobile First) */
+
 .header {
-  background-color: #111;
-  color: white;
-  padding: 0.4rem 1rem;
+  background: linear-gradient(145deg, #1a1a2e, #16213e);
+  color: #fff;
+  padding: 0.6rem 1rem;
   position: sticky;
   top: 0;
   z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
 /* Container to center the full layout */
@@ -14,14 +21,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 80%;
+  width: 100%;
+  gap: 0.5rem;
 }
 
 /* Left group: burger + logo + nav */
 .left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.5rem;
   flex: 1;
 }
 
@@ -31,97 +39,395 @@
   align-items: center;
 }
 
+/* Burger button - Yonchif Style */
+.burger {
+  background: transparent !important;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.5rem;
+  z-index: 1001;
+  outline: none;
+  box-shadow: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
+}
+
+.burger:active {
+  transform: scale(0.9);
+}
+
+.burger span {
+  display: block;
+  width: 24px;
+  height: 3px;
+  background: linear-gradient(90deg, #ffd700, #ffa500);
+  border-radius: 3px;
+  transition: all 0.3s ease;
+}
+
+.burger:hover span {
+  width: 28px;
+}
+
 /* Logo link and images */
 .logoLink {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  text-decoration: none;
+  position: relative;
+}
+
+.logoLink::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ffd700, #ffa500);
+  transition: width 0.3s ease;
+}
+
+.logoLink:hover::after {
+  width: 100%;
 }
 
 .logoFull {
-  height: 32px;
+  height: 36px;
   display: block;
+  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
 }
 
 .logoSmall {
-  height: 32px;
+  height: 36px;
   display: none;
+  filter: drop-shadow(0 2px 4px rgba(255, 215, 0, 0.3));
 }
 
-/* Navigation */
+/* Logo text fallback (if no image) */
+.logoText {
+  font-size: 22px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #ffd700, #ffa500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 1px;
+}
+
+/* Navigation - Desktop */
 .nav {
   display: flex;
   align-items: center;
-  gap: 4rem;
+  gap: 2rem;
   margin-left: 1rem;
-  justify-content: space-around;
 }
 
 .link {
-  color: white;
+  color: rgba(255, 255, 255, 0.8);
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
   font-size: 0.95rem;
   padding: 0.5rem 0;
   position: relative;
+  transition: all 0.3s ease;
 }
 
 .link::after {
   content: '';
   position: absolute;
-  bottom: -3px;
-  left: 0;
-  width: 100%;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
   height: 3px;
-  background-color: transparent;
-  transition: all 0.3s ease;
+  background: linear-gradient(90deg, #ffd700, #ffa500);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.link:hover {
+  color: #ffd700;
+}
+
+.link:hover::after {
+  width: 80%;
 }
 
 /* Active nav link indicator */
-.link.active::after,
-.active::after {
-  background-color: #ffc107;
-  border-radius: 999px;
+.link.active,
+.active {
+  color: #ffd700;
 }
 
-/* Right side (login or bell/points) */
+.link.active::after,
+.active::after {
+  width: 80%;
+  background: linear-gradient(90deg, #ffd700, #ffa500);
+}
+
+/* Right side container */
 .right {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
   font-weight: bold;
   font-size: 0.95rem;
   white-space: nowrap;
 }
 
-.bellButton {
-  background: none;
-  border: none;
-  color: white;
-  cursor: pointer;
-  margin-left: 1rem;
-}
-
+/* Points Container */
 .pointsContainer {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.pointsBubble {
-  background-color: #ffc107;
-  color: black;
-  font-weight: bold;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.3rem 0.5rem;
   border-radius: 50px;
-  padding: 0.3rem 0.8rem;
-  font-size: 0.85rem;
+  border: 1px solid rgba(255, 215, 0, 0.2);
 }
 
-/* Responsive */
+/* Points Bubble - Yonchif Style */
+.pointsBubble {
+  background: linear-gradient(135deg, #ffd700, #ffa500);
+  color: #1a1a2e;
+  font-weight: 800;
+  border-radius: 50px;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  animation: glowPulse 2s infinite;
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3); }
+  50% { box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6); }
+}
+
+.pointsBubble::before {
+  content: '⭐';
+  font-size: 12px;
+  margin-right: 4px;
+}
+
+.pointsBubble:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #ffed4a, #ffb347);
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+}
+
+.pointsBubble:active {
+  transform: translateY(2px);
+}
+
+/* Action Buttons - Buy & Withdraw */
+.buyButton {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  border-radius: 50px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.5px;
+}
+
+.buyButton:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #2ed573, #1e9b4f);
+  box-shadow: 0 8px 20px rgba(34, 197, 94, 0.5);
+}
+
+.buyButton:active {
+  transform: translateY(2px);
+}
+
+.withdrawButton {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  border-radius: 50px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  letter-spacing: 0.5px;
+}
+
+.withdrawButton:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #ff5e5e, #e84141);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.5);
+}
+
+.withdrawButton:active {
+  transform: translateY(2px);
+}
+
+/* Bell Button */
+.bellButton {
+  background: none;
+  border: none;
+  color: #ffd700;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.bellButton:hover {
+  background: rgba(255, 215, 0, 0.1);
+  transform: rotate(15deg) scale(1.1);
+}
+
+.bellButton:active {
+  transform: scale(0.95);
+}
+
+/* Notification Badge */
+.bellButton::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  border: 2px solid #1a1a2e;
+  display: none;
+}
+
+.bellButton.hasNotifications::after {
+  display: block;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+/* Mobile Menu Overlay */
+.mobileMenu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  background: rgba(26, 26, 46, 0.98);
+  backdrop-filter: blur(10px);
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  padding: 80px 20px 30px;
+  animation: slideIn 0.3s ease;
+  border-right: 3px solid #ffd700;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.mobileNav {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.mobileLink {
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-left: 4px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.mobileLink:hover,
+.mobileLink.active {
+  border-left-color: #ffd700;
+  background: rgba(255, 215, 0, 0.1);
+  transform: translateX(5px);
+  color: #ffd700;
+}
+
+/* Close button for mobile menu */
+.closeMenu {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #ffd700;
+  font-size: 2rem;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.closeMenu:hover {
+  background: rgba(255, 215, 0, 0.1);
+  transform: rotate(90deg);
+}
+
+/* Image styling */
+img,
+svg,
+button svg,
+.burgerWrapper svg {
+  background-color: transparent !important;
+  border: none;
+  outline: none;
+}
+
+/* ===== MOBILE FIRST - Responsive Design ===== */
+
+/* Mobile (up to 768px) */
 @media (max-width: 768px) {
-  .nav {
-    display: none;
+  .header {
+    padding: 0.4rem 0.8rem;
   }
 
-  .container {
-    width: 100%;
+  .nav {
+    display: none;
   }
 
   .logoFull {
@@ -131,97 +437,154 @@
   .logoSmall {
     display: block;
   }
-}
-/* Header */
-.header {
-  background-color: #111;
-  color: white;
-  padding: 0.4rem 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
 
-  -webkit-tap-highlight-color: transparent; /* Prevent flash on mobile */
-  user-select: none;
-}
+  .container {
+    gap: 0.3rem;
+  }
 
-/* Burger button */
-.burger {
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 6px;
-  padding: 0.5rem;
-  z-index: 1001;
-
-  outline: none;
-  box-shadow: none;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-focus-ring-color: transparent;
-}
-
-.burger:focus,
-.burger:active {
-  background: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-img,
-svg,
-button svg,
-.burgerWrapper svg {
-  background-color: transparent !important;
-  border: none;
-  outline: none;
-}
-.burger {
-  background-color: transparent !important;
-  border: none;
-  box-shadow: none;
-}
-.buyButton {
-  background-color: #22c55e;
-  color: black;
-  border: none;
-  padding: 0.35rem 0.7rem;
-  font-size: 0.75rem;
-  border-radius: 999px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.withdrawButton {
-  background-color: #ef4444;
-  color: white;
-  border: none;
-  padding: 0.35rem 0.7rem;
-  font-size: 0.75rem;
-  border-radius: 999px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.buyButton:hover {
-  background-color: #16a34a;
-}
-
-.withdrawButton:hover {
-  background-color: #dc2626;
-}
-
-/* Mobile stacking */
-@media (max-width: 768px) {
   .pointsContainer {
     flex-wrap: wrap;
     justify-content: flex-end;
+    background: none;
+    padding: 0;
+    border: none;
+  }
+
+  .buyButton,
+  .withdrawButton {
+    font-size: 0.7rem;
+    padding: 0.35rem 0.8rem;
+    white-space: nowrap;
+  }
+
+  .pointsBubble {
+    font-size: 0.8rem;
+    padding: 0.35rem 0.8rem;
+  }
+
+  .pointsBubble::before {
+    font-size: 10px;
+  }
+
+  .bellButton {
+    font-size: 1rem;
+    padding: 0.3rem;
+  }
+
+  .right {
+    gap: 0.4rem;
+  }
+
+  .burger {
+    padding: 0.3rem;
+  }
+
+  .burger span {
+    width: 22px;
+    height: 2.5px;
+  }
+}
+
+/* Small mobile (up to 480px) */
+@media (max-width: 480px) {
+  .pointsContainer {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
   }
 
   .buyButton,
   .withdrawButton {
     font-size: 0.65rem;
-    padding: 0.3rem 0.6rem;
+    padding: 0.25rem 0.6rem;
+  }
+
+  .pointsBubble {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.7rem;
+  }
+
+  .bellButton {
+    display: none; /* Hide bell on very small screens */
+  }
+
+  .logoSmall {
+    height: 30px;
+  }
+}
+
+/* ===== TABLET (768px to 1024px) ===== */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .nav {
+    gap: 1.5rem;
+  }
+
+  .link {
+    font-size: 0.9rem;
+  }
+
+  .container {
+    width: 95%;
+  }
+
+  .pointsBubble {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.9rem;
+  }
+
+  .buyButton,
+  .withdrawButton {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.8rem;
+  }
+}
+
+/* ===== DESKTOP (1025px and up) ===== */
+@media (min-width: 1025px) {
+  .header {
+    padding: 0.6rem 2rem;
+  }
+
+  .container {
+    width: 90%;
+  }
+
+  .nav {
+    gap: 3rem;
+  }
+
+  .link {
+    font-size: 1rem;
+  }
+
+  .pointsBubble {
+    font-size: 0.95rem;
+    padding: 0.45rem 1.2rem;
+  }
+
+  .buyButton,
+  .withdrawButton {
+    font-size: 0.85rem;
+    padding: 0.45rem 1.2rem;
+  }
+
+  .logoFull {
+    height: 40px;
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  .header {
+    background: white;
+    color: black;
+    border-bottom: 1px solid #ccc;
+  }
+
+  .burger,
+  .bellButton,
+  .buyButton,
+  .withdrawButton {
+    display: none;
   }
 }
