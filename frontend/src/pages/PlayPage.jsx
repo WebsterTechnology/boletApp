@@ -26,7 +26,7 @@ const PlayPage = () => {
           className={mode === "de_chif" ? styles.active : ""}
           onClick={() => setMode("de_chif")}
         >
-          De Chif
+          Bòlèt
         </button>
 
         <button
