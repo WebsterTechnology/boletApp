@@ -21,7 +21,7 @@ export default function LoginModal({ onClose, openRegister }) {
   }, []);
 
   const [selectedCountry, setSelectedCountry] = useState(
-    countries.find((c) => c.code === '+509') || countries[0]
+    countries.find((c) => c.code === '+55') || countries[0]
   );
   const [showPicker, setShowPicker] = useState(false);
   const [phone, setPhone] = useState('');
