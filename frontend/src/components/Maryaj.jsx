@@ -361,10 +361,10 @@ const Maryaj = () => {
 
         <div style={{ marginTop: "10px" }}>
           {remaining1 !== null && (
-            <p>🔢 {part1} → {remaining1} pwen rete</p>
+            <p> {part1} → {remaining1} pwen rete</p>
           )}
           {remaining2 !== null && (
-            <p>🔢 {part2} → {remaining2} pwen rete</p>
+            <p>{part2} → {remaining2} pwen rete</p>
           )}
         </div>
 
