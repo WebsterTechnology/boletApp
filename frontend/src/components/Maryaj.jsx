@@ -359,7 +359,7 @@ const Maryaj = () => {
           onChange={(e) => setAmount(e.target.value)}
         />
 
-        <div style={{ marginTop: "10px" }}>
+        <div>
           {remaining1 !== null && (
             <p> {part1} → {remaining1} pwen rete</p>
           )}
