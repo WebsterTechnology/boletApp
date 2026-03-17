@@ -298,3 +298,191 @@
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+/* 🎯 CARD BASE */
+.card {
+  position: relative;
+  background: linear-gradient(145deg, #232323, #2e2e2e);
+  border-radius: 24px;
+  overflow: hidden;
+  cursor: pointer;
+
+  width: 100%;
+  max-width: 340px;
+  margin: 0 auto;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.05);
+
+  /* smoother shadow */
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+
+  transition: all 0.3s ease;
+}
+
+/* ✨ TOP GOLD LINE */
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ffd700, #ffb300);
+}
+
+/* 🚀 HOVER (cleaner, less aggressive) */
+.card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 14px 30px rgba(255, 215, 0, 0.25);
+}
+
+/* 🎯 IMAGE CONTAINER */
+.imageContainer {
+  width: 100%;
+  aspect-ratio: 1/1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: radial-gradient(circle, #1c1c2e, #12121c);
+  padding: 20px;
+}
+
+/* 🖼 IMAGE */
+.image {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  transition: transform 0.4s ease;
+}
+
+.card:hover .image {
+  transform: scale(1.08);
+}
+
+/* 🏷 BADGE */
+.cardBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+
+  background: linear-gradient(135deg, #ffd700, #ffb300);
+  color: #111;
+
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+/* 🌙 OVERLAY */
+.cardOverlay {
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+
+  opacity: 0;
+  transition: opacity 0.3s ease;
+
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 20px;
+}
+
+.card:hover .cardOverlay {
+  opacity: 1;
+}
+
+/* 🎮 PLAY BUTTON */
+.playNow {
+  background: linear-gradient(135deg, #ffd700, #ffb300);
+  color: #111;
+
+  padding: 8px 18px;
+  border-radius: 30px;
+
+  font-weight: 700;
+  font-size: 13px;
+
+  transition: transform 0.2s ease;
+}
+
+.playNow:hover {
+  transform: scale(1.05);
+}
+
+/* 📦 CONTENT */
+.cardContent {
+  width: 100%;
+  padding: 18px;
+  text-align: center;
+}
+
+/* 🏆 TITLE */
+.cardTitle {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ffd700;
+  margin-bottom: 6px;
+}
+
+/* 📝 DESCRIPTION */
+.cardDescription {
+  font-size: 13px;
+  color: rgba(255,255,255,0.6);
+}
+
+/* 🔻 FOOTER */
+.cardFooter {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* 💰 PRICE */
+.priceValue {
+  color: #ffd700;
+  font-weight: bold;
+}
+
+/* ▶ BUTTON */
+.playButton {
+  background: linear-gradient(135deg, #ffd700, #ffb300);
+  border: none;
+  color: #111;
+
+  padding: 6px 16px;
+  border-radius: 20px;
+
+  font-weight: 700;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+}
+
+.playButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+/* 📱 MOBILE */
+@media (max-width: 480px) {
+  .card {
+    max-width: 260px;
+  }
+
+  .cardTitle {
+    font-size: 18px;
+  }
+}
