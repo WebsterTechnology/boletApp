@@ -20,6 +20,16 @@
   font-size: 16px;
 }
 
+.entryRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  min-height: 120px;
+
+  justify-content: space-between; /* 🔥 keeps spacing nice */
+}
+
 .plusBtn {
   padding: 10px;
   background: #ffc107; /* yellow */
