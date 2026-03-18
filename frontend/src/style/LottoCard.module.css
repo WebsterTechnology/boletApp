@@ -119,7 +119,6 @@
 /* ===== CARD STYLES - YONCHIF PREMIUM ===== */
 .card {
   position: relative;
-  background: linear-gradient(145deg, #1f1f1f, #2a2a2a);
   border-radius: 24px;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
