@@ -62,12 +62,13 @@
 }
 
 /* Single Number Input (Circle) */
+/* Single Number Input (Circle) */
 .entryRow input[type="text"]:not(.doubleInput input) {
-  width: 55px;
-  height: 55px;
+  width: 70px;              /* 🔥 bigger */
+  height: 70px;             /* 🔥 bigger */
   border-radius: 50%;
   text-align: center;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
   border: 2px solid #ffd700;
   background: #fff;
@@ -78,10 +79,12 @@
   transition: all 0.3s ease;
 }
 
-.entryRow input[type="text"]:focus {
-  transform: scale(1.05);
-  border-color: #ffa500;
-  box-shadow: 0 0 20px #ffd700;
+/* 🔥 Placeholder styling (THIS FIXES XXX) */
+.entryRow input[type="text"]::placeholder {
+  color: #999;
+  font-weight: 700;
+  letter-spacing: 2px;  /* makes XXXX look spaced */
+  font-size: 18px;
 }
 
 /* Amount Input (Pwen) - Rounded Rectangle */
