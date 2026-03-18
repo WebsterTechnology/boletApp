@@ -18,7 +18,7 @@ const Home = ({ openLogin }) => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Jwe</h1>
+      {/* <h1 className={styles.title}>Jwe</h1> */}
       <div className={styles.grid}>
         <LottoCard openLogin={openLogin} />
       </div>
