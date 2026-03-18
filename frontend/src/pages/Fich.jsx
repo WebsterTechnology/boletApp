@@ -1094,7 +1094,7 @@ export default function Fich() {
   /* ---------------- UI ---------------- */
   return (
     <div style={{ padding: "16px" }}>
-      <h2>🧾 Fich — Paris mwen yo</h2>
+      <h2>🧾 Fich — Pari mwen yo</h2>
 
       <div style={{ margin: "8px 0 16px", display: "flex", gap: 12 }}>
         <button onClick={() => load()} disabled={loading}>
