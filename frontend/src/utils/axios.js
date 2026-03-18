@@ -6,20 +6,41 @@ const instance = axios.create({
   baseURL: API,
 });
 
-// 🔥 GLOBAL 401 HANDLER (VERY IMPORTANT)
+/* ================= REQUEST INTERCEPTOR ================= */
+// 🔐 Automatically attach token to every request
+instance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+/* ================= RESPONSE INTERCEPTOR ================= */
+// 🔥 GLOBAL 401 HANDLER
 instance.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // ❌ user deleted or invalid
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      localStorage.removeItem("userPoints");
+      // Prevent multiple alerts
+      if (!window.__logoutTriggered) {
+        window.__logoutTriggered = true;
 
-      alert("Session expired. Please login again.");
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("userPoints");
 
-      window.location.href = "/";
+        alert("Session expired. Please login again.");
+
+        window.location.href = "/";
+      }
     }
+
     return Promise.reject(error);
   }
 );
