@@ -4,6 +4,7 @@ const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
+const authenticate = require("./middleware/authenticate")
 
 // ----------------------------------------------------
 // 🔥 FIXED CORS — ALLOW ALL ORIGINS FOR DEBUGGING PIX
@@ -44,14 +45,14 @@ const adminPaymentsRoutes = require("./routes/adminPaymentsRoutes");
 // 🚀 Mount Routes
 // ----------------------------------------------------
 app.use("/api/auth", authRoutes);
-app.use("/api/yonchif", yonChifRoutes);
-app.use("/api/dechif", deChifRoutes);
-app.use("/api/maryaj", maryajRoutes);
-app.use("/api/katchif", katchifRoutes);
-app.use("/api/twachif", twaChifRoutes);
-app.use("/api/bets", betsRoutes);
-app.use("/api/points", pwenRoutes);
-app.use("/api/pix", pixRoutes);
+app.use("/api/yonchif",authenticate, yonChifRoutes);
+app.use("/api/dechif",authenticate, deChifRoutes);
+app.use("/api/maryaj",authenticate, maryajRoutes);
+app.use("/api/katchif",authenticate, katchifRoutes);
+app.use("/api/twachif",authenticate, twaChifRoutes);
+app.use("/api/bets", authenticate,betsRoutes);
+app.use("/api/points",authenticate, pwenRoutes);
+app.use("/api/pix",authenticate, pixRoutes);
 
 // MUST COME BEFORE /api/admin
 app.use("/api/admin/bets", adminBetsRoutes);
