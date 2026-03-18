@@ -4,7 +4,7 @@ import styles from "../style/BetForm.module.css";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { useBet } from "../context/BetContext.jsx";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../utils/axios.js"
 
 const API = import.meta.env.VITE_API_URL || "boletapp-production.up.railway.app";
 
@@ -182,11 +182,7 @@ const YonChif = () => {
             location: bet.location,
             userId,
           },
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
+        
         );
       }
 
@@ -199,12 +195,23 @@ const YonChif = () => {
 
       alert("Pari 'Yon Chif' soumèt ak siksè!");
     } catch (error) {
-      console.error("Submit error:", error.response?.data || error.message);
-      alert(
-        "Erè soumèt pari: " +
-          (error.response?.data?.message || error.message)
-      );
-    }
+  console.error("Submit error:", error.response?.data || error.message);
+
+  if (error.response?.status === 401) {
+    alert("Session fini oswa kont lan efase.");
+    
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    navigate("/"); // 🔥 force logout
+    return;
+  }
+
+  alert(
+    "Erè soumèt pari: " +
+      (error.response?.data?.message || error.message)
+  );
+}
   };
 
   /* ---------------- UI ---------------- */
