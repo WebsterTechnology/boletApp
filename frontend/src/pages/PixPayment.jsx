@@ -485,7 +485,7 @@ export default function PixPayment() {
           />
 
           <div className={styles.hr} />
-          <h3>Dados do pagador (necessários 1ª vez)</h3>
+          {/* <h3>Dados do pagador (necessários 1ª vez)</h3> */}
 
           <label>Nome completo</label>
           <input 
@@ -523,7 +523,7 @@ export default function PixPayment() {
             {loading ? "Ap jenere..." : "Peye ak Pix"}
           </button>
           
-          <button 
+          {/* <button 
             type="button" 
             onClick={checkDebugInfo}
             className={styles.debugButton}
@@ -535,7 +535,7 @@ export default function PixPayment() {
             }}
           >
             Debug Info
-          </button>
+          </button> */}
         </form>
       ) : (
         <div className={styles.receiptBox}>
