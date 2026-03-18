@@ -173,24 +173,20 @@ const Katchif = () => {
   const handleSubmit = async () => {
     const { id: userId, points: currentPoints } = getUserAndPoints();
     const katchifBets = bets.filter((b) => b.type === "Katchif");
-    const totalKatchif = katchifBets.reduce(
-      (sum, b) => sum + parseInt(b.amount, 10),
-      0
-    );
 
     if (katchifBets.length === 0) {
       alert("Ou pa mete okenn pari pou 'Katchif'.");
       return;
     }
 
-    /* 🔒 AJOUT: BLOKE SI TOTAL > 10 */
-    if (totalKatchif > MAX_KATCHIF_POINTS) {
-      alert("❌ Ou pa ka jwe plis pase 10 pwen pou Katchif.");
-      return;
-    }
+    const totalKatchif = katchifBets.reduce(
+      (sum, b) => sum + parseInt(b.amount, 10),
+      0
+    );
 
-    const remaining = currentPoints - totalKatchif;
-    if (remaining < 0) {
+    const userRemainingPoints = currentPoints - totalKatchif;
+
+    if (userRemainingPoints < 0) {
       alert("Ou pa gen ase Pwen! Nap mennen w sou paj Achte Pwen an.");
       navigate("/buy-credits");
       return;
@@ -228,9 +224,15 @@ const Katchif = () => {
       }
 
       const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-      const updatedUser = { ...userObj, points: remaining };
+
+      const updatedUser = {
+        ...userObj,
+        points: userRemainingPoints // ✅ correct value
+      };
+
       localStorage.setItem("user", JSON.stringify(updatedUser));
-      localStorage.setItem("userPoints", String(remaining));
+      localStorage.setItem("userPoints", String(userRemainingPoints));
+
       window.dispatchEvent(new Event("pointsUpdated"));
 
       alert("Pari 'Katchif' soumèt ak siksè!");
