@@ -76,3 +76,39 @@ exports.register = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+// 🔥 DELETE USER (ADMIN ONLY)
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 🔒 Only admin can delete
+    if (!req.user.isAdmin) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    const user = await User.findByPk(id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 🔥 OPTIONAL: delete user bets too
+    const { Maryaj, Katchif } = require("../models");
+
+    await Maryaj.destroy({ where: { userId: id } });
+    await Katchif.destroy({ where: { userId: id } });
+
+    // ✅ delete user
+    await user.destroy();
+
+    res.json({ message: "User deleted successfully" });
+
+  } catch (err) {
+    console.error("Delete user error:", err);
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
+  }
+};

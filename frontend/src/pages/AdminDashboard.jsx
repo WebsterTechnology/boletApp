@@ -67,6 +67,18 @@ export default function AdminDashboard() {
     setAmounts((s) => ({ ...s, [userId]: "" }));
   };
 
+  const handleDeleteUser = async (userId) => {
+    const confirmDelete = window.confirm("Delete this user?");
+    if (!confirmDelete) return;
+
+    try {
+      await axios.delete(`${API}/api/auth/users/${userId}`, auth);
+      refreshAll();
+    } catch (err) {
+      alert("Error deleting user");
+    }
+  };
+
   const handleRemovePwen = async (userId) => {
     const amount = parseInt(amounts[userId], 10);
     if (!amount) return alert("Enter amount");
@@ -181,14 +193,22 @@ export default function AdminDashboard() {
                   style={{ width: 80 }}
                 />
               </td>
-
               <td>
                 <button onClick={() => handleAddPwen(u.id)}>➕ Add</button>
+
                 <button
                   onClick={() => handleRemovePwen(u.id)}
                   style={{ marginLeft: 6, background: "red", color: "#fff" }}
                 >
                   ➖ Remove
+                </button>
+
+                {/* 🔥 DELETE BUTTON */}
+                <button
+                  onClick={() => handleDeleteUser(u.id)}
+                  style={{ marginLeft: 6, background: "black", color: "#fff" }}
+                >
+                  🗑 Delete
                 </button>
               </td>
             </tr>
@@ -229,7 +249,7 @@ export default function AdminDashboard() {
         <option value="New York">New York</option>
         <option value="Florida">Florida</option>
         <option value="Georgia">Georgia</option>
-    
+
       </select>
 
       <button onClick={addDisabledLocation}>Save</button>
