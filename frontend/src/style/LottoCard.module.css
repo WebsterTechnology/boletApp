@@ -203,8 +203,8 @@
 
 /* Smooth faded look */
 .image {
-  opacity: 0.5;
-  filter: brightness(0.7);
+  opacity: 0;
+
 }
 
 @keyframes textGlowMove {
