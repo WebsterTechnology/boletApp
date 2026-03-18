@@ -129,7 +129,7 @@ const Katchif = () => {
 
     // 🔥 REAL LIMIT (PER NUMBER)
     if (remaining !== null && betAmount > remaining) {
-      return alert(`❌ ${numTrim} gen sèlman ${remaining} pwen ki rete.`);
+      return alert(`❌  pou kounya ka jwe sèlman ${remaining} pwen pou ${numTrim}.`);
     }
 
     if (disabledNumbers.includes(numTrim)) {

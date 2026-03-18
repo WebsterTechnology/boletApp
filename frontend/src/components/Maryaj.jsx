@@ -200,7 +200,7 @@ const Maryaj = () => {
     // 🔥 PAIR remaining check (FIXED)
     if (remaining !== null && betAmount > remaining) {
       return alert(
-        `❌ Maryaj ${part1}-${part2} gen sèlman ${remaining} pwen ki rete.`
+        `❌ pou kounya ka jwe sèlman  ${remaining} pwen pou maryaj ${part1}-${part2} .`
       );
     }
 
