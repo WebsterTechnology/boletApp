@@ -1,5 +1,6 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // ✅ add useEffect
+import { useNavigate } from "react-router-dom"; // ✅ add this
 import styles from "./PlayPage.module.css";
 import YonChif from "../components/YonChif";
 import DeChif from "../components/DeChif"; // ✅ NEW
@@ -11,6 +12,36 @@ import BetCart from "../components/BetCart";
 
 const PlayPage = () => {
   const [mode, setMode] = useState("yon_chif");
+  const [loading, setLoading] = useState(true); // ✅ NEW
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/");
+      return;
+    }
+
+    fetch("/api/auth/verify", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error();
+        setLoading(false); // ✅ allow page
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        navigate("/");
+      });
+  }, [navigate]);
+
+  // ⛔ BLOCK UI until verified
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className={styles.playPage}>
