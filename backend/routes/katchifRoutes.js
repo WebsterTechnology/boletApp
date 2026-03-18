@@ -5,6 +5,7 @@ const authenticate = require("../middleware/authenticate");
 
 router.post("/", authenticate, controller.createKatchif);
 router.get("/", authenticate, controller.getMyKatchifBets);
+router.get("/remaining", controller.getKatchifRemaining);
 router.put("/:id", authenticate, controller.updateKatchif);
 router.delete("/:id", authenticate, controller.deleteKatchif);
 

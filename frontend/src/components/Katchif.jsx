@@ -9,7 +9,7 @@ import axios from "axios";
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 /* 🔒 AJOUT: LIMIT TOTAL KATCHIF */
-const MAX_KATCHIF_POINTS = 10;
+// const MAX_KATCHIF_POINTS = 10;
 
 /* ---------------- Helpers ---------------- */
 async function syncUserFromServer() {
@@ -51,11 +51,28 @@ const Katchif = () => {
   const [gaTime, setGaTime] = useState("");
   const [disabledNumbers, setDisabledNumbers] = useState([]);
   const [disabledLocations, setDisabledLocations] = useState([]);
-
+  const [remaining, setRemaining] = useState(null);
   const { bets, addBet, deleteBet, total } = useBet();
   const navigate = useNavigate();
 
   /* ---------------- Effects ---------------- */
+
+  useEffect(() => {
+    if (nums.length === 4) {
+      axios.get(`${API}/api/katchif/remaining`, {
+        params: { number: nums, location }
+      })
+        .then(res => {
+          setRemaining(res.data.remaining);
+        })
+        .catch(() => {
+          setRemaining(null);
+        });
+    } else {
+      setRemaining(null);
+    }
+  }, [nums, location]);
+
   useEffect(() => {
     syncUserFromServer();
 
@@ -102,25 +119,25 @@ const Katchif = () => {
     const numTrim = nums.trim();
     const locNorm = location.trim().toLowerCase();
 
-    if (!numTrim || numTrim.length !== 4 || !betAmount) {
-      return alert("Tanpri antre 4 chif ak kantite pwen.");
+    if (!numTrim || numTrim.length !== 4) {
+      return alert("Tanpri antre 4 chif.");
     }
 
-    /* 🔒 AJOUT: BLOKE SI TOTAL KATCHIF > 10 */
-    const currentKatchifTotal = bets
-      .filter((b) => b.type === "Katchif")
-      .reduce((sum, b) => sum + parseInt(b.amount, 10), 0);
+    if (!betAmount || betAmount <= 0) {
+      return alert("Tanpri antre kantite pwen.");
+    }
 
-    if (currentKatchifTotal + betAmount > MAX_KATCHIF_POINTS) {
-      return alert("❌ Ou pa ka jwe plis pase 10 pwen pou Katchif.");
+    // 🔥 REAL LIMIT (PER NUMBER)
+    if (remaining !== null && betAmount > remaining) {
+      return alert(`❌ ${numTrim} gen sèlman ${remaining} pwen ki rete.`);
     }
 
     if (disabledNumbers.includes(numTrim)) {
-      return alert(`Nimewo ${numTrim} dezaktive. Ou pa ka parye sou li.`);
+      return alert(`Nimewo ${numTrim} dezaktive.`);
     }
 
     if (disabledLocations.includes(locNorm)) {
-      return alert(`Lokasyon ${location} dezaktive. Ou pa ka parye la a.`);
+      return alert(`Lokasyon ${location} dezaktive.`);
     }
 
     const willBeTotal = pendingTotal + betAmount;
@@ -130,7 +147,13 @@ const Katchif = () => {
       return;
     }
 
-    addBet({ number: numTrim, amount: betAmount, type: "Katchif", location });
+    addBet({
+      number: numTrim,
+      amount: betAmount,
+      type: "Katchif",
+      location
+    });
+
     setNums("");
     setAmount("");
   };
@@ -238,6 +261,12 @@ const Katchif = () => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
+
+        <div style={{ minHeight: "30px" }}>
+          {remaining !== null && (
+            <p>{nums} → {remaining} pwen rete</p>
+          )}
+        </div>
         <select value={location} onChange={(e) => setLocation(e.target.value)}>
           <option value="New York">New York</option>
           <option value="Florida">Florida</option>
