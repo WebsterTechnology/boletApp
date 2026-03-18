@@ -44,6 +44,39 @@ exports.login = async (req, res) => {
   }
 };
 
+// exports.register = async (req, res) => {
+//   const { phone, password, isAdmin } = req.body;
+
+//   if (!phone || !password) {
+//     return res.status(400).json({ message: "Phone and password are required" });
+//   }
+//   if (!/^\d{4}$/.test(password)) {
+//     return res.status(400).json({ message: "Password must be exactly 4 digits" });
+//   }
+
+//   try {
+//     const exists = await User.findOne({ where: { phone } });
+//     if (exists) return res.status(400).json({ message: "User already exists" });
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const user = await User.create({
+//       phone,
+//       password: hashedPassword,
+//       isAdmin: !!isAdmin,
+//       // points uses model default (0)
+//     });
+
+//     return res.status(201).json({
+//       message: "User created",
+//       user: shapeUser(user),
+//     });
+//   } catch (err) {
+//     console.error("Register error:", err);
+//     return res.status(500).json({ message: "Server error" });
+//   }
+// };
+
 exports.register = async (req, res) => {
   const { phone, password, isAdmin } = req.body;
 
@@ -64,12 +97,19 @@ exports.register = async (req, res) => {
       phone,
       password: hashedPassword,
       isAdmin: !!isAdmin,
-      // points uses model default (0)
     });
+
+    // 🔥 ADD THIS
+    const token = jwt.sign(
+      { id: user.id, phone: user.phone, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
 
     return res.status(201).json({
       message: "User created",
       user: shapeUser(user),
+      token, // ✅ NOW USER IS LOGGED IN
     });
   } catch (err) {
     console.error("Register error:", err);
