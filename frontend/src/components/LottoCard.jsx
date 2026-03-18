@@ -7,7 +7,7 @@ import htloto from '../assets/htloto.png';
 const LottoCard = ({ openLogin }) => {
   return (
     <div className={styles.card} onClick={openLogin}>
-      <img src={htloto} alt="Lotto" className={styles.image} />
+      {/* <img src={htloto} alt="Lotto" className={styles.image} /> */}
     </div>
   );
 };
