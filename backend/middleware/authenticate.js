@@ -21,7 +21,7 @@
 // };
 
 const jwt = require("jsonwebtoken");
-const { User } = require("../models"); // 🔥 ADD THIS
+const { User } = require("../models");
 const secret = process.env.JWT_SECRET;
 
 module.exports = async (req, res, next) => {
@@ -34,13 +34,15 @@ module.exports = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, secret);
 
-    // 🔥 VERY IMPORTANT CHECK
     const user = await User.findByPk(decoded.id);
+
     if (!user) {
       return res.status(401).json({ message: "User no longer exists" });
     }
 
-    req.user = decoded;
+    // ✅ FIX HERE
+    req.user = user;
+
     next();
   } catch (err) {
     res.status(401).json({ message: "Invalid token" });
