@@ -52,7 +52,7 @@ app.use("/api/katchif",authenticate, katchifRoutes);
 app.use("/api/twachif",authenticate, twaChifRoutes);
 app.use("/api/bets", authenticate,betsRoutes);
 app.use("/api/points",authenticate, pwenRoutes);
-app.use("/api/pix",authenticate, pixRoutes);
+app.use("/api/pix", pixRoutes);
 
 // MUST COME BEFORE /api/admin
 app.use("/api/admin/bets", adminBetsRoutes);
