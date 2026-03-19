@@ -57,7 +57,7 @@ router.post("/create-customer", async (req, res) => {
 });
 
 
-// 🔥 WEBHOOK ASAAS (ADICIONE ISSO)
+// 🔥 WEBHOOK ASAAS (ADICIONE ISSO) not use
 router.post("/pix/webhook", (req, res) => {
   console.log("🔥 WEBHOOK RECEBIDO DO ASAAS:");
   console.log(JSON.stringify(req.body, null, 2));
