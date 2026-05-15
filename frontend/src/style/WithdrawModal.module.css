@@ -7,13 +7,12 @@
   display: flex;
   justify-content: center;
 
-  /* ✅ Mobile: bottom sheet */
+  /* ✅ Keep bottom sheet style */
   align-items: flex-end;
 
-  /* ✅ FIX: space on top so it's not cut */
-  padding-top: 40px;
+  /* ✅ KEY FIX: push modal down so header doesn't hide it */
+  padding: 80px 10px 20px; /* top | sides | bottom */
 
-  /* ✅ allow full scroll */
   overflow-y: auto;
 
   z-index: 9999;
@@ -140,7 +139,9 @@
 @media (min-width: 768px) {
   .overlay {
     align-items: center;
-    padding: 20px;
+
+    /* ✅ smaller padding on desktop */
+    padding: 40px 20px;
   }
 
   .modal {
