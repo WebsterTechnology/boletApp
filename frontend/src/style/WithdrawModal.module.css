@@ -1,46 +1,37 @@
+/* Fullscreen dark overlay */
 .overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
-
   display: flex;
+  align-items: flex-end; /* mobile bottom sheet */
   justify-content: center;
-  align-items: flex-start;
-
-  padding: 95px 12px 24px;
-
-  overflow-y: auto;
   z-index: 9999;
 }
 
+/* Modal container */
 .modal {
-  position: relative;
   width: 100%;
-  max-width: 420px;
-  max-height: calc(100vh - 120px);
-
+  max-height: 92vh;
   background: #111;
   color: #fff;
-
-  border-radius: 16px;
+  border-radius: 16px 16px 0 0;
   padding: 20px;
-
   overflow-y: auto;
-  animation: modalFade 0.25s ease;
+  animation: slideUp 0.3s ease;
 }
 
-@keyframes modalFade {
+/* Slide-up animation */
+@keyframes slideUp {
   from {
-    opacity: 0;
-    transform: translateY(25px);
+    transform: translateY(100%);
   }
-
   to {
-    opacity: 1;
     transform: translateY(0);
   }
 }
 
+/* Close button */
 .close {
   position: absolute;
   top: 14px;
@@ -56,6 +47,7 @@
   color: #fff;
 }
 
+/* Title */
 .modal h2 {
   margin-bottom: 16px;
   text-align: center;
@@ -63,12 +55,14 @@
   font-weight: 600;
 }
 
+/* Form */
 .modal form {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* Inputs */
 .modal input,
 .modal select,
 .modal textarea {
@@ -91,6 +85,7 @@
   color: #888;
 }
 
+/* Focus state */
 .modal input:focus,
 .modal select:focus,
 .modal textarea:focus {
@@ -98,6 +93,7 @@
   border-color: #7c3aed;
 }
 
+/* Submit button */
 .modal button[type="submit"] {
   margin-top: 8px;
   padding: 14px;
@@ -115,6 +111,7 @@
   cursor: not-allowed;
 }
 
+/* Success message */
 .success {
   text-align: center;
   color: #22c55e;
@@ -122,12 +119,56 @@
   padding: 20px 10px;
 }
 
-@media (max-width: 480px) {
+/* Desktop enhancement */
+@media (min-width: 768px) {
   .overlay {
-    padding-top: 110px;
+    align-items: center;
   }
 
   .modal {
-    max-height: calc(100vh - 135px);
+    width: 420px;
+    border-radius: 16px;
+    max-height: unset;
+  }
+}
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+
+  z-index: 9999;
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+
+  /* ✅ KEY FIX */
+  max-height: calc(100vh - 80px); /* leave space for header */
+
+  margin-top: auto; /* pushes it down naturally */
+
+  background: #111;
+  color: #fff;
+
+  border-radius: 16px 16px 0 0;
+  padding: 20px;
+
+  overflow-y: auto;
+
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
   }
 }
