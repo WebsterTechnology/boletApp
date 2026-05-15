@@ -3,21 +3,36 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
+
   display: flex;
-  align-items: flex-end; /* mobile bottom sheet */
   justify-content: center;
+
+  /* ✅ Mobile: bottom sheet */
+  align-items: flex-end;
+
+  /* ✅ FIX: space on top so it's not cut */
+  padding-top: 40px;
+
+  /* ✅ allow full scroll */
+  overflow-y: auto;
+
   z-index: 9999;
 }
 
 /* Modal container */
 .modal {
+  position: relative;
   width: 100%;
-  max-height: 92vh;
+  max-height: 90vh;
+
   background: #111;
   color: #fff;
+
   border-radius: 16px 16px 0 0;
   padding: 20px;
+
   overflow-y: auto;
+
   animation: slideUp 0.3s ease;
 }
 
@@ -119,15 +134,18 @@
   padding: 20px 10px;
 }
 
-/* Desktop enhancement */
+/* ========================= */
+/* 💻 DESKTOP IMPROVEMENT */
+/* ========================= */
 @media (min-width: 768px) {
   .overlay {
     align-items: center;
+    padding: 20px;
   }
 
   .modal {
     width: 420px;
     border-radius: 16px;
-    max-height: unset;
+    max-height: 90vh;
   }
 }
