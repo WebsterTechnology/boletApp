@@ -610,3 +610,120 @@
     display: none;
   }
 }
+
+
+/* LOCATION MODAL */
+
+.modalOverlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.75);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:20px;
+    z-index:9999;
+}
+
+.modal{
+    width:100%;
+    max-width:420px;
+    background:#1a1a2e;
+    border-radius:20px;
+    padding:22px;
+    color:white;
+}
+
+.modalTitle{
+    text-align:center;
+    color:#ffd700;
+    margin-bottom:18px;
+    font-size:24px;
+}
+
+.locationItem{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:#243b55;
+    padding:15px;
+    border-radius:14px;
+    margin-bottom:12px;
+    transition:.2s;
+}
+
+.locationItem:hover{
+    background:#2d4f73;
+}
+
+.summary{
+    margin-top:20px;
+    background:#16213e;
+    padding:15px;
+    border-radius:14px;
+}
+
+.summary div{
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:10px;
+}
+
+.finalTotal{
+    color:#ffd700;
+    font-size:24px;
+    font-weight:bold;
+    border-top:1px solid rgba(255,255,255,.2);
+    padding-top:12px;
+}
+
+.modalButtons{
+    display:flex;
+    gap:12px;
+    margin-top:20px;
+}
+
+.playMoreBtn{
+    flex:1;
+    background:#666;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:14px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.finalizeBtn{
+    flex:1;
+    background:linear-gradient(135deg,#00b09b,#96c93d);
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:14px;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.entryRow select {
+  padding: 10px 24px 10px 16px;
+  border-radius: 30px;
+  border: 2px solid #ffd700;
+  font-size: 14px;
+  font-weight: 600;
+  background: #fff;
+  color: #1a1a2e;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ffd700'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  min-width: 100px;
+}
+
+.entryRow select:focus {
+  border-color: #ffa500;
+  box-shadow: 0 0 15px #ffd700;
+}

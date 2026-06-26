@@ -4,35 +4,19 @@
 // import { FaEdit, FaTrash } from "react-icons/fa";
 // import { useBet } from "../context/BetContext.jsx";
 // import { useNavigate } from "react-router-dom";
-// import axios from "../utils/axios.js"
+// import axios from "../utils/axios.js";
 
 // const API = import.meta.env.VITE_API_URL || "boletapp-production.up.railway.app";
 
 // /* ---------------- Helpers ---------------- */
-// async function syncUserFromServer() {
-//   const token = localStorage.getItem("token");
-//   if (!token) return null;
-//   const res = await fetch(`${API}/api/users/me`, {
-//     headers: { Authorization: `Bearer ${token}` },
-//   });
-//   if (!res.ok) return null;
-//   const user = await res.json();
-//   localStorage.setItem("user", JSON.stringify(user));
-//   localStorage.setItem("userId", String(user.id));
-//   localStorage.setItem("userPoints", String(user.points || 0));
-//   return user;
-// }
-
 // function getUserAndPoints() {
 //   try {
 //     const u = JSON.parse(localStorage.getItem("user") || "{}");
 //     return {
-//       id: u.id ?? localStorage.getItem("userId"),
 //       points: Number(u.points ?? localStorage.getItem("userPoints") ?? 0),
 //     };
 //   } catch {
 //     return {
-//       id: localStorage.getItem("userId"),
 //       points: Number(localStorage.getItem("userPoints") || 0),
 //     };
 //   }
@@ -48,47 +32,39 @@
 //   const [gaTime, setGaTime] = useState("");
 //   const [disabledNumbers, setDisabledNumbers] = useState([]);
 //   const [disabledLocations, setDisabledLocations] = useState([]);
+//   const [blocked, setBlocked] = useState(false);
 
 //   const { bets, addBet, deleteBet, total } = useBet();
-//   const [blocked, setBlocked] = useState(false);
 //   const navigate = useNavigate();
 
-//   /* ---------------- Effects ---------------- */
+//   /* ---------------- AUTH CHECK ---------------- */
 //   useEffect(() => {
-//   const token = localStorage.getItem("token");
+//     const token = localStorage.getItem("token");
 
-//   if (!token) {
-//     navigate("/");
-//     return;
-//   }
-
-//   axios.get(`${API}/api/users/me`)
-//     .then(() => {
-//       // user OK
-//     })
-//     .catch(() => {
-//       // 🔥 USER DELETED → FORCE LOGOUT
-//         setBlocked(true);
-//       alert("Kont lan pa egziste ankò.");
-
-//       localStorage.removeItem("token");
-//       localStorage.removeItem("user");
-
+//     if (!token) {
 //       navigate("/");
-//     });
+//       return;
+//     }
 
-// }, []);
+//     axios.get(`${API}/api/users/me`)
+//       .catch(() => {
+//         setBlocked(true);
+//         alert("Kont lan pa egziste ankò.");
 
+//         localStorage.removeItem("token");
+//         localStorage.removeItem("user");
+
+//         navigate("/");
+//       });
+//   }, []);
+
+//   /* ---------------- OTHER EFFECTS ---------------- */
 //   useEffect(() => {
-//     syncUserFromServer();
-
-//     // Fetch disabled numbers + locations from public endpoints
 //     Promise.all([
 //       axios.get(`${API}/api/admin/public-disabled-numbers`),
 //       axios.get(`${API}/api/admin/public-disabled-locations`),
 //     ])
 //       .then(([numRes, locRes]) => {
-//         // normalize data (trim and lowercase)
 //         const nums = (numRes.data || []).map((n) => String(n).trim());
 //         const locs = (locRes.data || []).map((l) =>
 //           String(l).trim().toLowerCase()
@@ -98,8 +74,7 @@
 //       })
 //       .catch((err) => console.error("Failed to load disabled data:", err));
 
-//     // Clock
-//       const updateTimes = () => {
+//     const updateTimes = () => {
 //       const now = new Date();
 //       const options = {
 //         timeZone: "America/New_York",
@@ -112,13 +87,19 @@
 //       const eastern = new Intl.DateTimeFormat("en-US", options).format(now);
 
 //       setNyTime(eastern);
-//       setFlTime(eastern);   // Eastern Florida
-//       setGaTime(eastern);   // Georgia
+//       setFlTime(eastern);
+//       setGaTime(eastern);
 //     };
+
 //     updateTimes();
 //     const interval = setInterval(updateTimes, 1000);
 //     return () => clearInterval(interval);
 //   }, []);
+
+//   /* ---------------- BLOCK UI ---------------- */
+//   if (blocked) {
+//     return <div>Kont lan efase</div>;
+//   }
 
 //   /* ---------------- Add Bet ---------------- */
 //   const handleAdd = () => {
@@ -126,26 +107,21 @@
 //     const { points: userPoints } = getUserAndPoints();
 //     const pendingTotal = Number(total) || 0;
 
-//     if (!number || !betAmount)
+//     if (!number || !betAmount) {
 //       return alert("Tanpri antre nimewo ak pwen.");
-
-//     // 🚫 Block disabled number
-//     if (disabledNumbers.map((n) => n.trim()).includes(number.trim())) {
-//       return alert(`Nimewo ${number} dezaktive. Ou pa ka parye sou li.`);
 //     }
 
-//     // 🚫 Block disabled location
+//     if (disabledNumbers.includes(number.trim())) {
+//       return alert(`Nimewo ${number} dezaktive.`);
+//     }
+
 //     const locNorm = location.trim().toLowerCase();
 //     if (disabledLocations.includes(locNorm)) {
-//       return alert(`Lokasyon ${location} dezaktive. Ou pa ka parye la a.`);
+//       return alert(`Lokasyon ${location} dezaktive.`);
 //     }
 
-//     // Check available points
-//     const willBeTotal = pendingTotal + betAmount;
-//     if (willBeTotal > userPoints) {
-//       const confirmBuy = window.confirm(
-//         "Ou pa gen ase pwen. Ou vle achte plis?"
-//       );
+//     if (pendingTotal + betAmount > userPoints) {
+//       const confirmBuy = window.confirm("Ou pa gen ase pwen. Ou vle achte plis?");
 //       if (confirmBuy) window.location.href = "/buy-credits";
 //       return;
 //     }
@@ -155,7 +131,7 @@
 //     setAmount("");
 //   };
 
-//   /* ---------------- Edit Bet ---------------- */
+//   /* ---------------- Edit ---------------- */
 //   const handleEdit = (id) => {
 //     const b = bets.find((bet) => bet.id === id);
 //     if (b && b.type === "Yon Chif") {
@@ -166,78 +142,63 @@
 //     }
 //   };
 
-//   /* ---------------- Submit Bets ---------------- */
+//   /* ---------------- Submit ---------------- */
 //   const handleSubmit = async () => {
-//     const { id: userId, points: currentPoints } = getUserAndPoints();
+//     const { points: currentPoints } = getUserAndPoints();
 //     const yonChifBets = bets.filter((b) => b.type === "Yon Chif");
+
+//     if (yonChifBets.length === 0) {
+//       return alert("Ou pa mete okenn pari.");
+//     }
+
 //     const totalYonChif = yonChifBets.reduce(
 //       (sum, b) => sum + parseInt(b.amount),
 //       0
 //     );
 
-//     if (yonChifBets.length === 0)
-//       return alert("Ou pa mete okenn pari pou 'Yon Chif'.");
-
-//     const remaining = currentPoints - totalYonChif;
-//     if (remaining < 0) {
-//       alert("Ou pa gen ase Pwen! Nap mennen w sou paj Achte Pwen an.");
+//     if (currentPoints - totalYonChif < 0) {
 //       navigate("/buy-credits");
 //       return;
 //     }
 
 //     try {
 //       for (const bet of yonChifBets) {
-//         // skip disabled number
-//         if (disabledNumbers.map((n) => n.trim()).includes(bet.number.trim())) {
-//           alert(`Nimewo ${bet.number} dezaktive. Pari sa a sote.`);
-//           continue;
-//         }
-
-//         // skip disabled location
 //         const locNorm = bet.location.trim().toLowerCase();
-//         if (disabledLocations.includes(locNorm)) {
-//           alert(`Lokasyon ${bet.location} dezaktive. Pari sa a sote.`);
-//           continue;
-//         }
 
-//         await axios.post(
-//           `${API}/api/yonchif`,
-//           {
-//             number: bet.number,
-//             pwen: parseInt(bet.amount),
-//             location: bet.location,
-          
-//           },
-        
-//         );
+//         if (disabledNumbers.includes(bet.number.trim())) continue;
+//         if (disabledLocations.includes(locNorm)) continue;
+
+//         await axios.post(`${API}/api/yonchif`, {
+//           number: bet.number,
+//           pwen: parseInt(bet.amount),
+//           location: bet.location,
+//         });
 //       }
 
-//       // update local points
 //       const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-//       const updatedUser = { ...userObj, points: remaining };
+//       const updatedUser = {
+//         ...userObj,
+//         points: currentPoints - totalYonChif,
+//       };
+
 //       localStorage.setItem("user", JSON.stringify(updatedUser));
-//       localStorage.setItem("userPoints", String(remaining));
+//       localStorage.setItem("userPoints", String(updatedUser.points));
 //       window.dispatchEvent(new Event("pointsUpdated"));
 
-//       alert("Pari 'Yon Chif' soumèt ak siksè!");
+//       alert("Pari soumèt avèk siksè!");
 //     } catch (error) {
-//   console.error("Submit error:", error.response?.data || error.message);
+//       if (error.response?.status === 401) {
+//         alert("Session fini.");
 
-//   if (error.response?.status === 401) {
-//     alert("Session fini oswa kont lan efase.");
-    
-//     localStorage.removeItem("token");
-//     localStorage.removeItem("user");
+//         localStorage.removeItem("token");
+//         localStorage.removeItem("user");
 
-//     navigate("/"); // 🔥 force logout
-//     return;
-//   }
+//         navigate("/");
+//         return;
+//       }
 
-//   alert(
-//     "Erè soumèt pari: " +
-//       (error.response?.data?.message || error.message)
-//   );
-// }
+//       alert("Erè: " + (error.response?.data?.message || error.message));
+//     }
 //   };
 
 //   /* ---------------- UI ---------------- */
@@ -254,84 +215,45 @@
 //         <input
 //           type="number"
 //           placeholder="Pwen"
-//           min="0"
 //           value={amount}
 //           onChange={(e) => setAmount(e.target.value)}
 //         />
-//         <select
-//           value={location}
-//           onChange={(e) => setLocation(e.target.value)}
-//         >
-//           <option value="New York">New York</option>
-//           <option value="Florida">Florida</option>
-//           <option value="Georgia">Georgia</option>
+//         <select value={location} onChange={(e) => setLocation(e.target.value)}>
+//           <option>New York</option>
+//           <option>Florida</option>
+//           <option>Georgia</option>
 //         </select>
-//         <button className={styles.plusBtn} onClick={handleAdd}>
-//           +
-//         </button>
+//         <button className={styles.plusBtn} onClick={handleAdd}>+</button>
 //       </div>
 
 //       <div className={styles.timeRow}>
-//         <p>
-//           <strong>🕐 New York:</strong> {nyTime}
-//         </p>
-//         <p>
-//           <strong>🕐 Florida:</strong> {flTime}
-//         </p>
-//         <p>
-//           <strong>🕐 Georgia:</strong> {gaTime}
-//         </p>
-       
-
+//         <p><strong>NY:</strong> {nyTime}</p>
+//         <p><strong>FL:</strong> {flTime}</p>
+//         <p><strong>GA:</strong> {gaTime}</p>
 //       </div>
 
 //       <ul className={styles.betsList}>
-//         {bets
-//           .filter((b) => b.type === "Yon Chif")
-//           .map((b) => (
-//             <li key={b.id}>
-//               <span className={styles.num}>{b.number}</span>
-//               <span className={styles.amt}>{b.amount} p</span>
-//               <span className={styles.location}>{b.location}</span>
-//               <div className={styles.actions}>
-//                 <button
-//                   onClick={() => handleEdit(b.id)}
-//                   style={{
-//                     backgroundColor: "#ffcc00",
-//                     color: "white",
-//                     border: "none",
-//                     padding: "6px",
-//                     borderRadius: "4px",
-//                     margin: "6px 6px",
-//                   }}
-//                 >
-//                   <FaEdit />
-//                 </button>
-//                 <button onClick={() => deleteBet(b.id)}>
-//                   <FaTrash />
-//                 </button>
-//               </div>
-//             </li>
-//           ))}
+//         {bets.filter(b => b.type === "Yon Chif").map((b) => (
+//           <li key={b.id}>
+//             <span>{b.number}</span>
+//             <span>{b.amount} p</span>
+//             <span>{b.location}</span>
+//             <button onClick={() => handleEdit(b.id)}><FaEdit /></button>
+//             <button onClick={() => deleteBet(b.id)}><FaTrash /></button>
+//           </li>
+//         ))}
 //       </ul>
 
 //       <div className={styles.footer}>
 //         <span>Total: {total} p</span>
-//         <button
-//           className={styles.submitBtn}
-//           onClick={handleSubmit}
-//           disabled={
-//             bets.filter((b) => b.type === "Yon Chif").length === 0
-//           }
-//         >
-//           Soumèt Pari
-//         </button>
+//         <button onClick={handleSubmit}>Soumèt</button>
 //       </div>
 //     </div>
 //   );
 // };
 
 // export default YonChif;
+
 import React, { useState, useEffect } from "react";
 import styles from "../style/BetForm.module.css";
 import { FaEdit, FaTrash } from "react-icons/fa";
@@ -341,7 +263,6 @@ import axios from "../utils/axios.js";
 
 const API = import.meta.env.VITE_API_URL || "boletapp-production.up.railway.app";
 
-/* ---------------- Helpers ---------------- */
 function getUserAndPoints() {
   try {
     const u = JSON.parse(localStorage.getItem("user") || "{}");
@@ -355,22 +276,26 @@ function getUserAndPoints() {
   }
 }
 
-/* ---------------- Component ---------------- */
+const LOCATIONS = ["New York", "Florida", "Georgia"];
+
 const YonChif = () => {
   const [number, setNumber] = useState("");
   const [amount, setAmount] = useState("");
-  const [location, setLocation] = useState("New York");
+
   const [nyTime, setNyTime] = useState("");
   const [flTime, setFlTime] = useState("");
   const [gaTime, setGaTime] = useState("");
+
   const [disabledNumbers, setDisabledNumbers] = useState([]);
   const [disabledLocations, setDisabledLocations] = useState([]);
   const [blocked, setBlocked] = useState(false);
 
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [selectedLocations, setSelectedLocations] = useState([]);
+
   const { bets, addBet, deleteBet, total } = useBet();
   const navigate = useNavigate();
 
-  /* ---------------- AUTH CHECK ---------------- */
   useEffect(() => {
     const token = localStorage.getItem("token");
 
@@ -379,19 +304,17 @@ const YonChif = () => {
       return;
     }
 
-    axios.get(`${API}/api/users/me`)
-      .catch(() => {
-        setBlocked(true);
-        alert("Kont lan pa egziste ankò.");
+    axios.get(`${API}/api/users/me`).catch(() => {
+      setBlocked(true);
+      alert("Kont lan pa egziste ankò.");
 
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
 
-        navigate("/");
-      });
-  }, []);
+      navigate("/");
+    });
+  }, [navigate]);
 
-  /* ---------------- OTHER EFFECTS ---------------- */
   useEffect(() => {
     Promise.all([
       axios.get(`${API}/api/admin/public-disabled-numbers`),
@@ -402,6 +325,7 @@ const YonChif = () => {
         const locs = (locRes.data || []).map((l) =>
           String(l).trim().toLowerCase()
         );
+
         setDisabledNumbers(nums);
         setDisabledLocations(locs);
       })
@@ -409,6 +333,7 @@ const YonChif = () => {
 
     const updateTimes = () => {
       const now = new Date();
+
       const options = {
         timeZone: "America/New_York",
         hour: "2-digit",
@@ -425,16 +350,24 @@ const YonChif = () => {
     };
 
     updateTimes();
+
     const interval = setInterval(updateTimes, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  /* ---------------- BLOCK UI ---------------- */
   if (blocked) {
     return <div>Kont lan efase</div>;
   }
 
-  /* ---------------- Add Bet ---------------- */
+  const yonChifBets = bets.filter((b) => b.type === "Yon Chif");
+
+  const baseTotal = yonChifBets.reduce(
+    (sum, b) => sum + Number(b.amount || 0),
+    0
+  );
+
+  const finalTotal = baseTotal * selectedLocations.length;
+
   const handleAdd = () => {
     const betAmount = parseInt(amount, 10);
     const { points: userPoints } = getUserAndPoints();
@@ -448,75 +381,98 @@ const YonChif = () => {
       return alert(`Nimewo ${number} dezaktive.`);
     }
 
-    const locNorm = location.trim().toLowerCase();
-    if (disabledLocations.includes(locNorm)) {
-      return alert(`Lokasyon ${location} dezaktive.`);
-    }
-
     if (pendingTotal + betAmount > userPoints) {
       const confirmBuy = window.confirm("Ou pa gen ase pwen. Ou vle achte plis?");
       if (confirmBuy) window.location.href = "/buy-credits";
       return;
     }
 
-    addBet({ number, amount: betAmount, type: "Yon Chif", location });
+    addBet({
+      number,
+      amount: betAmount,
+      type: "Yon Chif",
+    });
+
     setNumber("");
     setAmount("");
   };
 
-  /* ---------------- Edit ---------------- */
   const handleEdit = (id) => {
     const b = bets.find((bet) => bet.id === id);
+
     if (b && b.type === "Yon Chif") {
       setNumber(b.number);
       setAmount(b.amount);
-      setLocation(b.location);
       deleteBet(id);
     }
   };
 
-  /* ---------------- Submit ---------------- */
-  const handleSubmit = async () => {
-    const { points: currentPoints } = getUserAndPoints();
-    const yonChifBets = bets.filter((b) => b.type === "Yon Chif");
-
+  const handleSubmit = () => {
     if (yonChifBets.length === 0) {
       return alert("Ou pa mete okenn pari.");
     }
 
-    const totalYonChif = yonChifBets.reduce(
-      (sum, b) => sum + parseInt(b.amount),
-      0
-    );
+    setSelectedLocations([]);
+    setShowLocationModal(true);
+  };
 
-    if (currentPoints - totalYonChif < 0) {
+  const toggleLocation = (loc) => {
+    setSelectedLocations((prev) => {
+      if (prev.includes(loc)) {
+        return prev.filter((l) => l !== loc);
+      }
+
+      return [...prev, loc];
+    });
+  };
+
+  const handlePlayMore = () => {
+    setShowLocationModal(false);
+    setSelectedLocations([]);
+  };
+
+  const handleFinalizeBet = async () => {
+    const { points: currentPoints } = getUserAndPoints();
+
+    if (selectedLocations.length === 0) {
+      return alert("Tanpri chwazi omwen yon lokasyon.");
+    }
+
+    if (currentPoints - finalTotal < 0) {
       navigate("/buy-credits");
       return;
     }
 
     try {
       for (const bet of yonChifBets) {
-        const locNorm = bet.location.trim().toLowerCase();
+        if (disabledNumbers.includes(String(bet.number).trim())) continue;
 
-        if (disabledNumbers.includes(bet.number.trim())) continue;
-        if (disabledLocations.includes(locNorm)) continue;
+        for (const loc of selectedLocations) {
+          const locNorm = loc.trim().toLowerCase();
 
-        await axios.post(`${API}/api/yonchif`, {
-          number: bet.number,
-          pwen: parseInt(bet.amount),
-          location: bet.location,
-        });
+          if (disabledLocations.includes(locNorm)) continue;
+
+          await axios.post(`${API}/api/yonchif`, {
+            number: bet.number,
+            pwen: parseInt(bet.amount, 10),
+            location: loc,
+          });
+        }
       }
 
       const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+
       const updatedUser = {
         ...userObj,
-        points: currentPoints - totalYonChif,
+        points: currentPoints - finalTotal,
       };
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
       localStorage.setItem("userPoints", String(updatedUser.points));
       window.dispatchEvent(new Event("pointsUpdated"));
+
+      setShowLocationModal(false);
+      setSelectedLocations([]);
 
       alert("Pari soumèt avèk siksè!");
     } catch (error) {
@@ -534,7 +490,6 @@ const YonChif = () => {
     }
   };
 
-  /* ---------------- UI ---------------- */
   return (
     <div className={styles.container}>
       <div className={styles.entryRow}>
@@ -545,42 +500,191 @@ const YonChif = () => {
           value={number}
           onChange={(e) => setNumber(e.target.value.replace(/\D/, ""))}
         />
+
         <input
           type="number"
           placeholder="Pwen"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
-        <select value={location} onChange={(e) => setLocation(e.target.value)}>
-          <option>New York</option>
-          <option>Florida</option>
-          <option>Georgia</option>
-        </select>
-        <button className={styles.plusBtn} onClick={handleAdd}>+</button>
+
+        <button className={styles.plusBtn} onClick={handleAdd}>
+          +
+        </button>
       </div>
 
       <div className={styles.timeRow}>
-        <p><strong>NY:</strong> {nyTime}</p>
-        <p><strong>FL:</strong> {flTime}</p>
-        <p><strong>GA:</strong> {gaTime}</p>
+        <p>
+          <strong>NY:</strong> {nyTime}
+        </p>
+        <p>
+          <strong>FL:</strong> {flTime}
+        </p>
+        <p>
+          <strong>GA:</strong> {gaTime}
+        </p>
       </div>
 
       <ul className={styles.betsList}>
-        {bets.filter(b => b.type === "Yon Chif").map((b) => (
+        {yonChifBets.map((b) => (
           <li key={b.id}>
             <span>{b.number}</span>
             <span>{b.amount} p</span>
-            <span>{b.location}</span>
-            <button onClick={() => handleEdit(b.id)}><FaEdit /></button>
-            <button onClick={() => deleteBet(b.id)}><FaTrash /></button>
+
+            <button onClick={() => handleEdit(b.id)}>
+              <FaEdit />
+            </button>
+
+            <button onClick={() => deleteBet(b.id)}>
+              <FaTrash />
+            </button>
           </li>
         ))}
       </ul>
 
       <div className={styles.footer}>
-        <span>Total: {total} p</span>
+        <span>Total: {baseTotal} p</span>
         <button onClick={handleSubmit}>Soumèt</button>
       </div>
+
+      {showLocationModal && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+            zIndex: 9999,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "420px",
+              background: "#1f1f1f",
+              color: "#fff",
+              borderRadius: "18px",
+              padding: "22px",
+              boxShadow: "0 10px 35px rgba(0,0,0,0.4)",
+            }}
+          >
+            <h2 style={{ textAlign: "center", marginBottom: "16px" }}>
+              Chwazi kote pou jwe
+            </h2>
+
+            {LOCATIONS.map((loc) => {
+              const disabled = disabledLocations.includes(loc.toLowerCase());
+
+              return (
+                <label
+                  key={loc}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    background: selectedLocations.includes(loc)
+                      ? "#ffc107"
+                      : "#333",
+                    color: selectedLocations.includes(loc) ? "#000" : "#fff",
+                    padding: "14px",
+                    borderRadius: "12px",
+                    marginBottom: "10px",
+                    opacity: disabled ? 0.4 : 1,
+                    cursor: disabled ? "not-allowed" : "pointer",
+                    fontWeight: "bold",
+                  }}
+                >
+                  <span>{loc}</span>
+
+                  <input
+                    type="checkbox"
+                    checked={selectedLocations.includes(loc)}
+                    disabled={disabled}
+                    onChange={() => toggleLocation(loc)}
+                    style={{
+                      width: "22px",
+                      height: "22px",
+                    }}
+                  />
+                </label>
+              );
+            })}
+
+            <div
+              style={{
+                background: "#2b2b2b",
+                padding: "14px",
+                borderRadius: "12px",
+                marginTop: "16px",
+              }}
+            >
+              <p style={{ margin: "0 0 8px" }}>
+                Total baz: <strong>{baseTotal} p</strong>
+              </p>
+
+              <p style={{ margin: "0 0 8px" }}>
+                Lokasyon chwazi: <strong>{selectedLocations.length}</strong>
+              </p>
+
+              <p
+                style={{
+                  margin: "12px 0 0",
+                  paddingTop: "12px",
+                  borderTop: "1px solid #555",
+                  color: "#ffc107",
+                  fontSize: "22px",
+                  fontWeight: "bold",
+                }}
+              >
+                Total final: {finalTotal} p
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                marginTop: "18px",
+              }}
+            >
+              <button
+                onClick={handlePlayMore}
+                style={{
+                  flex: 1,
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "14px",
+                  background: "#555",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Play More
+              </button>
+
+              <button
+                onClick={handleFinalizeBet}
+                style={{
+                  flex: 1,
+                  border: "none",
+                  borderRadius: "12px",
+                  padding: "14px",
+                  background: "#28a745",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                }}
+              >
+                Finalize Bet
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
