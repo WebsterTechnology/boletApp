@@ -97,14 +97,15 @@ exports.getAllMyBets = async (req, res) => {
       })),
 
       ...katchif.map((b) => ({
-        id: b.id,
-        type: "katchif",
-        numbers: b.number || b.numbers || "-",
-        pwen: Number(b.pwen || 0),
-        draw: b.ville ?? b.city ?? b.lokal ?? b.location ?? null,
-        status: b.status || "pending",
-        createdAt: b.createdAt,
-      })),
+    id: b.id,
+    receiptId: b.receiptId,
+    type: "katchif",
+    numbers: b.number || b.numbers || "-",
+    pwen: Number(b.pwen || 0),
+    draw: b.location,
+    status: b.status || "pending",
+    createdAt: b.createdAt,
+})),
     ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     // ✅ Send to frontend
