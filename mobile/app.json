@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "BoletApp",
+    "slug": "boletapp-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b1020"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.boletapp.mobile"
+    },
+    "android": {
+      "package": "com.boletapp.mobile",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0b1020"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}

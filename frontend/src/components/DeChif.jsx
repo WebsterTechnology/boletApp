@@ -256,534 +256,1055 @@
 
 // export default DeChif;
 
+// import React, { useState, useEffect } from "react";
+// import styles from "../style/BetForm.module.css";
+// import { FaEdit, FaTrash } from "react-icons/fa";
+// import { useBet } from "../context/BetContext.jsx";
+// import { useNavigate } from "react-router-dom";
+// import BetSlip from "../components/BetSlip";
+// import axios from "axios";
+
+// const API =
+//   import.meta.env.VITE_API_URL ||
+//   "https://boletapp-production.up.railway.app";
+
+// const LOCATIONS = ["New York", "Florida", "Georgia"];
+
+// async function syncUserFromServer() {
+//   const token = localStorage.getItem("token");
+//   if (!token) return null;
+
+//   const res = await fetch(`${API}/api/users/me`, {
+//     headers: {
+//       Authorization: `Bearer ${token}`,
+//     },
+//   });
+
+//   if (!res.ok) return null;
+
+//   const user = await res.json();
+
+//   localStorage.setItem("user", JSON.stringify(user));
+//   localStorage.setItem("userId", String(user.id));
+//   localStorage.setItem("userPoints", String(user.points || 0));
+
+//   return user;
+// }
+
+// function getUserAndPoints() {
+//   try {
+//     const u = JSON.parse(localStorage.getItem("user") || "{}");
+
+//     return {
+//       id: u.id ?? localStorage.getItem("userId"),
+//       points: Number(
+//         u.points ??
+//           localStorage.getItem("userPoints") ??
+//           0
+//       ),
+//     };
+//   } catch {
+//     return {
+//       id: localStorage.getItem("userId"),
+//       points: Number(
+//         localStorage.getItem("userPoints") || 0
+//       ),
+//     };
+//   }
+// }
+
+// const DeChif = () => {
+//   const [number, setNumber] = useState("");
+//   const [amount, setAmount] = useState("");
+
+//   const [nyTime, setNyTime] = useState("");
+//   const [flTime, setFlTime] = useState("");
+//   const [gaTime, setGaTime] = useState("");
+
+//   const [disabledNumbers, setDisabledNumbers] =
+//     useState([]);
+
+//   const [disabledLocations, setDisabledLocations] =
+//     useState([]);
+
+//   const [showLocationModal, setShowLocationModal] =
+//     useState(false);
+
+//   const [selectedLocations, setSelectedLocations] =
+//     useState([]);
+
+//   const {
+//     bets,
+//     addBet,
+//     deleteBet,
+//     total,
+//   } = useBet();
+
+//   const navigate = useNavigate();
+
+//   useEffect(() => {
+//     syncUserFromServer();
+
+//     Promise.all([
+//       axios.get(
+//         `${API}/api/admin/public-disabled-numbers`
+//       ),
+//       axios.get(
+//         `${API}/api/admin/public-disabled-locations`
+//       ),
+//     ])
+//       .then(([numRes, locRes]) => {
+//         setDisabledNumbers(
+//           (numRes.data || []).map((n) =>
+//             String(n).trim()
+//           )
+//         );
+
+//         setDisabledLocations(
+//           (locRes.data || []).map((l) =>
+//             String(l).trim().toLowerCase()
+//           )
+//         );
+//       })
+//       .catch(console.error);
+
+//     const updateTimes = () => {
+//       const eastern =
+//         new Intl.DateTimeFormat("en-US", {
+//           timeZone: "America/New_York",
+//           hour: "2-digit",
+//           minute: "2-digit",
+//           second: "2-digit",
+//           hour12: false,
+//         }).format(new Date());
+
+//       setNyTime(eastern);
+//       setFlTime(eastern);
+//       setGaTime(eastern);
+//     };
+
+//     updateTimes();
+
+//     const interval = setInterval(updateTimes, 1000);
+
+//     return () => clearInterval(interval);
+//   }, []);
+
+//   const deChifBets = bets.filter(
+//     (b) => b.type === "De Chif"
+//   );
+
+//   const baseTotal = deChifBets.reduce(
+//     (sum, b) => sum + Number(b.amount || 0),
+//     0
+//   );
+
+//   const finalTotal =
+//     baseTotal * selectedLocations.length;
+
+//   const handleAdd = () => {
+//     const betAmount = parseInt(amount, 10);
+
+//     const { points: userPoints } = getUserAndPoints();
+
+//     const pendingTotal = Number(total) || 0;
+
+//     if (!/^\d{2}$/.test(number) || !betAmount) {
+//       return alert("Tanpri antre yon nimewo 2 chif ak pwen.");
+//     }
+
+//     if (disabledNumbers.includes(number.trim())) {
+//       return alert(`Nimewo ${number} dezaktive.`);
+//     }
+
+//     if (pendingTotal + betAmount > userPoints) {
+//       const confirmBuy = window.confirm(
+//         "Ou pa gen ase pwen. Ou vle achte plis?"
+//       );
+
+//       if (confirmBuy) {
+//         window.location.href = "/buy-credits";
+//       }
+
+//       return;
+//     }
+
+//     addBet({
+//       number,
+//       amount: betAmount,
+//       type: "De Chif",
+//     });
+
+//     setNumber("");
+//     setAmount("");
+//   };
+
+//   const handleEdit = (id) => {
+//     const bet = bets.find((b) => b.id === id);
+
+//     if (!bet) return;
+
+//     setNumber(bet.number);
+//     setAmount(bet.amount);
+
+//     deleteBet(id);
+//   };
+
+//   const handleSubmit = () => {
+//     if (!deChifBets.length) {
+//       return alert("Ou pa mete okenn pari.");
+//     }
+
+//     setSelectedLocations([]);
+//     setShowLocationModal(true);
+//   };
+
+//   const toggleLocation = (loc) => {
+//     setSelectedLocations((prev) =>
+//       prev.includes(loc)
+//         ? prev.filter((x) => x !== loc)
+//         : [...prev, loc]
+//     );
+//   };
+
+//   const handlePlayMore = () => {
+//     setShowLocationModal(false);
+//     setSelectedLocations([]);
+//   };
+
+//   const handleFinalizeBet = async () => {
+//     const {
+//       id: userId,
+//       points: currentPoints,
+//     } = getUserAndPoints();
+
+//     if (selectedLocations.length === 0) {
+//       return alert("Tanpri chwazi omwen yon lokasyon.");
+//     }
+
+//     if (currentPoints - finalTotal < 0) {
+//       navigate("/buy-credits");
+//       return;
+//     }
+
+//     try {
+//       for (const bet of deChifBets) {
+//         if (disabledNumbers.includes(bet.number.trim()))
+//           continue;
+
+//         for (const location of selectedLocations) {
+//           if (
+//             disabledLocations.includes(
+//               location.toLowerCase()
+//             )
+//           )
+//             continue;
+
+//           await axios.post(
+//             `${API}/api/dechif`,
+//             {
+//               number: bet.number,
+//               pwen: parseInt(bet.amount, 10),
+//               location,
+//               userId,
+//             },
+//             {
+//               headers: {
+//                 Authorization: `Bearer ${localStorage.getItem(
+//                   "token"
+//                 )}`,
+//               },
+//             }
+//           );
+//         }
+//       }
+
+
+//       const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+
+//       const updatedUser = {
+//         ...userObj,
+//         points: currentPoints - finalTotal,
+//       };
+
+//       localStorage.setItem("user", JSON.stringify(updatedUser));
+//       localStorage.setItem("userPoints", String(updatedUser.points));
+
+//       window.dispatchEvent(new Event("pointsUpdated"));
+
+//       deChifBets.forEach((bet) => deleteBet(bet.id));
+
+//       setNumber("");
+//       setAmount("");
+//       setSelectedLocations([]);
+//       setShowLocationModal(false);
+
+//       alert("Pari 'De Chif' soumèt ak siksè!");
+
+//     } catch (error) {
+//       alert(error.response?.data?.message || error.message);
+//     }
+//   };
+
+//   return (
+//     <div className={styles.container}>
+
+//       <div className={styles.entryRow}>
+
+//         <input
+//           type="text"
+//           placeholder="XX"
+//           maxLength={2}
+//           value={number}
+//           onChange={(e) =>
+//             setNumber(e.target.value.replace(/\D/g, ""))
+//           }
+//         />
+
+//         <input
+//           type="number"
+//           placeholder="Pwen"
+//           value={amount}
+//           onChange={(e) =>
+//             setAmount(e.target.value)
+//           }
+//         />
+
+//         <button
+//           className={styles.plusBtn}
+//           onClick={handleAdd}
+//         >
+//           +
+//         </button>
+
+//       </div>
+
+//       <div className={styles.timeRow}>
+//         <p><strong>NY:</strong> {nyTime}</p>
+//         <p><strong>FL:</strong> {flTime}</p>
+//         <p><strong>GA:</strong> {gaTime}</p>
+//       </div>
+
+//       <ul className={styles.betsList}>
+
+//         {deChifBets.map((b) => (
+
+//           <li key={b.id}>
+
+//             <span className={styles.num}>
+//               {b.number}
+//             </span>
+
+//             <span className={styles.amt}>
+//               {b.amount} p
+//             </span>
+
+//             <div className={styles.actions}>
+
+//               <button
+//                 onClick={() => handleEdit(b.id)}
+//               >
+//                 <FaEdit />
+//               </button>
+
+//               <button
+//                 onClick={() => deleteBet(b.id)}
+//               >
+//                 <FaTrash />
+//               </button>
+
+//             </div>
+
+//           </li>
+
+//         ))}
+
+//       </ul>
+
+//       <div className={styles.footer}>
+
+//         <span>Total: {baseTotal} p</span>
+
+//         <button
+//           className={styles.submitBtn}
+//           onClick={handleSubmit}
+//         >
+//           Soumèt Pari
+//         </button>
+
+//       </div>
+//       {showLocationModal && (
+//         <div
+//           style={{
+//             position: "fixed",
+//             inset: 0,
+//             background: "rgba(0,0,0,.75)",
+//             display: "flex",
+//             justifyContent: "center",
+//             alignItems: "center",
+//             padding: 16,
+//             zIndex: 9999,
+//           }}
+//         >
+//           <div
+//             style={{
+//               width: "100%",
+//               maxWidth: 420,
+//               background: "#1f1f1f",
+//               color: "#fff",
+//               borderRadius: 18,
+//               padding: 22,
+//             }}
+//           >
+//             <h2
+//               style={{
+//                 textAlign: "center",
+//                 marginBottom: 20,
+//               }}
+//             >
+//               Chwazi kote pou jwe
+//             </h2>
+
+//             {LOCATIONS.map((loc) => {
+//               const disabled = disabledLocations.includes(
+//                 loc.toLowerCase()
+//               );
+
+//               return (
+//                 <label
+//                   key={loc}
+//                   style={{
+//                     display: "flex",
+//                     justifyContent: "space-between",
+//                     alignItems: "center",
+//                     padding: 14,
+//                     marginBottom: 10,
+//                     borderRadius: 12,
+//                     background: selectedLocations.includes(loc)
+//                       ? "#ffc107"
+//                       : "#333",
+//                     color: selectedLocations.includes(loc)
+//                       ? "#000"
+//                       : "#fff",
+//                     opacity: disabled ? 0.4 : 1,
+//                     cursor: disabled
+//                       ? "not-allowed"
+//                       : "pointer",
+//                     fontWeight: "bold",
+//                   }}
+//                 >
+//                   <span>{loc}</span>
+
+//                   <input
+//                     type="checkbox"
+//                     checked={selectedLocations.includes(loc)}
+//                     disabled={disabled}
+//                     onChange={() => toggleLocation(loc)}
+//                     style={{
+//                       width: 22,
+//                       height: 22,
+//                     }}
+//                   />
+//                 </label>
+//               );
+//             })}
+
+//             <div
+//               style={{
+//                 background: "#2b2b2b",
+//                 padding: 15,
+//                 borderRadius: 12,
+//                 marginTop: 15,
+//               }}
+//             >
+//               <p>
+//                 Total baz:
+//                 <strong> {baseTotal} p</strong>
+//               </p>
+
+//               <p>
+//                 Lokasyon:
+//                 <strong> {selectedLocations.length}</strong>
+//               </p>
+
+//               <p
+//                 style={{
+//                   borderTop: "1px solid #555",
+//                   paddingTop: 12,
+//                   marginTop: 12,
+//                   color: "#ffc107",
+//                   fontSize: 22,
+//                   fontWeight: "bold",
+//                 }}
+//               >
+//                 Total Final: {finalTotal} p
+//               </p>
+//             </div>
+
+//             <div
+//               style={{
+//                 display: "flex",
+//                 gap: 10,
+//                 marginTop: 20,
+//               }}
+//             >
+//               <button
+//                 onClick={handlePlayMore}
+//                 style={{
+//                   flex: 1,
+//                   background: "#666",
+//                   color: "#fff",
+//                   border: "none",
+//                   borderRadius: 12,
+//                   padding: 14,
+//                   cursor: "pointer",
+//                   fontWeight: "bold",
+//                 }}
+//               >
+//                 Play More
+//               </button>
+
+//               <button
+//                 onClick={handleFinalizeBet}
+//                 style={{
+//                   flex: 1,
+//                   background: "#28a745",
+//                   color: "#fff",
+//                   border: "none",
+//                   borderRadius: 12,
+//                   padding: 14,
+//                   cursor: "pointer",
+//                   fontWeight: "bold",
+//                 }}
+//               >
+//                 Finalize Bet
+//               </button>
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// };
+
+// export default DeChif;
+
 import React, { useState, useEffect } from "react";
 import styles from "../style/BetForm.module.css";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { useBet } from "../context/BetContext.jsx";
 import { useNavigate } from "react-router-dom";
+import BetSlip from "../components/BetSlip";
 import axios from "axios";
 
 const API =
-  import.meta.env.VITE_API_URL ||
-  "https://boletapp-production.up.railway.app";
+import.meta.env.VITE_API_URL ||
+"https://boletapp-production.up.railway.app";
 
-const LOCATIONS = ["New York", "Florida", "Georgia"];
+const LOCATIONS = [
+"New York",
+"Florida",
+"Georgia",
+];
 
 async function syncUserFromServer() {
-  const token = localStorage.getItem("token");
-  if (!token) return null;
+const token = localStorage.getItem("token");
+if (!token) return null;
 
-  const res = await fetch(`${API}/api/users/me`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+const res = await fetch(`${API}/api/users/me`, {
+headers: {
+Authorization: `Bearer ${token}`,
+},
+});
 
-  if (!res.ok) return null;
+if (!res.ok) return null;
 
-  const user = await res.json();
+const user = await res.json();
 
-  localStorage.setItem("user", JSON.stringify(user));
-  localStorage.setItem("userId", String(user.id));
-  localStorage.setItem("userPoints", String(user.points || 0));
+localStorage.setItem("user", JSON.stringify(user));
+localStorage.setItem("userId", String(user.id));
+localStorage.setItem("userPoints", String(user.points || 0));
 
-  return user;
+return user;
 }
 
 function getUserAndPoints() {
-  try {
-    const u = JSON.parse(localStorage.getItem("user") || "{}");
+try {
+const u = JSON.parse(localStorage.getItem("user") || "{}");
 
-    return {
-      id: u.id ?? localStorage.getItem("userId"),
-      points: Number(
-        u.points ??
-          localStorage.getItem("userPoints") ??
-          0
-      ),
-    };
-  } catch {
-    return {
-      id: localStorage.getItem("userId"),
-      points: Number(
-        localStorage.getItem("userPoints") || 0
-      ),
-    };
-  }
+
+return {
+  id: u.id ?? localStorage.getItem("userId"),
+  points: Number(
+    u.points ??
+      localStorage.getItem("userPoints") ??
+      0
+  ),
+};
+
+
+} catch {
+return {
+id: localStorage.getItem("userId"),
+points: Number(
+localStorage.getItem("userPoints") || 0
+),
+};
+}
 }
 
 const DeChif = () => {
-  const [number, setNumber] = useState("");
-  const [amount, setAmount] = useState("");
+const [number, setNumber] = useState("");
+const [amount, setAmount] = useState("");
 
-  const [nyTime, setNyTime] = useState("");
-  const [flTime, setFlTime] = useState("");
-  const [gaTime, setGaTime] = useState("");
+const [nyTime, setNyTime] = useState("");
+const [flTime, setFlTime] = useState("");
+const [gaTime, setGaTime] = useState("");
 
-  const [disabledNumbers, setDisabledNumbers] =
-    useState([]);
+const [disabledNumbers, setDisabledNumbers] =
+useState([]);
 
-  const [disabledLocations, setDisabledLocations] =
-    useState([]);
+const [disabledLocations, setDisabledLocations] =
+useState([]);
 
-  const [showLocationModal, setShowLocationModal] =
-    useState(false);
+const [showLocationModal, setShowLocationModal] =
+useState(false);
 
-  const [selectedLocations, setSelectedLocations] =
-    useState([]);
+const [selectedLocations, setSelectedLocations] =
+useState([]);
 
-  const {
-    bets,
-    addBet,
-    deleteBet,
-    total,
-  } = useBet();
+const {
+bets,
+addBet,
+deleteBet,
+total,
+} = useBet();
 
-  const navigate = useNavigate();
+const navigate = useNavigate();
 
-  useEffect(() => {
-    syncUserFromServer();
+useEffect(() => {
+syncUserFromServer();
 
-    Promise.all([
-      axios.get(
-        `${API}/api/admin/public-disabled-numbers`
-      ),
-      axios.get(
-        `${API}/api/admin/public-disabled-locations`
-      ),
-    ])
-      .then(([numRes, locRes]) => {
-        setDisabledNumbers(
-          (numRes.data || []).map((n) =>
-            String(n).trim()
-          )
-        );
 
-        setDisabledLocations(
-          (locRes.data || []).map((l) =>
-            String(l).trim().toLowerCase()
-          )
-        );
-      })
-      .catch(console.error);
-
-    const updateTimes = () => {
-      const eastern =
-        new Intl.DateTimeFormat("en-US", {
-          timeZone: "America/New_York",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        }).format(new Date());
-
-      setNyTime(eastern);
-      setFlTime(eastern);
-      setGaTime(eastern);
-    };
-
-    updateTimes();
-
-    const interval = setInterval(updateTimes, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const deChifBets = bets.filter(
-    (b) => b.type === "De Chif"
+Promise.all([
+  axios.get(`${API}/api/admin/public-disabled-numbers`),
+  axios.get(`${API}/api/admin/public-disabled-locations`),
+]).then(([numRes, locRes]) => {
+  setDisabledNumbers(
+    (numRes.data || []).map((n) =>
+      String(n).trim()
+    )
   );
 
-  const baseTotal = deChifBets.reduce(
-    (sum, b) => sum + Number(b.amount || 0),
-    0
+  setDisabledLocations(
+    (locRes.data || []).map((l) =>
+      String(l).trim().toLowerCase()
+    )
   );
+});
 
-  const finalTotal =
-    baseTotal * selectedLocations.length;
+const updateTimes = () => {
+  const eastern =
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(new Date());
 
-  const handleAdd = () => {
-    const betAmount = parseInt(amount, 10);
+  setNyTime(eastern);
+  setFlTime(eastern);
+  setGaTime(eastern);
+};
 
-    const { points: userPoints } = getUserAndPoints();
+updateTimes();
 
-    const pendingTotal = Number(total) || 0;
+const interval = setInterval(updateTimes, 1000);
 
-    if (!/^\d{2}$/.test(number) || !betAmount) {
-      return alert("Tanpri antre yon nimewo 2 chif ak pwen.");
-    }
+return () => clearInterval(interval);
 
-    if (disabledNumbers.includes(number.trim())) {
-      return alert(`Nimewo ${number} dezaktive.`);
-    }
 
-    if (pendingTotal + betAmount > userPoints) {
-      const confirmBuy = window.confirm(
-        "Ou pa gen ase pwen. Ou vle achte plis?"
-      );
+}, []);
 
-      if (confirmBuy) {
-        window.location.href = "/buy-credits";
+const deChifBets = bets.filter(
+(b) => b.type === "De Chif"
+);
+
+const baseTotal = deChifBets.reduce(
+(sum, b) => sum + Number(b.amount || 0),
+0
+);
+
+const finalTotal =
+baseTotal * selectedLocations.length;
+const handleAdd = () => {
+const betAmount = parseInt(amount, 10);
+
+const { points: userPoints } = getUserAndPoints();
+
+const pendingTotal = Number(total) || 0;
+
+if (!/^\d{2}$/.test(number)) {
+return alert("Tanpri antre yon nimewo 2 chif.");
+}
+
+if (!betAmount || betAmount <= 0) {
+return alert("Tanpri antre kantite pwen.");
+}
+
+if (disabledNumbers.includes(number.trim())) {
+return alert(`Nimewo ${number} dezaktive.`);
+}
+
+if (pendingTotal + betAmount > userPoints) {
+const confirmBuy = window.confirm(
+"Ou pa gen ase pwen. Ou vle achte plis?"
+);
+
+
+if (confirmBuy) {
+  window.location.href = "/buy-credits";
+}
+
+return;
+
+
+}
+
+addBet({
+number,
+amount: betAmount,
+type: "De Chif",
+});
+
+setNumber("");
+setAmount("");
+};
+
+const handleEdit = (bet) => {
+if (bet.type !== "De Chif") return;
+
+setNumber(bet.number);
+setAmount(bet.amount);
+
+deleteBet(bet.id);
+};
+
+const handleSubmit = () => {
+if (!deChifBets.length) {
+return alert("Ou pa mete okenn pari.");
+}
+
+setSelectedLocations([]);
+setShowLocationModal(true);
+};
+
+const toggleLocation = (loc) => {
+setSelectedLocations((prev) =>
+prev.includes(loc)
+? prev.filter((x) => x !== loc)
+: [...prev, loc]
+);
+};
+
+const handlePlayMore = () => {
+setShowLocationModal(false);
+setSelectedLocations([]);
+};
+
+const handleFinalizeBet = async () => {
+const {
+id: userId,
+points: currentPoints,
+} = getUserAndPoints();
+
+if (selectedLocations.length === 0) {
+return alert("Tanpri chwazi omwen yon lokasyon.");
+}
+
+if (currentPoints - finalTotal < 0) {
+navigate("/buy-credits");
+return;
+}
+
+try {
+for (const bet of deChifBets) {
+if (disabledNumbers.includes(bet.number.trim()))
+continue;
+
+
+  for (const location of selectedLocations) {
+    if (
+      disabledLocations.includes(
+        location.toLowerCase()
+      )
+    )
+      continue;
+
+    await axios.post(
+      `${API}/api/dechif`,
+      {
+        number: bet.number,
+        pwen: parseInt(bet.amount, 10),
+        location,
+        userId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem(
+            "token"
+          )}`,
+        },
       }
-
-      return;
-    }
-
-    addBet({
-      number,
-      amount: betAmount,
-      type: "De Chif",
-    });
-
-    setNumber("");
-    setAmount("");
-  };
-
-  const handleEdit = (id) => {
-    const bet = bets.find((b) => b.id === id);
-
-    if (!bet) return;
-
-    setNumber(bet.number);
-    setAmount(bet.amount);
-
-    deleteBet(id);
-  };
-
-  const handleSubmit = () => {
-    if (!deChifBets.length) {
-      return alert("Ou pa mete okenn pari.");
-    }
-
-    setSelectedLocations([]);
-    setShowLocationModal(true);
-  };
-
-  const toggleLocation = (loc) => {
-    setSelectedLocations((prev) =>
-      prev.includes(loc)
-        ? prev.filter((x) => x !== loc)
-        : [...prev, loc]
     );
+  }
+}
+
+  const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+
+  const updatedUser = {
+    ...userObj,
+    points: currentPoints - finalTotal,
   };
 
-  const handlePlayMore = () => {
-    setShowLocationModal(false);
-    setSelectedLocations([]);
-  };
+  localStorage.setItem(
+    "user",
+    JSON.stringify(updatedUser)
+  );
 
-  const handleFinalizeBet = async () => {
-    const {
-      id: userId,
-      points: currentPoints,
-    } = getUserAndPoints();
+  localStorage.setItem(
+    "userPoints",
+    String(updatedUser.points)
+  );
 
-    if (selectedLocations.length === 0) {
-      return alert("Tanpri chwazi omwen yon lokasyon.");
-    }
+  window.dispatchEvent(
+    new Event("pointsUpdated")
+  );
 
-    if (currentPoints - finalTotal < 0) {
-      navigate("/buy-credits");
-      return;
-    }
+  deChifBets.forEach((bet) =>
+    deleteBet(bet.id)
+  );
 
-    try {
-      for (const bet of deChifBets) {
-        if (disabledNumbers.includes(bet.number.trim()))
-          continue;
+  setNumber("");
+  setAmount("");
 
-        for (const location of selectedLocations) {
-          if (
-            disabledLocations.includes(
-              location.toLowerCase()
-            )
-          )
-            continue;
+  setSelectedLocations([]);
+  setShowLocationModal(false);
 
-          await axios.post(
-            `${API}/api/dechif`,
-            {
-              number: bet.number,
-              pwen: parseInt(bet.amount, 10),
-              location,
-              userId,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem(
-                  "token"
-                )}`,
-              },
-            }
-          );
-        }
+  alert("Pari De Chif soumèt avèk siksè!");
+
+} catch (error) {
+  alert(
+    error.response?.data?.message ||
+    error.message
+  );
+}
+
+
+};
+
+return ( <div className={styles.container}>
+
+  <div className={styles.entryRow}>
+
+    <input
+      type="text"
+      placeholder="XX"
+      maxLength={2}
+      value={number}
+      onChange={(e) =>
+        setNumber(
+          e.target.value.replace(/\D/g, "")
+        )
       }
+    />
+
+    <input
+      type="number"
+      placeholder="Pwen"
+      value={amount}
+      onChange={(e) =>
+        setAmount(e.target.value)
+      }
+    />
+
+    <button
+      className={styles.plusBtn}
+      onClick={handleAdd}
+    >
+      +
+    </button>
+
+  </div>
+
+  <div className={styles.timeRow}>
+    <p><strong>NY:</strong> {nyTime}</p>
+    <p><strong>FL:</strong> {flTime}</p>
+    <p><strong>GA:</strong> {gaTime}</p>
+  </div>
+
+  <BetSlip
+    onEdit={handleEdit}
+    onSubmit={handleSubmit}
+  />
 
 
-      const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-
-      const updatedUser = {
-        ...userObj,
-        points: currentPoints - finalTotal,
-      };
-
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      localStorage.setItem("userPoints", String(updatedUser.points));
-
-      window.dispatchEvent(new Event("pointsUpdated"));
-
-      deChifBets.forEach((bet) => deleteBet(bet.id));
-
-      setNumber("");
-      setAmount("");
-      setSelectedLocations([]);
-      setShowLocationModal(false);
-
-      alert("Pari 'De Chif' soumèt ak siksè!");
-
-    } catch (error) {
-      alert(error.response?.data?.message || error.message);
-    }
-  };
-
-  return (
-    <div className={styles.container}>
-
-      <div className={styles.entryRow}>
-
-        <input
-          type="text"
-          placeholder="XX"
-          maxLength={2}
-          value={number}
-          onChange={(e) =>
-            setNumber(e.target.value.replace(/\D/g, ""))
-          }
-        />
-
-        <input
-          type="number"
-          placeholder="Pwen"
-          value={amount}
-          onChange={(e) =>
-            setAmount(e.target.value)
-          }
-        />
-
-        <button
-          className={styles.plusBtn}
-          onClick={handleAdd}
-        >
-          +
-        </button>
-
-      </div>
-
-      <div className={styles.timeRow}>
-        <p><strong>NY:</strong> {nyTime}</p>
-        <p><strong>FL:</strong> {flTime}</p>
-        <p><strong>GA:</strong> {gaTime}</p>
-      </div>
-
-      <ul className={styles.betsList}>
-
-        {deChifBets.map((b) => (
-
-          <li key={b.id}>
-
-            <span className={styles.num}>
-              {b.number}
-            </span>
-
-            <span className={styles.amt}>
-              {b.amount} p
-            </span>
-
-            <div className={styles.actions}>
-
-              <button
-                onClick={() => handleEdit(b.id)}
-              >
-                <FaEdit />
-              </button>
-
-              <button
-                onClick={() => deleteBet(b.id)}
-              >
-                <FaTrash />
-              </button>
-
-            </div>
-
-          </li>
-
-        ))}
-
-      </ul>
-
-      <div className={styles.footer}>
-
-        <span>Total: {baseTotal} p</span>
-
-        <button
-          className={styles.submitBtn}
-          onClick={handleSubmit}
-        >
-          Soumèt Pari
-        </button>
-
-      </div>
-      {showLocationModal && (
-        <div
+  {showLocationModal && (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,.75)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 16,
+        zIndex: 9999,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 420,
+          background: "#1f1f1f",
+          color: "#fff",
+          borderRadius: 18,
+          padding: 22,
+        }}
+      >
+        <h2
           style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,.75)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 16,
-            zIndex: 9999,
+            textAlign: "center",
+            marginBottom: 20,
           }}
         >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: 420,
-              background: "#1f1f1f",
-              color: "#fff",
-              borderRadius: 18,
-              padding: 22,
-            }}
-          >
-            <h2
-              style={{
-                textAlign: "center",
-                marginBottom: 20,
-              }}
-            >
-              Chwazi kote pou jwe
-            </h2>
+          Chwazi kote pou jwe
+        </h2>
 
-            {LOCATIONS.map((loc) => {
-              const disabled = disabledLocations.includes(
-                loc.toLowerCase()
-              );
+        {LOCATIONS.map((loc) => {
+          const disabled = disabledLocations.includes(
+            loc.toLowerCase()
+          );
 
-              return (
-                <label
-                  key={loc}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: 14,
-                    marginBottom: 10,
-                    borderRadius: 12,
-                    background: selectedLocations.includes(loc)
-                      ? "#ffc107"
-                      : "#333",
-                    color: selectedLocations.includes(loc)
-                      ? "#000"
-                      : "#fff",
-                    opacity: disabled ? 0.4 : 1,
-                    cursor: disabled
-                      ? "not-allowed"
-                      : "pointer",
-                    fontWeight: "bold",
-                  }}
-                >
-                  <span>{loc}</span>
-
-                  <input
-                    type="checkbox"
-                    checked={selectedLocations.includes(loc)}
-                    disabled={disabled}
-                    onChange={() => toggleLocation(loc)}
-                    style={{
-                      width: 22,
-                      height: 22,
-                    }}
-                  />
-                </label>
-              );
-            })}
-
-            <div
-              style={{
-                background: "#2b2b2b",
-                padding: 15,
-                borderRadius: 12,
-                marginTop: 15,
-              }}
-            >
-              <p>
-                Total baz:
-                <strong> {baseTotal} p</strong>
-              </p>
-
-              <p>
-                Lokasyon:
-                <strong> {selectedLocations.length}</strong>
-              </p>
-
-              <p
-                style={{
-                  borderTop: "1px solid #555",
-                  paddingTop: 12,
-                  marginTop: 12,
-                  color: "#ffc107",
-                  fontSize: 22,
-                  fontWeight: "bold",
-                }}
-              >
-                Total Final: {finalTotal} p
-              </p>
-            </div>
-
-            <div
+          return (
+            <label
+              key={loc}
               style={{
                 display: "flex",
-                gap: 10,
-                marginTop: 20,
+                justifyContent: "space-between",
+                alignItems: "center",
+                padding: 14,
+                marginBottom: 10,
+                borderRadius: 12,
+                background: selectedLocations.includes(loc)
+                  ? "#ffc107"
+                  : "#333",
+                color: selectedLocations.includes(loc)
+                  ? "#000"
+                  : "#fff",
+                opacity: disabled ? 0.4 : 1,
+                cursor: disabled
+                  ? "not-allowed"
+                  : "pointer",
+                fontWeight: "bold",
               }}
             >
-              <button
-                onClick={handlePlayMore}
-                style={{
-                  flex: 1,
-                  background: "#666",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: 14,
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                }}
-              >
-                Play More
-              </button>
+              <span>{loc}</span>
 
-              <button
-                onClick={handleFinalizeBet}
+              <input
+                type="checkbox"
+                checked={selectedLocations.includes(loc)}
+                disabled={disabled}
+                onChange={() => toggleLocation(loc)}
                 style={{
-                  flex: 1,
-                  background: "#28a745",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 12,
-                  padding: 14,
-                  cursor: "pointer",
-                  fontWeight: "bold",
+                  width: 22,
+                  height: 22,
                 }}
-              >
-                Finalize Bet
-              </button>
-            </div>
-          </div>
+              />
+            </label>
+          );
+        })}
+
+        <div
+          style={{
+            background: "#2b2b2b",
+            padding: 15,
+            borderRadius: 12,
+            marginTop: 15,
+          }}
+        >
+          <p>
+            Total baz:
+            <strong> {baseTotal} p</strong>
+          </p>
+
+          <p>
+            Lokasyon:
+            <strong> {selectedLocations.length}</strong>
+          </p>
+
+          <p
+            style={{
+              borderTop: "1px solid #555",
+              paddingTop: 12,
+              marginTop: 12,
+              color: "#ffc107",
+              fontSize: 22,
+              fontWeight: "bold",
+            }}
+          >
+            Total Final: {finalTotal} p
+          </p>
         </div>
-      )}
+
+        <div
+          style={{
+            display: "flex",
+            gap: 10,
+            marginTop: 20,
+          }}
+        >
+          <button
+            onClick={handlePlayMore}
+            style={{
+              flex: 1,
+              background: "#666",
+              color: "#fff",
+              border: "none",
+              borderRadius: 12,
+              padding: 14,
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            Play More
+          </button>
+
+          <button
+            onClick={handleFinalizeBet}
+            style={{
+              flex: 1,
+              background: "#28a745",
+              color: "#fff",
+              border: "none",
+              borderRadius: 12,
+              padding: 14,
+              cursor: "pointer",
+              fontWeight: "bold",
+            }}
+          >
+            Finalize Bet
+          </button>
+        </div>
+      </div>
     </div>
-  );
+  )}
+
+</div>
+
+
+);
 };
 
 export default DeChif;
