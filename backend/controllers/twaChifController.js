@@ -1,24 +1,77 @@
 const { TwaChif, User } = require("../models");
 
 // ✅ Create TwaChif Bet with pwen check
+// exports.createTwaChif = async (req, res) => {
+//   try {
+//     const { number, pwen, location } = req.body;
+//     const userId = req.user.id;
+
+//     // Validate number
+//     if (!/^\d{3}$/.test(number)) {
+//       return res.status(400).json({ message: "Number must be exactly 3 digits." });
+//     }
+
+//     if (!pwen || !location) {
+//       return res.status(400).json({ message: "Missing required fields" });
+//     }
+
+//     // ✅ Get user from DB
+//     const user = await User.findByPk(userId);
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     // ✅ Check if user has enough pwen
+//     if (user.points < pwen) {
+//       return res.status(403).json({
+//         message: "Ou pa gen ase pwen pou mete parye a.",
+//         required: pwen,
+//         currentBalance: user.points,
+//         redirectTo: "/buy-credits"
+//       });
+//     }
+
+//     // ✅ Deduct pwen
+//     user.points -= pwen;
+//     await user.save();
+
+//     // ✅ Create the bet
+//     const bet = await TwaChif.create({ number, pwen, location, userId });
+
+//     res.status(201).json({
+//       message: "Parye Twa Chif soumèt avèk siksè",
+//       bet,
+//       newBalance: user.points
+//     });
+//   } catch (err) {
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// };
+
 exports.createTwaChif = async (req, res) => {
   try {
-    const { number, pwen, location } = req.body;
+    const { number, pwen, location, receiptId } = req.body;
     const userId = req.user.id;
 
     // Validate number
     if (!/^\d{3}$/.test(number)) {
-      return res.status(400).json({ message: "Number must be exactly 3 digits." });
+      return res.status(400).json({
+        message: "Number must be exactly 3 digits.",
+      });
     }
 
-    if (!pwen || !location) {
-      return res.status(400).json({ message: "Missing required fields" });
+    if (!pwen || !location || !receiptId) {
+      return res.status(400).json({
+        message: "Missing required fields",
+      });
     }
 
     // ✅ Get user from DB
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found",
+      });
     }
 
     // ✅ Check if user has enough pwen
@@ -27,7 +80,7 @@ exports.createTwaChif = async (req, res) => {
         message: "Ou pa gen ase pwen pou mete parye a.",
         required: pwen,
         currentBalance: user.points,
-        redirectTo: "/buy-credits"
+        redirectTo: "/buy-credits",
       });
     }
 
@@ -36,15 +89,24 @@ exports.createTwaChif = async (req, res) => {
     await user.save();
 
     // ✅ Create the bet
-    const bet = await TwaChif.create({ number, pwen, location, userId });
+    const bet = await TwaChif.create({
+      number,
+      pwen,
+      location,
+      receiptId,
+      userId,
+    });
 
     res.status(201).json({
       message: "Parye Twa Chif soumèt avèk siksè",
       bet,
-      newBalance: user.points
+      newBalance: user.points,
     });
   } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 };
 

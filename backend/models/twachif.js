@@ -1,4 +1,52 @@
 
+// module.exports = (sequelize, DataTypes) => {
+//   const TwaChif = sequelize.define(
+//     "TwaChif",
+//     {
+//       number: {
+//         type: DataTypes.STRING,
+//         allowNull: false,
+//         validate: {
+//           is: /^\d{3}$/, // exactly 3 digits
+//         },
+//       },
+//       pwen: {
+//         type: DataTypes.INTEGER,
+//         allowNull: false,
+//       },
+//       location: {
+//        type: DataTypes.ENUM("New York", "Florida", "Georgia"),
+//         allowNull: false,
+//       },
+//       userId: {
+//         type: DataTypes.INTEGER,
+//         allowNull: false,
+//       },
+
+//       // ✅ NEW: persists admin decisions
+//       status: {
+//         type: DataTypes.ENUM("pending", "won", "lost", "paid", "void", "cancelled"),
+//         allowNull: false,
+//         defaultValue: "pending",
+//       },
+//     },
+//     {
+//       tableName: "twa_chif",     // keep or remove if you use default pluralization
+//       timestamps: true,          // createdAt / updatedAt
+//       indexes: [
+//         { fields: ["userId"] },
+//         { fields: ["status"] },
+//       ],
+//     }
+//   );
+
+//   TwaChif.associate = (models) => {
+//     TwaChif.belongsTo(models.User, { foreignKey: "userId" });
+//   };
+
+//   return TwaChif;
+// };
+
 module.exports = (sequelize, DataTypes) => {
   const TwaChif = sequelize.define(
     "TwaChif",
@@ -10,38 +58,57 @@ module.exports = (sequelize, DataTypes) => {
           is: /^\d{3}$/, // exactly 3 digits
         },
       },
+
       pwen: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
+
       location: {
-       type: DataTypes.ENUM("New York", "Florida", "Georgia"),
+        type: DataTypes.ENUM("New York", "Florida", "Georgia"),
         allowNull: false,
       },
+
       userId: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
 
-      // ✅ NEW: persists admin decisions
+      // ✅ Groups bets into one receipt
+      receiptId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
+      // ✅ Admin status
       status: {
-        type: DataTypes.ENUM("pending", "won", "lost", "paid", "void", "cancelled"),
+        type: DataTypes.ENUM(
+          "pending",
+          "won",
+          "lost",
+          "paid",
+          "void",
+          "cancelled"
+        ),
         allowNull: false,
         defaultValue: "pending",
       },
     },
     {
-      tableName: "twa_chif",     // keep or remove if you use default pluralization
-      timestamps: true,          // createdAt / updatedAt
+      tableName: "twa_chif",
+      timestamps: true,
       indexes: [
         { fields: ["userId"] },
+        { fields: ["receiptId"] },
         { fields: ["status"] },
       ],
     }
   );
 
   TwaChif.associate = (models) => {
-    TwaChif.belongsTo(models.User, { foreignKey: "userId" });
+    TwaChif.belongsTo(models.User, {
+      foreignKey: "userId",
+    });
   };
 
   return TwaChif;

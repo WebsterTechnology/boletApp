@@ -1,3 +1,66 @@
+// module.exports = (sequelize, DataTypes) => {
+//   const DeChif = sequelize.define(
+//     "DeChif",
+//     {
+//       number: {
+//         type: DataTypes.STRING,
+//         allowNull: false,
+//         validate: {
+//           isTwoDigits(value) {
+//             // Must be exactly 2 digits (00–99)
+//             if (!/^\d{2}$/.test(value)) {
+//               throw new Error("DeChif number must be exactly 2 digits (00–99)");
+//             }
+//           },
+//         },
+//       },
+
+//       pwen: {
+//         type: DataTypes.INTEGER,
+//         allowNull: false,
+//       },
+
+//       location: {
+//         type: DataTypes.STRING,
+//         allowNull: false,
+//       },
+
+//       userId: {
+//         type: DataTypes.INTEGER,
+//         allowNull: false,
+//       },
+
+//       status: {
+//         type: DataTypes.ENUM(
+//           "pending",
+//           "won",
+//           "lost",
+//           "paid",
+//           "void",
+//           "cancelled"
+//         ),
+//         allowNull: false,
+//         defaultValue: "pending",
+//       },
+//     },
+//     {
+//       tableName: "de_chif",
+//       timestamps: true,
+//       indexes: [
+//         { fields: ["userId"] },
+//         { fields: ["status"] },
+//         { fields: ["number"] },
+//       ],
+//     }
+//   );
+
+//   DeChif.associate = (models) => {
+//     DeChif.belongsTo(models.User, { foreignKey: "userId" });
+//   };
+
+//   return DeChif;
+// };
+
 module.exports = (sequelize, DataTypes) => {
   const DeChif = sequelize.define(
     "DeChif",
@@ -7,9 +70,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         validate: {
           isTwoDigits(value) {
-            // Must be exactly 2 digits (00–99)
             if (!/^\d{2}$/.test(value)) {
-              throw new Error("DeChif number must be exactly 2 digits (00–99)");
+              throw new Error(
+                "DeChif number must be exactly 2 digits (00–99)"
+              );
             }
           },
         },
@@ -30,6 +94,13 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
 
+      // ✅ Groups bets into one receipt
+      receiptId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+
+      // ✅ Admin decision
       status: {
         type: DataTypes.ENUM(
           "pending",
@@ -48,6 +119,7 @@ module.exports = (sequelize, DataTypes) => {
       timestamps: true,
       indexes: [
         { fields: ["userId"] },
+        { fields: ["receiptId"] },
         { fields: ["status"] },
         { fields: ["number"] },
       ],
@@ -55,7 +127,9 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   DeChif.associate = (models) => {
-    DeChif.belongsTo(models.User, { foreignKey: "userId" });
+    DeChif.belongsTo(models.User, {
+      foreignKey: "userId",
+    });
   };
 
   return DeChif;

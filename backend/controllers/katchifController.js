@@ -4,9 +4,88 @@ const { Katchif, User } = require("../models");
 
 const MAX_KATCHIF_POINTS = 20;
 
+// exports.createKatchif = async (req, res) => {
+//   try {
+//     const { number, pwen, location } = req.body;
+//     const userId = req.user.id;
+
+//     // ✅ Validate number (4 digits)
+//     if (!/^\d{4}$/.test(number)) {
+//       return res.status(400).json({
+//         message: "Number must be exactly 4 digits."
+//       });
+//     }
+
+//     const betPwen = parseInt(pwen, 10);
+
+//     if (!betPwen || betPwen <= 0 || !location) {
+//       return res.status(400).json({
+//         message: "Invalid pwen or missing location"
+//       });
+//     }
+
+//     // ✅ Get user
+//     const user = await User.findByPk(userId);
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     // ✅ Check balance
+//     if (user.points < betPwen) {
+//       return res.status(403).json({
+//         message: "Ou pa gen ase pwen.",
+//         required: betPwen,
+//         currentBalance: user.points,
+//         redirectTo: "/buy-credits",
+//       });
+//     }
+
+//     // 🔥 TOTAL FOR THIS EXACT NUMBER + LOCATION
+//     const total = await Katchif.sum("pwen", {
+//       where: { number, location }
+//     }) || 0;
+
+//     // 🔥 REMAINING
+//     const remaining = Math.max(0, MAX_KATCHIF_POINTS - total);
+
+//     // ❌ BLOCK
+//     if (betPwen > remaining) {
+//       return res.status(400).json({
+//         message: `❌ Nimewo ${number} gen sèlman ${remaining} pwen ki rete.`,
+//         remaining
+//       });
+//     }
+
+//     // ✅ Deduct points
+//     user.points -= betPwen;
+//     await user.save();
+
+//     // ✅ Create bet
+//     const bet = await Katchif.create({
+//       number,
+//       pwen: betPwen,
+//       location,
+//       userId,
+//     });
+
+//     res.status(201).json({
+//       message: "Katchif soumèt avèk siksè",
+//       bet,
+//       newBalance: user.points,
+//       remaining: remaining - betPwen
+//     });
+
+//   } catch (err) {
+//     res.status(500).json({
+//       message: "Server error",
+//       error: err.message
+//     });
+//   }
+// };
+
 exports.createKatchif = async (req, res) => {
   try {
-    const { number, pwen, location } = req.body;
+    const { number, pwen, location, receiptId } = req.body;
     const userId = req.user.id;
 
     // ✅ Validate number (4 digits)
@@ -18,16 +97,18 @@ exports.createKatchif = async (req, res) => {
 
     const betPwen = parseInt(pwen, 10);
 
-    if (!betPwen || betPwen <= 0 || !location) {
+    if (!betPwen || betPwen <= 0 || !location || !receiptId) {
       return res.status(400).json({
-        message: "Invalid pwen or missing location"
+        message: "Invalid pwen, missing location or receiptId"
       });
     }
 
     // ✅ Get user
     const user = await User.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({
+        message: "User not found"
+      });
     }
 
     // ✅ Check balance
@@ -42,7 +123,10 @@ exports.createKatchif = async (req, res) => {
 
     // 🔥 TOTAL FOR THIS EXACT NUMBER + LOCATION
     const total = await Katchif.sum("pwen", {
-      where: { number, location }
+      where: {
+        number,
+        location,
+      },
     }) || 0;
 
     // 🔥 REMAINING
@@ -52,7 +136,7 @@ exports.createKatchif = async (req, res) => {
     if (betPwen > remaining) {
       return res.status(400).json({
         message: `❌ Nimewo ${number} gen sèlman ${remaining} pwen ki rete.`,
-        remaining
+        remaining,
       });
     }
 
@@ -65,6 +149,7 @@ exports.createKatchif = async (req, res) => {
       number,
       pwen: betPwen,
       location,
+      receiptId,
       userId,
     });
 
@@ -72,17 +157,16 @@ exports.createKatchif = async (req, res) => {
       message: "Katchif soumèt avèk siksè",
       bet,
       newBalance: user.points,
-      remaining: remaining - betPwen
+      remaining: remaining - betPwen,
     });
 
   } catch (err) {
     res.status(500).json({
       message: "Server error",
-      error: err.message
+      error: err.message,
     });
   }
 };
-
 exports.getKatchifRemaining = async (req, res) => {
   try {
     const { number, location } = req.query;

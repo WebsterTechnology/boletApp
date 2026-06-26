@@ -49,18 +49,20 @@ exports.getAllMyBets = async (req, res) => {
 
     // 📦 Build unified list
     const items = [
-      ...yonchif.map((b) => ({
-        id: b.id,
-        type: "yonchif",
-        numbers: b.nimewo || b.number || b.numbers || "-",
-        pwen: Number(b.pwen || 0),
-        draw: b.ville ?? b.city ?? b.lokal ?? b.location ?? null,
-        status: b.status || "pending",
-        createdAt: b.createdAt,
-      })),
+    ...yonchif.map((b) => ({
+  id: b.id,
+  receiptId: b.receiptId,
+  type: "yonchif",
+  numbers: b.nimewo || b.number || b.numbers || "-",
+  pwen: Number(b.pwen || 0),
+  draw: b.ville ?? b.city ?? b.lokal ?? b.location ?? null,
+  status: b.status || "pending",
+  createdAt: b.createdAt,
+})),
 
       ...dechif.map((b) => ({
         id: b.id,
+        receiptId: b.receiptId,
         type: "dechif",
         numbers: b.number || b.nimewo || "-",
         pwen: Number(b.pwen || 0),
@@ -71,6 +73,7 @@ exports.getAllMyBets = async (req, res) => {
 
       ...twachif.map((b) => ({
         id: b.id,
+        receiptId: b.receiptId,
         type: "twachif",
         numbers: b.number || b.nimewo || "-",
         pwen: Number(b.pwen || 0),
@@ -81,6 +84,7 @@ exports.getAllMyBets = async (req, res) => {
 
       ...maryaj.map((b) => ({
         id: b.id,
+        receiptId: b.receiptId,
         type: "maryaj",
         part1: b.part1 || "-",
         part2: b.part2 || "-",
