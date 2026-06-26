@@ -8,7 +8,7 @@ import Maryaj from "../components/Maryaj";
 import TwaChif from "../components/TwaChif";
 import Katchif from "../components/Katchif"; // ✅ NEW
 import Video from "../components/Video";
-import BetCart from "../components/BetCart";
+//import BetCart from "../components/BetCart";
 
 const PlayPage = () => {
   const [mode, setMode] = useState("yon_chif");
@@ -91,9 +91,9 @@ const PlayPage = () => {
       </div>
 
       {/* ⬇️ Unified cart always visible */}
-      <div className={styles.cartSection}>
+      {/* <div className={styles.cartSection}>
         <BetCart />
-      </div>
+      </div> */}
 
       <Video />
     </div>

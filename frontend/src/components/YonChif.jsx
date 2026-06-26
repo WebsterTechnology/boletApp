@@ -1036,7 +1036,7 @@ const YonChif = () => {
         onEdit={handleEdit}
         onSubmit={handleSubmit}
       />
-```jsx
+
       {showLocationModal && (
         <div
           style={{
