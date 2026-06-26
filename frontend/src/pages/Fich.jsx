@@ -304,12 +304,346 @@
 //       )}
 //     </div>
 //   );
+// // }
+
+// import React, { useEffect, useMemo, useRef, useState } from "react";
+// import axios from "axios";
+
+// const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+// const GAME_LABELS = {
+//   yonchif: "Yon Chif",
+//   dechif: "Bòlèt",
+//   twachif: "Loto 3",
+//   katchif: "Loto 4",
+//   maryaj: "Maryaj",
+// };
+
+// const GAME_ORDER = ["dechif", "twachif", "maryaj", "katchif", "yonchif"];
+
+// const normalizeType = (type = "") =>
+//   String(type).toLowerCase().replace(/\s+/g, "");
+
+// const fmtDate = (d) => {
+//   if (!d) return "-";
+//   return new Date(d).toLocaleDateString();
+// };
+
+// const fmtTime = (d) => {
+//   if (!d) return "-";
+//   return new Date(d).toLocaleTimeString([], {
+//     hour: "2-digit",
+//     minute: "2-digit",
+//   });
+// };
+
+// const getLocation = (bet) =>
+//   bet.draw || bet.location || bet.lot || bet.city || "Unknown";
+
+// const getNumbers = (bet) => {
+//   const type = normalizeType(bet.type);
+
+//   if (type === "maryaj") {
+//     if (bet.part1 && bet.part2) return `${bet.part1} x ${bet.part2}`;
+//     if (bet.numbers) return String(bet.numbers).replace("-", " x ");
+//   }
+
+//   return bet.numbers || bet.number || "-";
+// };
+
+// const getPwen = (bet) => Number(bet.pwen || bet.amount || 0);
+
+// const groupByLocationAndType = (items) => {
+//   const result = {};
+
+//   items.forEach((bet) => {
+//     const location = getLocation(bet);
+//     const type = normalizeType(bet.type);
+
+//     if (!result[location]) result[location] = {};
+//     if (!result[location][type]) result[location][type] = [];
+
+//     result[location][type].push(bet);
+//   });
+
+//   return result;
+// };
+
+// export default function Fich() {
+//   const [loading, setLoading] = useState(true);
+//   const [items, setItems] = useState([]);
+//   const [totalPwen, setTotalPwen] = useState(0);
+//   const mounted = useRef(true);
+
+//   useEffect(() => {
+//     return () => {
+//       mounted.current = false;
+//     };
+//   }, []);
+
+//   const load = async ({ silent = false } = {}) => {
+//     if (!silent) setLoading(true);
+
+//     try {
+//       const token = localStorage.getItem("token");
+
+//       if (!token) {
+//         if (mounted.current) {
+//           setItems([]);
+//           setTotalPwen(0);
+//         }
+//         return;
+//       }
+
+//       const res = await axios.get(`${API}/api/bets/me`, {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//         },
+//       });
+
+//       const data = res?.data || {};
+
+//       if (mounted.current) {
+//         setItems(Array.isArray(data.items) ? data.items : []);
+//         setTotalPwen(Number(data.totalPwen || 0));
+//       }
+//     } catch (err) {
+//       console.error("Fich load error:", err);
+
+//       if (mounted.current) {
+//         setItems([]);
+//         setTotalPwen(0);
+//       }
+//     } finally {
+//       if (!silent && mounted.current) {
+//         setLoading(false);
+//       }
+//     }
+//   };
+
+//   useEffect(() => {
+//     load();
+//   }, []);
+
+//   useEffect(() => {
+//     const tick = () => {
+//       if (document.visibilityState === "visible") {
+//         load({ silent: true });
+//       }
+//     };
+
+//     const interval = setInterval(tick, 7000);
+
+//     window.addEventListener("focus", tick);
+//     document.addEventListener("visibilitychange", tick);
+
+//     return () => {
+//       clearInterval(interval);
+//       window.removeEventListener("focus", tick);
+//       document.removeEventListener("visibilitychange", tick);
+//     };
+//   }, []);
+
+//   const grouped = useMemo(() => groupByLocationAndType(items), [items]);
+
+//   const locations = Object.keys(grouped).sort();
+
+//   return (
+//     <div
+//       style={{
+//         padding: "16px",
+//         background: "#000",
+//         minHeight: "100vh",
+//       }}
+//     >
+//       <h2
+//         style={{
+//           color: "#fff",
+//           textAlign: "center",
+//           marginBottom: 14,
+//         }}
+//       >
+//         Fich Pari Mwen Yo
+//       </h2>
+
+//       <div
+//         style={{
+//           display: "flex",
+//           justifyContent: "center",
+//           gap: 12,
+//           marginBottom: 20,
+//         }}
+//       >
+//         <button
+//           onClick={() => load()}
+//           disabled={loading}
+//           style={{
+//             background: "#ffc107",
+//             border: "none",
+//             borderRadius: 10,
+//             padding: "10px 16px",
+//             fontWeight: "bold",
+//             cursor: "pointer",
+//           }}
+//         >
+//           {loading ? "Chajman..." : "Rafrechi"}
+//         </button>
+
+//         <div
+//           style={{
+//             background: "#1f2937",
+//             color: "#fff",
+//             padding: "10px 16px",
+//             borderRadius: 10,
+//             fontWeight: "bold",
+//           }}
+//         >
+//           Total: {totalPwen} p
+//         </div>
+//       </div>
+
+//       {loading ? (
+//         <p style={{ color: "#fff", textAlign: "center" }}>Chajman...</p>
+//       ) : items.length === 0 ? (
+//         <p style={{ color: "#fff", textAlign: "center" }}>Pa gen pari ankò.</p>
+//       ) : (
+//         <div
+//           style={{
+//             display: "grid",
+//             gap: 24,
+//             justifyContent: "center",
+//           }}
+//         >
+//           {locations.map((location) => {
+//             const groups = grouped[location];
+
+//             const locationTotal = Object.values(groups)
+//               .flat()
+//               .reduce((sum, bet) => sum + getPwen(bet), 0);
+
+//             const newestDate =
+//               Object.values(groups)
+//                 .flat()
+//                 .sort(
+//                   (a, b) =>
+//                     new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+//                 )[0]?.createdAt || null;
+
+//             return (
+//               <div
+//                 key={location}
+//                 style={{
+//                   width: "320px",
+//                   maxWidth: "100%",
+//                   background: "#fff",
+//                   color: "#000",
+//                   padding: "14px 16px",
+//                   fontFamily: "monospace",
+//                   borderRadius: 6,
+//                   boxShadow: "0 8px 25px rgba(0,0,0,.35)",
+//                 }}
+//               >
+//                 <div
+//                   style={{
+//                     textAlign: "center",
+//                     fontSize: 24,
+//                     fontWeight: "bold",
+//                     marginBottom: 6,
+//                   }}
+//                 >
+//                   {location}
+//                 </div>
+
+//                 <div style={{ borderTop: "2px dashed #000", margin: "8px 0" }} />
+
+//                 {GAME_ORDER.map((type) => {
+//                   const bets = groups[type] || [];
+//                   if (bets.length === 0) return null;
+
+//                   return (
+//                     <div key={type}>
+//                       <div
+//                         style={{
+//                           textAlign: "center",
+//                           margin: "8px 0 6px",
+//                         }}
+//                       >
+//                         <span
+//                           style={{
+//                             background: "#102a63",
+//                             color: "#fff",
+//                             padding: "3px 12px",
+//                             borderRadius: 4,
+//                             fontWeight: "bold",
+//                             fontSize: 18,
+//                           }}
+//                         >
+//                           {GAME_LABELS[type] || type}
+//                         </span>
+//                       </div>
+
+//                       {bets.map((bet) => (
+//                         <div
+//                           key={`${type}-${bet.id}`}
+//                           style={{
+//                             display: "grid",
+//                             gridTemplateColumns: "1fr auto auto",
+//                             columnGap: 10,
+//                             fontSize: 16,
+//                             lineHeight: "22px",
+//                             padding: "1px 0",
+//                           }}
+//                         >
+//                           <span>{getNumbers(bet)}</span>
+//                           <span>=</span>
+//                           <strong>{getPwen(bet)}</strong>
+//                         </div>
+//                       ))}
+//                     </div>
+//                   );
+//                 })}
+
+//                 <div style={{ borderTop: "2px dashed #000", margin: "10px 0" }} />
+
+//                 <div
+//                   style={{
+//                     textAlign: "center",
+//                     fontSize: 30,
+//                     fontWeight: "bold",
+//                   }}
+//                 >
+//                   *Total {locationTotal}*
+//                 </div>
+
+//                 <div style={{ borderTop: "2px dashed #000", margin: "10px 0" }} />
+
+//                 <div
+//                   style={{
+//                     textAlign: "center",
+//                     fontSize: 12,
+//                     lineHeight: "17px",
+//                   }}
+//                 >
+//                   <div>Dat imprimission</div>
+//                   <div>{fmtDate(newestDate)}</div>
+//                   <div>{fmtTime(newestDate)}</div>
+//                   <div>LoteNetsoft</div>
+//                 </div>
+//               </div>
+//             );
+//           })}
+//         </div>
+//       )}
+//     </div>
+//   );
 // }
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API =
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:3001";
 
 const GAME_LABELS = {
   yonchif: "Yon Chif",
@@ -319,10 +653,18 @@ const GAME_LABELS = {
   maryaj: "Maryaj",
 };
 
-const GAME_ORDER = ["dechif", "twachif", "maryaj", "katchif", "yonchif"];
+const GAME_ORDER = [
+  "dechif",
+  "twachif",
+  "maryaj",
+  "katchif",
+  "yonchif",
+];
 
 const normalizeType = (type = "") =>
-  String(type).toLowerCase().replace(/\s+/g, "");
+  String(type)
+    .toLowerCase()
+    .replace(/\s+/g, "");
 
 const fmtDate = (d) => {
   if (!d) return "-";
@@ -338,41 +680,65 @@ const fmtTime = (d) => {
 };
 
 const getLocation = (bet) =>
-  bet.draw || bet.location || bet.lot || bet.city || "Unknown";
+  bet.draw ||
+  bet.location ||
+  bet.lot ||
+  bet.city ||
+  "Unknown";
 
 const getNumbers = (bet) => {
   const type = normalizeType(bet.type);
 
   if (type === "maryaj") {
-    if (bet.part1 && bet.part2) return `${bet.part1} x ${bet.part2}`;
-    if (bet.numbers) return String(bet.numbers).replace("-", " x ");
+    if (bet.part1 && bet.part2) {
+      return `${bet.part1} x ${bet.part2}`;
+    }
+
+    if (bet.numbers) {
+      return String(bet.numbers).replace(
+        "-",
+        " x "
+      );
+    }
   }
 
   return bet.numbers || bet.number || "-";
 };
 
-const getPwen = (bet) => Number(bet.pwen || bet.amount || 0);
+const getPwen = (bet) =>
+  Number(bet.pwen || bet.amount || 0);
 
-const groupByLocationAndType = (items) => {
-  const result = {};
+const groupReceipts = (items) => {
+  const receipts = {};
 
   items.forEach((bet) => {
-    const location = getLocation(bet);
-    const type = normalizeType(bet.type);
+    const receiptId =
+      bet.receiptId || "old-receipt";
 
-    if (!result[location]) result[location] = {};
-    if (!result[location][type]) result[location][type] = [];
+    if (!receipts[receiptId]) {
+      receipts[receiptId] = {
+        receiptId,
+        location: getLocation(bet),
+        createdAt: bet.createdAt,
+        bets: [],
+      };
+    }
 
-    result[location][type].push(bet);
+    receipts[receiptId].bets.push(bet);
   });
 
-  return result;
+  return Object.values(receipts).sort(
+    (a, b) =>
+      new Date(b.createdAt) -
+      new Date(a.createdAt)
+  );
 };
 
 export default function Fich() {
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [totalPwen, setTotalPwen] = useState(0);
+
   const mounted = useRef(true);
 
   useEffect(() => {
@@ -395,20 +761,30 @@ export default function Fich() {
         return;
       }
 
-      const res = await axios.get(`${API}/api/bets/me`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const res = await axios.get(
+        `${API}/api/bets/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-      const data = res?.data || {};
+      const data = res.data || {};
 
       if (mounted.current) {
-        setItems(Array.isArray(data.items) ? data.items : []);
-        setTotalPwen(Number(data.totalPwen || 0));
+        setItems(
+          Array.isArray(data.items)
+            ? data.items
+            : []
+        );
+
+        setTotalPwen(
+          Number(data.totalPwen || 0)
+        );
       }
     } catch (err) {
-      console.error("Fich load error:", err);
+      console.error(err);
 
       if (mounted.current) {
         setItems([]);
@@ -432,23 +808,39 @@ export default function Fich() {
       }
     };
 
-    const interval = setInterval(tick, 7000);
+    const interval = setInterval(
+      tick,
+      7000
+    );
 
-    window.addEventListener("focus", tick);
-    document.addEventListener("visibilitychange", tick);
+    window.addEventListener(
+      "focus",
+      tick
+    );
+
+    document.addEventListener(
+      "visibilitychange",
+      tick
+    );
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener("focus", tick);
-      document.removeEventListener("visibilitychange", tick);
+      window.removeEventListener(
+        "focus",
+        tick
+      );
+      document.removeEventListener(
+        "visibilitychange",
+        tick
+      );
     };
   }, []);
 
-  const grouped = useMemo(() => groupByLocationAndType(items), [items]);
-
-  const locations = Object.keys(grouped).sort();
-
-  return (
+  const receipts = useMemo(
+    () => groupReceipts(items),
+    [items]
+  );
+    return (
     <div
       style={{
         padding: "16px",
@@ -503,9 +895,13 @@ export default function Fich() {
       </div>
 
       {loading ? (
-        <p style={{ color: "#fff", textAlign: "center" }}>Chajman...</p>
-      ) : items.length === 0 ? (
-        <p style={{ color: "#fff", textAlign: "center" }}>Pa gen pari ankò.</p>
+        <p style={{ color: "#fff", textAlign: "center" }}>
+          Chajman...
+        </p>
+      ) : receipts.length === 0 ? (
+        <p style={{ color: "#fff", textAlign: "center" }}>
+          Pa gen pari ankò.
+        </p>
       ) : (
         <div
           style={{
@@ -514,50 +910,68 @@ export default function Fich() {
             justifyContent: "center",
           }}
         >
-          {locations.map((location) => {
-            const groups = grouped[location];
+          {receipts.map((receipt) => {
+            const grouped = {};
 
-            const locationTotal = Object.values(groups)
-              .flat()
-              .reduce((sum, bet) => sum + getPwen(bet), 0);
+            receipt.bets.forEach((bet) => {
+              const type = normalizeType(bet.type);
 
-            const newestDate =
-              Object.values(groups)
-                .flat()
-                .sort(
-                  (a, b) =>
-                    new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-                )[0]?.createdAt || null;
+              if (!grouped[type]) {
+                grouped[type] = [];
+              }
+
+              grouped[type].push(bet);
+            });
+
+            const receiptTotal = receipt.bets.reduce(
+              (sum, bet) => sum + getPwen(bet),
+              0
+            );
 
             return (
               <div
-                key={location}
+                key={receipt.receiptId}
                 style={{
                   width: "320px",
-                  maxWidth: "100%",
                   background: "#fff",
                   color: "#000",
                   padding: "14px 16px",
-                  fontFamily: "monospace",
                   borderRadius: 6,
-                  boxShadow: "0 8px 25px rgba(0,0,0,.35)",
+                  fontFamily: "monospace",
+                  boxShadow:
+                    "0 8px 25px rgba(0,0,0,.35)",
                 }}
               >
                 <div
                   style={{
                     textAlign: "center",
-                    fontSize: 24,
                     fontWeight: "bold",
-                    marginBottom: 6,
+                    fontSize: 24,
                   }}
                 >
-                  {location}
+                  {receipt.location}
                 </div>
 
-                <div style={{ borderTop: "2px dashed #000", margin: "8px 0" }} />
+                <div
+                  style={{
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: "#666",
+                    marginBottom: 8,
+                  }}
+                >
+                  Receipt #{receipt.receiptId.slice(0,8)}
+                </div>
 
-                {GAME_ORDER.map((type) => {
-                  const bets = groups[type] || [];
+                <div
+                  style={{
+                    borderTop: "2px dashed #000",
+                    margin: "8px 0",
+                  }}
+                />
+                                {GAME_ORDER.map((type) => {
+                  const bets = grouped[type] || [];
+
                   if (bets.length === 0) return null;
 
                   return (
@@ -565,7 +979,7 @@ export default function Fich() {
                       <div
                         style={{
                           textAlign: "center",
-                          margin: "8px 0 6px",
+                          margin: "8px 0",
                         }}
                       >
                         <span
@@ -575,23 +989,20 @@ export default function Fich() {
                             padding: "3px 12px",
                             borderRadius: 4,
                             fontWeight: "bold",
-                            fontSize: 18,
                           }}
                         >
-                          {GAME_LABELS[type] || type}
+                          {GAME_LABELS[type]}
                         </span>
                       </div>
 
                       {bets.map((bet) => (
                         <div
-                          key={`${type}-${bet.id}`}
+                          key={bet.id}
                           style={{
                             display: "grid",
                             gridTemplateColumns: "1fr auto auto",
                             columnGap: 10,
-                            fontSize: 16,
                             lineHeight: "22px",
-                            padding: "1px 0",
                           }}
                         >
                           <span>{getNumbers(bet)}</span>
@@ -603,30 +1014,38 @@ export default function Fich() {
                   );
                 })}
 
-                <div style={{ borderTop: "2px dashed #000", margin: "10px 0" }} />
+                <div
+                  style={{
+                    borderTop: "2px dashed #000",
+                    margin: "10px 0",
+                  }}
+                />
 
                 <div
                   style={{
                     textAlign: "center",
-                    fontSize: 30,
                     fontWeight: "bold",
+                    fontSize: 28,
                   }}
                 >
-                  *Total {locationTotal}*
+                  *Total {receiptTotal}*
                 </div>
 
-                <div style={{ borderTop: "2px dashed #000", margin: "10px 0" }} />
+                <div
+                  style={{
+                    borderTop: "2px dashed #000",
+                    margin: "10px 0",
+                  }}
+                />
 
                 <div
                   style={{
                     textAlign: "center",
                     fontSize: 12,
-                    lineHeight: "17px",
                   }}
                 >
-                  <div>Dat imprimission</div>
-                  <div>{fmtDate(newestDate)}</div>
-                  <div>{fmtTime(newestDate)}</div>
+                  <div>{fmtDate(receipt.createdAt)}</div>
+                  <div>{fmtTime(receipt.createdAt)}</div>
                   <div>LoteNetsoft</div>
                 </div>
               </div>
