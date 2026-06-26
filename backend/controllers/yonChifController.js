@@ -45,6 +45,8 @@ const { YonChif, User } = require("../models");
 // };
 
 exports.createYonChif = async (req, res) => {
+  console.log("BODY:", req.body);
+
   try {
     const { number, pwen, location, receiptId } = req.body;
     const userId = req.user.id;
