@@ -144,6 +144,7 @@ exports.createKatchif = async (req, res) => {
     user.points -= betPwen;
     await user.save();
 
+    console.log("Incoming receiptId:", receiptId);
     // ✅ Create bet
     const bet = await Katchif.create({
       number,
@@ -152,7 +153,7 @@ exports.createKatchif = async (req, res) => {
       receiptId,
       userId,
     });
-
+console.log("Saved bet:", bet.toJSON());
     res.status(201).json({
       message: "Katchif soumèt avèk siksè",
       bet,
