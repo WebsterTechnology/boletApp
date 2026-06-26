@@ -866,10 +866,7 @@ const TwaChif = () => {
     (b) => b.type === "Twa Chif"
   );
 
-  const baseTotal = twaChifBets.reduce(
-    (sum, b) => sum + Number(b.amount || 0),
-    0
-  );
+ const baseTotal = total;
 
   const finalTotal =
     baseTotal * selectedLocations.length;

@@ -1123,10 +1123,7 @@ const Maryaj = () => {
     (b) => b.type === "Maryaj"
   );
 
-  const baseTotal = maryajBets.reduce(
-    (sum, b) => sum + Number(b.amount || 0),
-    0
-  );
+ const baseTotal = total;
 
   const finalTotal =
     baseTotal * selectedLocations.length;

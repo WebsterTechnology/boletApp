@@ -1103,10 +1103,7 @@ const Katchif = () => {
     (b) => b.type === "Katchif"
   );
 
-  const baseTotal = katchifBets.reduce(
-    (sum, b) => sum + Number(b.amount || 0),
-    0
-  );
+const baseTotal = total;
 
   const finalTotal =
     baseTotal * selectedLocations.length;

@@ -931,10 +931,7 @@ const deChifBets = bets.filter(
 (b) => b.type === "De Chif"
 );
 
-const baseTotal = deChifBets.reduce(
-(sum, b) => sum + Number(b.amount || 0),
-0
-);
+const baseTotal = total;
 
 const finalTotal =
 baseTotal * selectedLocations.length;

@@ -830,10 +830,7 @@ const YonChif = () => {
     (b) => b.type === "Yon Chif"
   );
 
-  const baseTotal = yonChifBets.reduce(
-    (sum, b) => sum + Number(b.amount || 0),
-    0
-  );
+ const baseTotal = total;
 
   const finalTotal =
     baseTotal * selectedLocations.length;
