@@ -694,6 +694,7 @@ import { useBet } from "../context/BetContext.jsx";
 import { useNavigate } from "react-router-dom";
 import BetSlip from "../components/BetSlip";
 import axios from "../utils/axios.js";
+import submitAllBets from "../utils/submitAllBets";
 
 const API =
   import.meta.env.VITE_API_URL ||
@@ -905,92 +906,29 @@ const YonChif = () => {
   };
 
   const handleFinalizeBet = async () => {
-    const { points: currentPoints } =
-      getUserAndPoints();
+  if (selectedLocations.length === 0) {
+    return alert("Tanpri chwazi omwen yon lokasyon.");
+  }
 
-    if (selectedLocations.length === 0) {
-      return alert(
-        "Tanpri chwazi omwen yon lokasyon."
-      );
-    }
+  try {
+    await submitAllBets({
+      bets,
+      selectedLocations,
+      deleteBet,
+    });
 
-    if (currentPoints - finalTotal < 0) {
-      navigate("/buy-credits");
-      return;
-    }
+    setSelectedLocations([]);
+    setShowLocationModal(false);
 
-    try {
-      for (const bet of yonChifBets) {
-        if (
-          disabledNumbers.includes(
-            String(bet.number).trim()
-          )
-        )
-          continue;
+    setNumber("");
+    setAmount("");
 
-        for (const location of selectedLocations) {
-          if (
-            disabledLocations.includes(
-              location.toLowerCase()
-            )
-          )
-            continue;
+    alert("Tout pari yo soumèt avèk siksè!");
 
-          await axios.post(
-            `${API}/api/yonchif`,
-            {
-              number: bet.number,
-              pwen: parseInt(
-                bet.amount,
-                10
-              ),
-              location,
-            }
-          );
-        }
-      }
-
-      const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-
-      const updatedUser = {
-        ...userObj,
-        points: currentPoints - finalTotal,
-      };
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(updatedUser)
-      );
-
-      localStorage.setItem(
-        "userPoints",
-        String(updatedUser.points)
-      );
-
-      window.dispatchEvent(
-        new Event("pointsUpdated")
-      );
-
-      yonChifBets.forEach((bet) =>
-        deleteBet(bet.id)
-      );
-
-      setNumber("");
-      setAmount("");
-
-      setSelectedLocations([]);
-      setShowLocationModal(false);
-
-      alert("Pari Yon Chif soumèt avèk siksè!");
-
-    } catch (error) {
-      alert(
-        error.response?.data?.message ||
-        error.message
-      );
-    }
-  };
-
+  } catch (err) {
+    alert(err.message);
+  }
+};
   return (
     <div className={styles.container}>
 

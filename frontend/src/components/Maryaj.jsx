@@ -964,6 +964,7 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import { useBet } from "../context/BetContext.jsx";
 import { useNavigate } from "react-router-dom";
 import BetSlip from "../components/BetSlip";
+import submitAllBets from "../utils/submitAllBets";
 import axios from "axios";
 
 const API =
@@ -1224,91 +1225,30 @@ const Maryaj = () => {
     setSelectedLocations([]);
   };
 
-  const handleFinalizeBet = async () => {
-    const {
-      id: userId,
-      points: currentPoints,
-    } = getUserAndPoints();
+const handleFinalizeBet = async () => {
+  if (selectedLocations.length === 0) {
+    return alert("Tanpri chwazi omwen yon lokasyon.");
+  }
 
-    if (selectedLocations.length === 0) {
-      return alert("Chwazi omwen yon lokasyon.");
-    }
+  try {
+    await submitAllBets({
+      bets,
+      selectedLocations,
+      deleteBet,
+    });
 
-    if (currentPoints - finalTotal < 0) {
-      navigate("/buy-credits");
-      return;
-    }
+    setSelectedLocations([]);
+    setShowLocationModal(false);
 
-    try {
-      for (const bet of maryajBets) {
-        for (const location of selectedLocations) {
-          if (
-            disabledLocations.includes(
-              location.toLowerCase()
-            )
-          )
-            continue;
+    setNumber("");
+    setAmount("");
 
+    alert("Tout pari yo soumèt avèk siksè!");
 
-          await axios.post(
-            `${API}/api/maryaj`,
-            {
-              part1: bet.part1,
-              part2: bet.part2,
-              pwen: parseInt(bet.amount, 10),
-              location,
-              userId,
-            }
-          );
-        }
-      }
-
-
-      const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-
-      const updatedUser = {
-        ...userObj,
-        points: currentPoints - finalTotal,
-      };
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(updatedUser)
-      );
-
-      localStorage.setItem(
-        "userPoints",
-        String(updatedUser.points)
-      );
-
-      window.dispatchEvent(
-        new Event("pointsUpdated")
-      );
-
-      maryajBets.forEach((bet) =>
-        deleteBet(bet.id)
-      );
-
-      setPart1("");
-      setPart2("");
-      setAmount("");
-      setRemaining(null);
-
-      setSelectedLocations([]);
-      setShowLocationModal(false);
-
-      alert("Pari Maryaj soumèt avèk siksè!");
-
-    } catch (error) {
-      alert(
-        error.response?.data?.message ||
-        error.message
-      );
-    }
-
-
-  };
-
+  } catch (err) {
+    alert(err.message);
+  }
+};
   return (<div className={styles.container}>
 
 

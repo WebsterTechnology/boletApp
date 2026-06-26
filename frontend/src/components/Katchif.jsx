@@ -946,6 +946,7 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import { useBet } from "../context/BetContext.jsx";
 import { useNavigate } from "react-router-dom";
 import BetSlip from "../components/BetSlip";
+import submitAllBets from "../utils/submitAllBets";
 import axios from "axios";
 
 const API =
@@ -1194,97 +1195,29 @@ const baseTotal = total;
   };
 
   const handleFinalizeBet = async () => {
-    const {
-      id: userId,
-      points: currentPoints,
-    } = getUserAndPoints();
+  if (selectedLocations.length === 0) {
+    return alert("Tanpri chwazi omwen yon lokasyon.");
+  }
 
-    if (selectedLocations.length === 0) {
-      return alert("Tanpri chwazi omwen yon lokasyon.");
-    }
+  try {
+    await submitAllBets({
+      bets,
+      selectedLocations,
+      deleteBet,
+    });
 
-    if (currentPoints - finalTotal < 0) {
-      navigate("/buy-credits");
-      return;
-    }
+    setSelectedLocations([]);
+    setShowLocationModal(false);
 
-    try {
-      for (const bet of katchifBets) {
-        if (disabledNumbers.includes(bet.number.trim()))
-          continue;
+    setNumber("");
+    setAmount("");
 
+    alert("Tout pari yo soumèt avèk siksè!");
 
-        for (const location of selectedLocations) {
-          if (
-            disabledLocations.includes(
-              location.toLowerCase()
-            )
-          )
-            continue;
-
-          await axios.post(
-            `${API}/api/katchif`,
-            {
-              number: bet.number,
-              pwen: parseInt(bet.amount, 10),
-              location,
-              userId,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem(
-                  "token"
-                )}`,
-              },
-            }
-          );
-        }
-      }
-
-
-      const userObj = JSON.parse(localStorage.getItem("user") || "{}");
-
-      const updatedUser = {
-        ...userObj,
-        points: currentPoints - finalTotal,
-      };
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(updatedUser)
-      );
-
-      localStorage.setItem(
-        "userPoints",
-        String(updatedUser.points)
-      );
-
-      window.dispatchEvent(
-        new Event("pointsUpdated")
-      );
-
-      katchifBets.forEach((bet) =>
-        deleteBet(bet.id)
-      );
-
-      setNums("");
-      setAmount("");
-      setRemaining(null);
-
-      setSelectedLocations([]);
-      setShowLocationModal(false);
-
-      alert("Pari Katchif soumèt avèk siksè!");
-
-    } catch (error) {
-      alert(
-        error.response?.data?.message ||
-        error.message
-      );
-    }
-
-
-  };
+  } catch (err) {
+    alert(err.message);
+  }
+};
 
   return (<div className={styles.container}>
 

@@ -735,6 +735,7 @@ import { FaEdit, FaTrash } from "react-icons/fa";
 import { useBet } from "../context/BetContext.jsx";
 import { useNavigate } from "react-router-dom";
 import BetSlip from "../components/BetSlip";
+import submitAllBets from "../utils/submitAllBets";
 import axios from "axios";
 
 const API =
@@ -949,83 +950,29 @@ setSelectedLocations([]);
 };
 
 const handleFinalizeBet = async () => {
-const {
-id: userId,
-points: currentPoints,
-} = getUserAndPoints();
-
-if (selectedLocations.length === 0) {
-return alert("Tanpri chwazi omwen yon lokasyon.");
-}
-
-if (currentPoints - finalTotal < 0) {
-navigate("/buy-credits");
-return;
-}
-
-try {
-for (const bet of twaChifBets) {
-if (disabledNumbers.includes(bet.number.trim()))
-continue;
-
-
-  for (const location of selectedLocations) {
-    if (
-      disabledLocations.includes(
-        location.toLowerCase()
-      )
-    )
-      continue;
-
-    await axios.post(
-      `${API}/api/twachif`,
-      {
-        number: bet.number,
-        pwen: parseInt(bet.amount, 10),
-        location,
-        userId,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem(
-            "token"
-          )}`,
-        },
-      }
-    );
+  if (selectedLocations.length === 0) {
+    return alert("Tanpri chwazi omwen yon lokasyon.");
   }
-}
 
-  const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+  try {
+    await submitAllBets({
+      bets,
+      selectedLocations,
+      deleteBet,
+    });
 
-  const updatedUser = {
-    ...userObj,
-    points: currentPoints - finalTotal,
-  };
+    setSelectedLocations([]);
+    setShowLocationModal(false);
 
-  localStorage.setItem("user", JSON.stringify(updatedUser));
-  localStorage.setItem("userPoints", String(updatedUser.points));
+    setNumber("");
+    setAmount("");
 
-  window.dispatchEvent(new Event("pointsUpdated"));
+    alert("Tout pari yo soumèt avèk siksè!");
 
-  twaChifBets.forEach((bet) => deleteBet(bet.id));
-
-  setNums("");
-  setAmount("");
-  setSelectedLocations([]);
-  setShowLocationModal(false);
-
-  alert("Pari Twa Chif soumèt avèk siksè!");
-
-} catch (error) {
-  alert(
-    error.response?.data?.message ||
-    error.message
-  );
-}
-
+  } catch (err) {
+    alert(err.message);
+  }
 };
-
 return ( <div className={styles.container}>
 
 
