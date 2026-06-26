@@ -50,7 +50,12 @@ exports.createYonChif = async (req, res) => {
   try {
     const { number, pwen, location, receiptId } = req.body;
     const userId = req.user.id;
-
+      console.log({
+  number,
+  pwen,
+  location,
+  receiptId: req.body.receiptId,
+});
     // Basic input validation
     if (!number || number.length !== 1 || !pwen || !location || !receiptId) {
       return res.status(400).json({
