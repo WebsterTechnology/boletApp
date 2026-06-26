@@ -53,31 +53,49 @@ export default function BetSlip({
                 <strong
                   style={{
                     color: "#ffc107",
+                    fontSize: "15px",
                   }}
                 >
                   {bet.type}
                 </strong>
 
-                <span>
+                <span
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "bold",
+                  }}
+                >
                   {bet.display || bet.number}
                 </span>
 
-                <span>{bet.amount} p</span>
+                <span
+                  style={{
+                    color: "#ddd",
+                  }}
+                >
+                  {bet.amount} p
+                </span>
+
+                {bet.location && (
+                  <small
+                    style={{
+                      color: "#999",
+                    }}
+                  >
+                    {bet.location}
+                  </small>
+                )}
               </div>
 
               <div className={styles.actions}>
                 <button
-                  onClick={() =>
-                    onEdit && onEdit(bet)
-                  }
+                  onClick={() => onEdit && onEdit(bet)}
                 >
                   <FaEdit />
                 </button>
 
                 <button
-                  onClick={() =>
-                    deleteBet(bet.id)
-                  }
+                  onClick={() => deleteBet(bet.id)}
                 >
                   <FaTrash />
                 </button>
@@ -100,6 +118,7 @@ export default function BetSlip({
         <strong
           style={{
             fontSize: 20,
+            color: "#ffc107",
           }}
         >
           Total: {total} p
@@ -110,7 +129,7 @@ export default function BetSlip({
             className={styles.submitBtn}
             onClick={onSubmit}
           >
-            Soumèt Tout
+            Soumèt Pari
           </button>
         )}
       </div>
