@@ -1103,7 +1103,7 @@ const YonChif = () => {
                   fontWeight: "bold",
                 }}
               >
-                Play More
+                Jwe ankò
               </button>
 
               <button
@@ -1119,7 +1119,7 @@ const YonChif = () => {
                   fontWeight: "bold",
                 }}
               >
-                Finalize Bet
+                Finalize Paryaj ou
               </button>
             </div>
           </div>

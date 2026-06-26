@@ -1210,7 +1210,7 @@ return ( <div className={styles.container}>
               fontWeight: "bold",
             }}
           >
-            Play More
+           Jwe Ankò
           </button>
 
           <button
@@ -1226,7 +1226,7 @@ return ( <div className={styles.container}>
               fontWeight: "bold",
             }}
           >
-            Finalize Bet
+            Finalize Paryaj ou
           </button>
         </div>
       </div>

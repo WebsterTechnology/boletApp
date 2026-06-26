@@ -1396,7 +1396,7 @@ const baseTotal = total;
                 fontWeight: "bold",
               }}
             >
-              Play More
+             Jwe Ankò
             </button>
 
             <button
@@ -1412,7 +1412,7 @@ const baseTotal = total;
                 fontWeight: "bold",
               }}
             >
-              Finalize Bet
+              Finalize Paryaj ou
             </button>
           </div>
         </div>

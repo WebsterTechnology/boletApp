@@ -1444,7 +1444,7 @@ const handleFinalizeBet = async () => {
                 fontWeight: "bold",
               }}
             >
-              Play More
+              Jwe Ankò
             </button>
 
             <button
@@ -1460,7 +1460,7 @@ const handleFinalizeBet = async () => {
                 fontWeight: "bold",
               }}
             >
-              Finalize Bet
+              Finalize Paryaj ou
             </button>
           </div>
         </div>
