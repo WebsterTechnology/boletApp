@@ -471,8 +471,16 @@ const YonChif = () => {
       localStorage.setItem("userPoints", String(updatedUser.points));
       window.dispatchEvent(new Event("pointsUpdated"));
 
-      setShowLocationModal(false);
+      /* CLEAR ALL BETS */
+      yonChifBets.forEach((bet) => {
+        deleteBet(bet.id);
+      });
+
+      /* RESET FORM */
+      setNumber("");
+      setAmount("");
       setSelectedLocations([]);
+      setShowLocationModal(false);
 
       alert("Pari soumèt avèk siksè!");
     } catch (error) {
