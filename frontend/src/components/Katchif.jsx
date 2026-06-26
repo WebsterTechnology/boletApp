@@ -1209,7 +1209,7 @@ const baseTotal = total;
     setSelectedLocations([]);
     setShowLocationModal(false);
 
-    setNumber("");
+    setNums("");
     setAmount("");
 
     alert("Tout pari yo soumèt avèk siksè!");

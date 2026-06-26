@@ -1124,7 +1124,7 @@ const Maryaj = () => {
     (b) => b.type === "Maryaj"
   );
 
- const baseTotal = total;
+  const baseTotal = total;
 
   const finalTotal =
     baseTotal * selectedLocations.length;
@@ -1225,30 +1225,31 @@ const Maryaj = () => {
     setSelectedLocations([]);
   };
 
-const handleFinalizeBet = async () => {
-  if (selectedLocations.length === 0) {
-    return alert("Tanpri chwazi omwen yon lokasyon.");
-  }
+  const handleFinalizeBet = async () => {
+    if (selectedLocations.length === 0) {
+      return alert("Tanpri chwazi omwen yon lokasyon.");
+    }
 
-  try {
-    await submitAllBets({
-      bets,
-      selectedLocations,
-      deleteBet,
-    });
+    try {
+      await submitAllBets({
+        bets,
+        selectedLocations,
+        deleteBet,
+      });
 
-    setSelectedLocations([]);
-    setShowLocationModal(false);
+      setSelectedLocations([]);
+      setShowLocationModal(false);
 
-    setNumber("");
-    setAmount("");
+      setPart1("");
+      setPart2("");
+      setAmount("");
 
-    alert("Tout pari yo soumèt avèk siksè!");
+      alert("Tout pari yo soumèt avèk siksè!");
 
-  } catch (err) {
-    alert(err.message);
-  }
-};
+    } catch (err) {
+      alert(err.message);
+    }
+  };
   return (<div className={styles.container}>
 
 
