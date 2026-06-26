@@ -671,7 +671,7 @@ const YonChif = () => {
                   cursor: "pointer",
                 }}
               >
-                Play More
+                Jwe Ankò
               </button>
 
               <button
@@ -687,7 +687,7 @@ const YonChif = () => {
                   cursor: "pointer",
                 }}
               >
-                Finalize Bet
+                Finalize Paryaj ou
               </button>
             </div>
           </div>
