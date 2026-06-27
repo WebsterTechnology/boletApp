@@ -15,6 +15,7 @@ import {
   FaListAlt,        // <-- for "Fich"
   FaCrown,          // <-- admin section icon
   FaCheckCircle,    // <-- admin bets icon
+  FaWhatsapp,
 } from 'react-icons/fa';
 
 const BurgerMenu = () => {
@@ -87,18 +88,27 @@ const BurgerMenu = () => {
             </Link>
           </li>
           <li>
+            <Link
+              to="/support"
+              className={styles.item}
+              onClick={closeMenu}
+            >
+              <FaWhatsapp /> Sipò
+            </Link>
+          </li>
+          <li>
             <Link to="/tiraj" className={styles.item} onClick={closeMenu}>
-            
+
             </Link>
           </li>
           <li>
             <Link to="/chans" className={styles.item} onClick={closeMenu}>
-              
+
             </Link>
           </li>
           <li>
             <Link to="/videyo" className={styles.item} onClick={closeMenu}>
-              
+
             </Link>
           </li>
           <li>
@@ -108,7 +118,7 @@ const BurgerMenu = () => {
           </li>
           <li>
             <Link to="/settings" className={styles.item} onClick={closeMenu}>
-             
+
             </Link>
           </li>
 
