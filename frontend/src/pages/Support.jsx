@@ -49,7 +49,7 @@ export default function Support() {
             fontWeight: "bold",
           }}
         >
-          WhatsApp 1
+          +5551989171342
         </a>
 
         <a
@@ -67,7 +67,7 @@ export default function Support() {
             fontWeight: "bold",
           }}
         >
-          WhatsApp 2
+          +555492669595
         </a>
       </div>
     </div>
