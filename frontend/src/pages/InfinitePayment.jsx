@@ -34,7 +34,7 @@ export default function InfinitePayment() {
           body: JSON.stringify({
             userId: user.id,
             amountBRL: Number(amount),
-            description: "Lotto Credits",
+            description: "Credits",
             name: user.name,
             email: user.email,
             phone: user.phone,
