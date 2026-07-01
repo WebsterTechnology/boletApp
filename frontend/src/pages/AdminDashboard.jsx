@@ -12,6 +12,7 @@ export default function AdminDashboard() {
   const [disabledNumbers, setDisabledNumbers] = useState([]);
   const [disabledLocations, setDisabledLocations] = useState([]);
   const [inputNumbers, setInputNumbers] = useState("");
+  const [searchNumber, setSearchNumber] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(""); // no default
 
   const token = localStorage.getItem("token") || "";
@@ -156,6 +157,16 @@ export default function AdminDashboard() {
     );
   };
 
+  const filteredDisabledNumbers = useMemo(() => {
+    if (!searchNumber.trim()) {
+      return disabledNumbers;
+    }
+
+    return disabledNumbers.filter((num) =>
+      String(num).startsWith(searchNumber.trim())
+    );
+  }, [disabledNumbers, searchNumber]);
+
   /* ================= UI ================= */
 
   return (
@@ -219,6 +230,18 @@ export default function AdminDashboard() {
       {loading && <p>Loading…</p>}
 
       <hr />
+      <input
+        type="text"
+        placeholder="Search disabled number..."
+        value={searchNumber}
+        onChange={(e) => setSearchNumber(e.target.value)}
+        style={{
+          width: 220,
+          marginTop: 15,
+          marginBottom: 10,
+          marginLeft: 10,
+        }}
+      />
 
       <h3>🚫 Disable Numbers</h3>
 
@@ -230,7 +253,7 @@ export default function AdminDashboard() {
       <button onClick={saveDisabledNumbers}>Save</button>
 
       <div style={{ marginTop: 10 }}>
-        {disabledNumbers.map((n) => (
+        {filteredDisabledNumbers.map((n) => (
           <button key={n} onClick={() => enableNumber(n)}>
             ❌ {n}
           </button>
