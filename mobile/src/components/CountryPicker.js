@@ -67,5 +67,5 @@ const styles = StyleSheet.create({
   optionText: { color: colors.text, fontSize: 15 },
   optionCode: { color: colors.textDim },
   closeBtn: { padding: 14, alignItems: "center", marginBottom: 20 },
-  closeBtnText: { color: colors.blue, fontWeight: "700" },
+  closeBtnText: { color: colors.gold, fontWeight: "700" },
 });

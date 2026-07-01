@@ -227,14 +227,14 @@ const styles = StyleSheet.create({
   },
   picker: { color: colors.text, width: "100%" },
   plusBtn: {
-    backgroundColor: colors.green,
+    backgroundColor: colors.gold,
     width: 40,
     height: 40,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
   },
-  plusBtnText: { color: "#fff", fontSize: 22, fontWeight: "700", lineHeight: 24 },
+  plusBtnText: { color: colors.textOnGold, fontSize: 22, fontWeight: "700", lineHeight: 24 },
   timeRow: { flexDirection: "row", gap: 14, marginBottom: 10, flexWrap: "wrap" },
   timeText: { color: colors.textMuted, fontSize: 12 },
   betRow: {

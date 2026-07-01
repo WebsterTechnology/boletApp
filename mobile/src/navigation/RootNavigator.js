@@ -50,7 +50,7 @@ function MainTabs() {
       screenOptions={({ route }) => ({
         ...screenOptions,
         tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
-        tabBarActiveTintColor: colors.blue,
+        tabBarActiveTintColor: colors.gold,
         tabBarInactiveTintColor: colors.textDim,
         tabBarIcon: () => null,
         tabBarLabel: `${TAB_ICONS[route.name] ?? ""} ${route.name}`,
@@ -88,7 +88,7 @@ export default function RootNavigator() {
   if (!ready) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color={colors.blue} />
+        <ActivityIndicator size="large" color={colors.gold} />
       </View>
     );
   }
@@ -98,7 +98,7 @@ export default function RootNavigator() {
       theme={{
         ...DarkTheme,
         colors: {
-          primary: colors.blue,
+          primary: colors.gold,
           background: colors.bg,
           card: colors.card,
           text: colors.text,

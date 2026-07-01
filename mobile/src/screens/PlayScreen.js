@@ -62,9 +62,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  tabActive: { backgroundColor: colors.blue, borderColor: colors.blue },
+  tabActive: { backgroundColor: colors.gold, borderColor: colors.gold },
   tabText: { color: colors.textMuted, fontWeight: "600" },
-  tabTextActive: { color: "#fff" },
+  tabTextActive: { color: colors.textOnGold },
   content: { paddingHorizontal: 4 },
   cartSection: { paddingHorizontal: 12 },
 });

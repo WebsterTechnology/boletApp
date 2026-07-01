@@ -45,7 +45,7 @@ export default function usePromptModal() {
               <Text style={styles.btnText}>Anile</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.btn, styles.okBtn]} onPress={() => close(value)}>
-              <Text style={styles.btnText}>OK</Text>
+              <Text style={styles.okBtnText}>OK</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -85,7 +85,8 @@ const styles = StyleSheet.create({
   },
   row: { flexDirection: "row", justifyContent: "flex-end", gap: 10 },
   btn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
-  cancelBtn: { backgroundColor: colors.border },
-  okBtn: { backgroundColor: colors.blue },
+  cancelBtn: { backgroundColor: colors.cardAlt },
+  okBtn: { backgroundColor: colors.gold },
   btnText: { color: "#fff", fontWeight: "600" },
+  okBtnText: { color: colors.textOnGold, fontWeight: "600" },
 });

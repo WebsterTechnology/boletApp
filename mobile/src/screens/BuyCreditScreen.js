@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
   },
-  optionSelected: { borderColor: colors.blue, backgroundColor: "#0f2540" },
+  optionSelected: { borderColor: colors.gold, backgroundColor: "rgba(255, 215, 0, 0.08)" },
   optionIcon: { fontSize: 26 },
   optionLabel: { color: colors.text, fontWeight: "700", fontSize: 16 },
   optionDesc: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row", gap: 12, marginTop: 28 },
   backBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: "center", borderWidth: 1, borderColor: colors.border },
   backBtnText: { color: colors.text, fontWeight: "600" },
-  continueBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: "center", backgroundColor: colors.green },
+  continueBtn: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: "center", backgroundColor: colors.gold },
   disabledBtn: { opacity: 0.5 },
-  continueBtnText: { color: "#fff", fontWeight: "700" },
+  continueBtnText: { color: colors.textOnGold, fontWeight: "700" },
 });
