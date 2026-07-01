@@ -27,13 +27,23 @@ const mapRow = (type, r) => ({
   id: r.id,
   type,
   userId: r.userId,
+
+  // ⭐ ADD THESE
+  receiptId: r.receiptId,
+  customerName: r.User?.name,
   phone: r.User?.phone,
+
   numbers:
-    type === "yonchif" ? (r.nimewo ?? r.number)
-    : type === "dechif" ? (r.number)
-    : type === "twachif" ? (r.number ?? r.twachif)
-    : type === "maryaj" ? (r.part1 && r.part2 ? `${r.part1}${r.part2}` : "-")  // ✅ FIX HERE
-    : /* katchif */       (r.number),
+    type === "yonchif"
+      ? (r.nimewo ?? r.number)
+      : type === "dechif"
+      ? r.number
+      : type === "twachif"
+      ? (r.number ?? r.twachif)
+      : type === "maryaj"
+      ? (r.part1 && r.part2 ? `${r.part1}${r.part2}` : "-")
+      : r.number,
+
   pwen: Number(r.pwen || 0),
   draw: r.ville ?? r.city ?? r.lokal ?? r.location ?? null,
   status: r.status || "pending",
