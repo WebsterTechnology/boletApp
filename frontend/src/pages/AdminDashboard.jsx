@@ -200,6 +200,7 @@ const filteredUsers = useMemo(() => {
         </thead>
 
         <tbody>
+          //remover el index do la do do u no map para parar el admin page
           {filteredUsers.map((u, index) => (
             <tr key={u.id}>
              <td>{index + 1}</td>
