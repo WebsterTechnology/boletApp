@@ -895,3 +895,40 @@
   border-color: #38bdf8;
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
 }
+
+/* ===== FIX LABEL COLORS ===== */
+
+.form h2 {
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.form label {
+  display: block;
+  margin: 18px 0 8px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.form input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid #4b5563;
+  background: #ffffff;
+  color: #111827;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.form input::placeholder {
+  color: #9ca3af;
+}
+
+.form input:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+}
