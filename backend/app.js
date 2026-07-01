@@ -33,6 +33,7 @@ const twaChifRoutes = require("./routes/twaChifRoutes");
 const betsRoutes = require("./routes/betsRoutes");
 const pwenRoutes = require("./routes/pwenRoutes");
 const pixRoutes = require("./routes/pixRoutes");
+const infinitepayRoutes = require("./routes/infinitepay");
 const claimRoutes = require("./routes/claimRoutes");
 const katchifRoutes = require("./routes/katchifRoutes");
 
@@ -53,6 +54,7 @@ app.use("/api/twachif",authenticate, twaChifRoutes);
 app.use("/api/bets", authenticate,betsRoutes);
 app.use("/api/points",authenticate, pwenRoutes);
 app.use("/api/pix", pixRoutes);
+app.use("/api/infinitepay", infinitepayRoutes);
 
 // MUST COME BEFORE /api/admin
 app.use("/api/admin/bets", adminBetsRoutes);
