@@ -200,7 +200,7 @@ const filteredUsers = useMemo(() => {
         </thead>
 
         <tbody>
-          {filteredUsers.map((u) => (
+          {filteredUsers.map((u, index) => (
             <tr key={u.id}>
              <td>{index + 1}</td>
               <td>{u.phone}</td>
