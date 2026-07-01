@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   const [disabledNumbers, setDisabledNumbers] = useState([]);
   const [disabledLocations, setDisabledLocations] = useState([]);
   const [inputNumbers, setInputNumbers] = useState("");
-  const [searchNumber, setSearchNumber] = useState("");
+  const [searchUser, setSearchUser] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(""); // no default
 
   const token = localStorage.getItem("token") || "";
@@ -156,22 +156,37 @@ export default function AdminDashboard() {
       auth
     );
   };
+const filteredUsers = useMemo(() => {
+  if (!searchUser.trim()) {
+    return users;
+  }
 
-  const filteredDisabledNumbers = useMemo(() => {
-    if (!searchNumber.trim()) {
-      return disabledNumbers;
-    }
+  const search = searchUser.trim();
 
-    return disabledNumbers.filter((num) =>
-      String(num).startsWith(searchNumber.trim())
-    );
-  }, [disabledNumbers, searchNumber]);
-
+  return users.filter((user) =>
+    String(user.phone).includes(search)
+  );
+}, [users, searchUser]);
   /* ================= UI ================= */
 
   return (
     <div style={{ padding: 24 }}>
       <h2>👑 Admin Dashboard</h2>
+
+   
+
+<input
+  type="text"
+  placeholder="🔍 Search phone number..."
+  value={searchUser}
+  onChange={(e) => setSearchUser(e.target.value)}
+  style={{
+    width: 300,
+    padding: 10,
+    marginBottom: 15,
+    fontSize: 16,
+  }}
+/>
 
       <table border="1" width="100%">
         <thead>
@@ -185,7 +200,7 @@ export default function AdminDashboard() {
         </thead>
 
         <tbody>
-          {users.map((u) => (
+          {filteredUsers.map((u) => (
             <tr key={u.id}>
               <td>{u.id}</td>
               <td>{u.phone}</td>
@@ -230,18 +245,6 @@ export default function AdminDashboard() {
       {loading && <p>Loading…</p>}
 
       <hr />
-      <input
-        type="text"
-        placeholder="Search disabled number..."
-        value={searchNumber}
-        onChange={(e) => setSearchNumber(e.target.value)}
-        style={{
-          width: 220,
-          marginTop: 15,
-          marginBottom: 10,
-          marginLeft: 10,
-        }}
-      />
 
       <h3>🚫 Disable Numbers</h3>
 
@@ -253,7 +256,7 @@ export default function AdminDashboard() {
       <button onClick={saveDisabledNumbers}>Save</button>
 
       <div style={{ marginTop: 10 }}>
-        {filteredDisabledNumbers.map((n) => (
+        {disabledNumbers.map((n) => (
           <button key={n} onClick={() => enableNumber(n)}>
             ❌ {n}
           </button>
