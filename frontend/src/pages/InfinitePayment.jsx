@@ -10,8 +10,9 @@ export default function InfinitePayment() {
     e.preventDefault();
 
     const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const token = localStorage.getItem("token");
 
-    if (!user.id) {
+    if (!token) {
       alert("Please login first.");
       return;
     }
@@ -30,9 +31,9 @@ export default function InfinitePayment() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            userId: user.id,
             amountBRL: Number(amount),
             description: "Credits",
             name: user.name,
