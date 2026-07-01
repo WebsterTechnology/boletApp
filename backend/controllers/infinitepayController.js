@@ -196,7 +196,7 @@ exports.webhook = async (req, res) => {
       const paid = Number(paidAmount) / 100;
 
       pay.netValueBRL = paid;
-      pay.feeBRL = Math.max(0, paid - gross);
+      pay.feeBRL = Math.max(0, gross - paid);
     }
 
     await pay.save({ transaction: t });
