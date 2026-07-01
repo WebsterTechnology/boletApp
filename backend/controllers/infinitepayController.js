@@ -42,7 +42,7 @@ exports.createPayment = async (req, res) => {
                 {
                     quantity: 1,
                     price: Math.round(amount * 100),
-                    description: description || "Lotto Credits",
+                    description: description || "Credits",
                 },
             ],
             order_nsu: orderNsu,
