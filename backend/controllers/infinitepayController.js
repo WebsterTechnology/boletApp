@@ -16,7 +16,8 @@ exports.createPayment = async (req, res) => {
         console.log("========= INFINITEPAY /create-payment =========");
         console.log("📥 Body received:", req.body);
 
-        const { userId, amountBRL, description, name, email, phone } = req.body;
+        const userId = req.user.id;
+        const { amountBRL, description, name, email, phone } = req.body;
 
         if (!userId) {
             return res.status(400).json({ error: "userId is required" });
