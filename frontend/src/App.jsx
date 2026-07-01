@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminBets from "./pages/AdminBets";
 import AdminClaims from "./pages/AdminClaims"; // ✅ NEW (admin claims manager)
 import Support from "./pages/Support";
+import InfinitePayment from "./pages/InfinitePayment";
 
 // -------- Guard (supports admin-only) --------
 function ProtectedRoute({ children, requireAdmin = false }) {
@@ -108,6 +109,15 @@ function App() {
           element={
             <ProtectedRoute>
               <PixPayment />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/infinite-payment"
+          element={
+            <ProtectedRoute>
+              <InfinitePayment />
             </ProtectedRoute>
           }
         />

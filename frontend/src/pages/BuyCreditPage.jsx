@@ -21,7 +21,7 @@ const BuyCreditPage = () => {
     if (selectedMethod === "credit") {
       navigate("/credit-card");
     } else if (selectedMethod === "pix") {
-      navigate("/pix-payment"); // ✅ Navigates to PixPayment page
+      navigate("/infinite-payment"); // ✅ Navigates to InfinitePayment page "/pix-payment"
     } else {
       alert(`Ou chwazi: ${selectedMethod}`);
     }
