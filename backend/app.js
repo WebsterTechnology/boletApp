@@ -9,29 +9,16 @@ const authenticate = require("./middleware/authenticate")
 // ----------------------------------------------------
 // CORS
 // ----------------------------------------------------
-const allowedOrigins = [
-  "https://ht-lotodigital.com",
-  "https://www.ht-lotodigital.com",
-  "http://localhost:5173",
-  "http://localhost:3000",
-];
-
-const corsOptions = {
-  origin(origin, callback) {
-    // Allow server-to-server requests (webhooks, health checks, etc.)
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error(`CORS blocked origin: ${origin}`));
-  },
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "access_token"],
-  credentials: false,
-};
-
-app.use(cors(corsOptions));
-app.options("/{*splat}", cors(corsOptions));
+// Restore the permissive CORS behavior the app used before the payment fixes.
+// This avoids blocking login or other existing frontend routes.
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "access_token"],
+    credentials: false,
+  })
+);
 app.use(express.json());
 
 // ----------------------------------------------------
