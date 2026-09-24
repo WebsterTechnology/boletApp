@@ -7,18 +7,19 @@ const app = express();
 const authenticate = require("./middleware/authenticate")
 
 // ----------------------------------------------------
-// CORS
+// 🔥 FIXED CORS — ALLOW ALL ORIGINS FOR DEBUGGING PIX
 // ----------------------------------------------------
-// Restore the permissive CORS behavior the app used before the payment fixes.
-// This avoids blocking login or other existing frontend routes.
 app.use(
   cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    origin: "*", // OK for now (tighten later)
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], // ✅ PATCH ADDED
     allowedHeaders: ["Content-Type", "Authorization", "access_token"],
     credentials: false,
   })
 );
+
+// ✅ VERY IMPORTANT: allow preflight for ALL routes
+app.use(cors());
 app.use(express.json());
 
 // ----------------------------------------------------
