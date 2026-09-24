@@ -49,9 +49,10 @@ function MainTabs() {
     <Tabs.Navigator
       screenOptions={({ route }) => ({
         ...screenOptions,
-        tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+        tabBarStyle: { backgroundColor: colors.card, borderTopColor: "rgba(255, 215, 0, 0.3)", borderTopWidth: 2, height: 66, paddingTop: 7, paddingBottom: 8 },
         tabBarActiveTintColor: colors.gold,
-        tabBarInactiveTintColor: colors.textDim,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: { fontWeight: "700", fontSize: 12 },
         tabBarIcon: () => null,
         tabBarLabel: `${TAB_ICONS[route.name] ?? ""} ${route.name}`,
       })}
