@@ -2,7 +2,7 @@ const axios = require("axios");
 const { User, PixPayment, PixPaymentRequest, sequelize } = require("../models");
 
 const INFINITEPAY_LINKS_URL = "https://api.checkout.infinitepay.io/links";
-const HANDLE = (process.env.INFINITEPAY_HANDLE || "laurius-debrune")\n    .trim()\n    .replace(/^\\$/, "");
+const HANDLE = process.env.INFINITEPAY_HANDLE || "laurius-debrune";
 
 exports.test = async (req, res) => {
     res.json({
@@ -52,22 +52,11 @@ exports.createPayment = async (req, res) => {
                 "https://boletapp-production.up.railway.app/api/infinitepay/webhook",
         };
 
-        // Customer data is optional in InfinitePay. Do not send a partial or
-        // malformed customer object because the provider rejects the whole link.
-        const customerName = String(name || user.name || "").trim();
-        const customerEmail = String(email || user.email || "").trim();
-        const normalizedPhone = String(phone || user.phone || "")
-            .replace(/[\\s().-]/g, "")
-            .trim();
-
-        const emailIsValid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(customerEmail);
-        const phoneIsValid = /^\\+?[1-9]\\d{7,14}$/.test(normalizedPhone);
-
-        if (customerName && emailIsValid && phoneIsValid) {
+        if (name || email || phone || user.phone) {
             payload.customer = {
-                name: customerName,
-                email: customerEmail,
-                phone_number: normalizedPhone,
+                name: name || `User ${user.id}`,
+                email: email || `user${user.id}@example.com`,
+                phone_number: phone || user.phone || "",
             };
         }
 
