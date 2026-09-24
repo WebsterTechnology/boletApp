@@ -2,6 +2,30 @@ import { useState } from "react";
 
 const API = import.meta.env.VITE_API_URL;
 
+function getErrorMessage(data, fallback = "Unable to create payment") {
+  if (!data) return fallback;
+  if (typeof data === "string") return data;
+  if (typeof data.error === "string") return data.error;
+  if (typeof data.message === "string") return data.message;
+
+  if (data.error && typeof data.error === "object") {
+    if (typeof data.error.message === "string") return data.error.message;
+    if (typeof data.error.error === "string") return data.error.error;
+
+    try {
+      return JSON.stringify(data.error);
+    } catch {
+      return fallback;
+    }
+  }
+
+  try {
+    return JSON.stringify(data);
+  } catch {
+    return fallback;
+  }
+}
+
 export default function InfinitePayment() {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +49,10 @@ export default function InfinitePayment() {
     setLoading(true);
 
     try {
+      if (!API) {
+        throw new Error("Payment service is not configured.");
+      }
+
       const response = await fetch(
         `${API}/api/infinitepay/create-payment`,
         {
@@ -43,24 +71,37 @@ export default function InfinitePayment() {
         }
       );
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      let data;
+
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = text ? { error: text } : {};
+      }
 
       console.log("InfinitePay:", data);
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to create payment");
+        throw new Error(getErrorMessage(data));
       }
 
-      if (!data.checkoutUrl && !data.url) {
-        throw new Error("Checkout URL not returned");
+      const checkoutUrl =
+        data.checkoutUrl ||
+        data.checkout_url ||
+        data.url ||
+        data.link ||
+        data.payment_url;
+
+      if (!checkoutUrl || typeof checkoutUrl !== "string") {
+        throw new Error("Checkout URL not returned by InfinitePay.");
       }
 
-      // Redirect to InfinitePay
-      window.location.href = data.checkoutUrl || data.url;
-
+      window.location.assign(checkoutUrl);
     } catch (err) {
-      console.error(err);
-      alert(err.message);
+      console.error("InfinitePay payment error:", err);
+      alert(err instanceof Error ? err.message : "Unable to create payment");
     } finally {
       setLoading(false);
     }
@@ -106,8 +147,9 @@ export default function InfinitePayment() {
             background: "#00995D",
             color: "#fff",
             fontWeight: "bold",
-            cursor: "pointer",
+            cursor: loading ? "not-allowed" : "pointer",
             borderRadius: 8,
+            opacity: loading ? 0.7 : 1,
           }}
         >
           {loading ? "Creating Checkout..." : "Pay with InfinitePay"}
