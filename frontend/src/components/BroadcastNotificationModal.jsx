@@ -24,7 +24,7 @@ export default function BroadcastNotificationModal() {
           </a>
         )}
         <button className={styles.closeButton} onClick={() => dismissModal(notification.id)}>
-          Got it
+          Klike pou jwe
         </button>
       </div>
     </div>
