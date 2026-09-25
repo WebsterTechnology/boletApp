@@ -10,6 +10,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     imageUrl: { type: DataTypes.TEXT, allowNull: true },
     linkUrl: { type: DataTypes.TEXT, allowNull: true },
+    recipientType: { type: DataTypes.ENUM("all", "user"), allowNull: false, defaultValue: "all" },
+    recipientUserId: { type: DataTypes.INTEGER, allowNull: true },
   }, {
     tableName: "notifications",
   });
