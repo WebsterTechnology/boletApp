@@ -68,6 +68,45 @@ router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => 
   }
 });
 
+router.patch("/users/:id/admin-status", authenticate, adminOnly, async (req, res) => {
+  const targetId = Number(req.params.id);
+  const { isAdmin } = req.body;
+
+  if (typeof isAdmin !== "boolean") {
+    return res.status(400).json({ message: "isAdmin must be a boolean" });
+  }
+
+  try {
+    const user = await User.findByPk(targetId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (!isAdmin && user.isAdmin) {
+      const adminCount = await User.count({ where: { isAdmin: true } });
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          message: "Cannot remove the last administrator.",
+        });
+      }
+    }
+
+    user.isAdmin = isAdmin;
+    await user.save();
+
+    return res.json({
+      message: isAdmin ? "User promoted to admin" : "Admin access removed",
+      user: {
+        id: user.id,
+        phone: user.phone,
+        points: Number(user.points ?? 0),
+        isAdmin: !!user.isAdmin,
+      },
+    });
+  } catch (err) {
+    console.error("admin PATCH /users/:id/admin-status error:", err);
+    return res.status(500).json({ message: "Failed to update admin status" });
+  }
+});
+
 router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) => {
   const { id } = req.params;
   const toRemove = parseInt(req.body.amount, 10);
