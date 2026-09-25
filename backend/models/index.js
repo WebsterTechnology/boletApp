@@ -68,6 +68,7 @@ Pwen.belongsTo(User, { foreignKey: "userId", as: "user" });
 Notification.hasMany(NotificationRead, { foreignKey: "notificationId", onDelete: "CASCADE" });
 NotificationRead.belongsTo(Notification, { foreignKey: "notificationId" });
 User.hasMany(NotificationRead, { foreignKey: "userId", onDelete: "CASCADE" });
+Notification.belongsTo(User, { foreignKey: "recipientUserId", as: "recipient", constraints: false });
 NotificationRead.belongsTo(User, { foreignKey: "userId" });
 
 // ==================== MODEL OBJECT ====================
