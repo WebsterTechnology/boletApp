@@ -9,6 +9,7 @@ import { FaBell } from "react-icons/fa";
 import NotificationPanel from "./NotificationPanel";
 import Pwen from "./Pwen";
 import WithdrawModal from "./WithdrawModal"; // ✅ ADD THIS
+import { useNotifications } from "../context/NotificationContext";
 
 const Header = ({ openLogin }) => {
   const [userPhone, setUserPhone] = useState(localStorage.getItem("userPhone"));
@@ -16,6 +17,7 @@ const Header = ({ openLogin }) => {
   const [showWithdrawModal, setShowWithdrawModal] = useState(false); // ✅ ADD
   const location = useLocation();
   const navigate = useNavigate();
+  const { unreadCount } = useNotifications();
 
   useEffect(() => {
     const checkUser = () => {
@@ -80,10 +82,11 @@ const Header = ({ openLogin }) => {
               </button>
 
               <button
-                className={styles.bellButton}
+                className={`${styles.bellButton} ${unreadCount > 0 ? styles.hasNotifications : ""}`}
                 onClick={() => setShowNotif(!showNotif)}
               >
                 <FaBell size={20} />
+                {unreadCount > 0 && <span className={styles.unreadBadge}>{unreadCount > 99 ? "99+" : unreadCount}</span>}
               </button>
             </div>
           )}
