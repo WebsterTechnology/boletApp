@@ -78,7 +78,7 @@ exports.login = async (req, res) => {
 // };
 
 exports.register = async (req, res) => {
-  const { phone, password, isAdmin } = req.body;
+  const { phone, password } = req.body;
 
   if (!phone || !password) {
     return res.status(400).json({ message: "Phone and password are required" });
@@ -96,7 +96,8 @@ exports.register = async (req, res) => {
     const user = await User.create({
       phone,
       password: hashedPassword,
-      isAdmin: !!isAdmin,
+      // Public registration can never grant administrator privileges.
+      isAdmin: false,
     });
 
     // 🔥 ADD THIS
