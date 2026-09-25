@@ -7,6 +7,10 @@
 .list { max-height:55vh; overflow:auto; display:grid; gap:8px; }
 .item { width:100%; text-align:left; border:1px solid #30364f; border-radius:10px; padding:10px; background:#202438 !important; color:#fff !important; cursor:pointer; appearance:none; -webkit-appearance:none; }
 .item.unread { background:#272d49 !important; border-color:#5262a1; color:#fff !important; }
+.item:nth-child(odd) { background:#202438 !important; }
+.item:nth-child(even) { background:#30364d !important; }
+.item:nth-child(odd).unread { background:#272d49 !important; }
+.item:nth-child(even).unread { background:#394260 !important; }
 .itemTop { display:grid; grid-template-columns:12px 1fr auto; gap:6px; align-items:center; color:#fff !important; }
 .item strong { color:#fff !important; }
 .item:hover, .item:focus, .item:active { background:#2d3452 !important; color:#fff !important; }
