@@ -8,6 +8,9 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [amounts, setAmounts] = useState({});
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState({ title: "", message: "", priority: "info", imageUrl: "", linkUrl: "" });
+  const [notificationHistory, setNotificationHistory] = useState([]);
+  const [sendingNotification, setSendingNotification] = useState(false);
 
   const [disabledNumbers, setDisabledNumbers] = useState([]);
   const [disabledLocations, setDisabledLocations] = useState([]);
@@ -38,12 +41,33 @@ export default function AdminDashboard() {
     setDisabledLocations(res.data);
   };
 
+  const fetchNotificationHistory = async () => {
+    const res = await axios.get(`${API}/api/notifications/history`, auth);
+    setNotificationHistory(Array.isArray(res.data) ? res.data : []);
+  };
+
+  const sendNotification = async () => {
+    if (!notification.title.trim() || !notification.message.trim()) return alert("Title and message are required");
+    try {
+      setSendingNotification(true);
+      await axios.post(`${API}/api/notifications/broadcast`, notification, auth);
+      setNotification({ title: "", message: "", priority: "info", imageUrl: "", linkUrl: "" });
+      await fetchNotificationHistory();
+      alert("Notification sent to all users");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to send notification");
+    } finally {
+      setSendingNotification(false);
+    }
+  };
+
   const refreshAll = async () => {
     setLoading(true);
     await Promise.all([
       fetchUsers(),
       fetchDisabledNumbers(),
       fetchDisabledLocations(),
+      fetchNotificationHistory(),
     ]);
     setLoading(false);
   };
@@ -172,6 +196,20 @@ const filteredUsers = useMemo(() => {
   return (
     <div style={{ padding: 24 }}>
       <h2>👑 Admin Dashboard</h2>
+
+      <section style={{ marginBottom: 30, padding: 20, border: "1px solid #ddd", borderRadius: 12 }}>
+        <h3>📣 Broadcast Notification</h3>
+        <input placeholder="Title" value={notification.title} onChange={(e)=>setNotification((n)=>({...n,title:e.target.value}))} style={{width:"100%",padding:10,marginBottom:10}} />
+        <textarea placeholder="Message" value={notification.message} onChange={(e)=>setNotification((n)=>({...n,message:e.target.value}))} rows={4} style={{width:"100%",padding:10,marginBottom:10}} />
+        <select value={notification.priority} onChange={(e)=>setNotification((n)=>({...n,priority:e.target.value}))} style={{padding:10,marginRight:10}}>
+          <option value="info">Info</option><option value="warning">Warning</option><option value="critical">Critical</option>
+        </select>
+        <input placeholder="Optional image URL" value={notification.imageUrl} onChange={(e)=>setNotification((n)=>({...n,imageUrl:e.target.value}))} style={{width:"100%",padding:10,marginTop:10}} />
+        <input placeholder="Optional link URL" value={notification.linkUrl} onChange={(e)=>setNotification((n)=>({...n,linkUrl:e.target.value}))} style={{width:"100%",padding:10,marginTop:10}} />
+        <button onClick={sendNotification} disabled={sendingNotification} style={{marginTop:12,padding:"10px 18px",background:"#111827",color:"#fff"}}>{sendingNotification?"Sending...":"Send Notification"}</button>
+        <h4 style={{marginTop:22}}>History</h4>
+        <div style={{display:"grid",gap:8}}>{notificationHistory.map((n)=><div key={n.id} style={{padding:10,border:"1px solid #eee",borderRadius:8}}><strong>{n.title}</strong> — {n.priority}<div>{n.message}</div><small>{new Date(n.createdAt).toLocaleString()}</small></div>)}</div>
+      </section>
 
    
 

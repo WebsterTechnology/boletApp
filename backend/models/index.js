@@ -14,6 +14,8 @@ const WinClaim = require("./winclaim")(sequelize, DataTypes);
 const PixPaymentRequest = require("./PixPaymentRequest")(sequelize, DataTypes);
 const DeChif = require("./dechif")(sequelize, DataTypes);
 const Katchif = require("./katchif")(sequelize, DataTypes);
+const Notification = require("./notification")(sequelize, DataTypes);
+const NotificationRead = require("./notificationRead")(sequelize, DataTypes);
 
 // ==================== ASSOCIATIONS ====================
 // User -> YonChif
@@ -63,6 +65,11 @@ WinClaim.belongsTo(User, { foreignKey: "userId" });
 User.hasMany(Pwen, { foreignKey: "userId", as: "pwenTransactions" });
 Pwen.belongsTo(User, { foreignKey: "userId", as: "user" });
 
+Notification.hasMany(NotificationRead, { foreignKey: "notificationId", onDelete: "CASCADE" });
+NotificationRead.belongsTo(Notification, { foreignKey: "notificationId" });
+User.hasMany(NotificationRead, { foreignKey: "userId", onDelete: "CASCADE" });
+NotificationRead.belongsTo(User, { foreignKey: "userId" });
+
 // ==================== MODEL OBJECT ====================
 const models = {
   User,
@@ -75,6 +82,8 @@ const models = {
   DeChif,
   PixPaymentRequest,
   Katchif,
+  Notification,
+  NotificationRead,
 };
 
 // Call associate method if it exists
