@@ -3,7 +3,7 @@ import { useNotifications } from "../context/NotificationContext";
 import styles from "../style/BroadcastNotificationModal.module.css";
 
 export default function BroadcastNotificationModal() {
-  const { queue, markRead } = useNotifications();
+  const { queue, dismissModal } = useNotifications();
   const notification = queue[0];
   if (!notification) return null;
 
@@ -23,7 +23,7 @@ export default function BroadcastNotificationModal() {
             Open link
           </a>
         )}
-        <button className={styles.closeButton} onClick={() => markRead(notification.id)}>
+        <button className={styles.closeButton} onClick={() => dismissModal(notification.id)}>
           Got it
         </button>
       </div>
