@@ -307,6 +307,9 @@
   transform: scale(0.95);
 }
 
+/* Numeric unread notification badge */
+.unreadBadge { position:absolute; top:-5px; right:-6px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; display:flex; align-items:center; justify-content:center; background:#ef4444; color:#fff; font-size:9px; font-weight:800; border:2px solid #1a1a2e; line-height:1; }
+
 /* Notification Badge */
 .bellButton::after {
   content: '';

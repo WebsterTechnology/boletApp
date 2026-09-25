@@ -2,6 +2,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const app = require("./app");
 const sequelize = require("./config/database");
+const jwt = require("jsonwebtoken");
 
 const PORT = process.env.PORT || 8000;
 const server = http.createServer(app);
@@ -14,7 +15,22 @@ const io = new Server(server, {
 
 app.set("io", io);
 
+io.use((socket, next) => {
+  try {
+    const token = socket.handshake.auth?.token;
+    if (!token) return next(new Error("Authentication required"));
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.id || decoded.userId;
+    if (!userId) return next(new Error("Invalid token"));
+    socket.userId = userId;
+    next();
+  } catch (_err) {
+    next(new Error("Invalid token"));
+  }
+});
+
 io.on("connection", (socket) => {
+  socket.join(`user:${socket.userId}`);
   console.log("🔔 Notification client connected:", socket.id);
   socket.on("disconnect", () => {
     console.log("🔕 Notification client disconnected:", socket.id);
