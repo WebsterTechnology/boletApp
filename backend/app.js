@@ -36,6 +36,7 @@ const pixRoutes = require("./routes/pixRoutes");
 const infinitepayRoutes = require("./routes/infinitepay");
 const claimRoutes = require("./routes/claimRoutes");
 const katchifRoutes = require("./routes/katchifRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const adminBetsRoutes = require("./routes/adminBetsRoutes");
 const adminRoutes = require("./routes/adminRoutes");
@@ -63,6 +64,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/claims", claimRoutes);
 app.use("/api/admin/payments", adminPaymentsRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // ----------------------------------------------------
 // Export App
