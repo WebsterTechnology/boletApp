@@ -488,29 +488,108 @@ button svg,
 
 /* Small mobile (up to 480px) */
 @media (max-width: 480px) {
+  .header {
+    padding: 0.4rem 0.45rem;
+  }
+
+  .container {
+    gap: 0.35rem;
+  }
+
+  .left {
+    flex: 0 0 auto;
+    gap: 0.3rem;
+  }
+
+  .right {
+    flex: 1;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+
+  /* Keep the complete account toolbar visible on one clean row. */
   .pointsContainer {
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.2rem;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    width: 100%;
   }
 
   .buyButton,
   .withdrawButton {
-    font-size: 0.65rem;
-    padding: 0.25rem 0.6rem;
+    font-size: 0.6rem;
+    padding: 0.32rem 0.48rem;
+    line-height: 1;
   }
 
   .pointsBubble {
-    font-size: 0.75rem;
-    padding: 0.25rem 0.7rem;
+    font-size: 0.68rem;
+    padding: 0.32rem 0.55rem;
+    line-height: 1;
   }
 
+  /* Notifications must remain available on mobile. */
   .bellButton {
-    display: none; /* Hide bell on very small screens */
+    display: flex;
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: #fff;
+    background: linear-gradient(135deg, #1685f8, #0969da);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 3px 10px rgba(9, 105, 218, 0.35);
+  }
+
+  .bellButton:hover {
+    background: linear-gradient(135deg, #2993ff, #0b73ec);
   }
 
   .logoSmall {
     height: 30px;
+  }
+
+  .burger {
+    padding: 0.2rem;
+  }
+
+  .burger span {
+    width: 20px;
+  }
+}
+
+/* Extra-small phones: preserve the bell and allow only the action buttons to tighten. */
+@media (max-width: 360px) {
+  .header {
+    padding-left: 0.3rem;
+    padding-right: 0.3rem;
+  }
+
+  .pointsContainer {
+    gap: 0.18rem;
+  }
+
+  .buyButton,
+  .withdrawButton {
+    font-size: 0.56rem;
+    padding: 0.3rem 0.36rem;
+  }
+
+  .pointsBubble {
+    font-size: 0.62rem;
+    padding: 0.3rem 0.42rem;
+  }
+
+  .bellButton {
+    flex-basis: 28px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .logoSmall {
+    height: 27px;
   }
 }
 
