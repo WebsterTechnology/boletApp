@@ -8,7 +8,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [amounts, setAmounts] = useState({});
   const [loading, setLoading] = useState(false);
-  const [notification, setNotification] = useState({ title: "", message: "", priority: "info", imageUrl: "", linkUrl: "" });
+  const [notification, setNotification] = useState({ title: "", message: "", priority: "info", imageUrl: "", linkUrl: "", recipientType: "all", recipientUserId: "" });
   const [notificationHistory, setNotificationHistory] = useState([]);
   const [sendingNotification, setSendingNotification] = useState(false);
 
@@ -50,10 +50,12 @@ export default function AdminDashboard() {
     if (!notification.title.trim() || !notification.message.trim()) return alert("Title and message are required");
     try {
       setSendingNotification(true);
-      await axios.post(`${API}/api/notifications/broadcast`, notification, auth);
-      setNotification({ title: "", message: "", priority: "info", imageUrl: "", linkUrl: "" });
+      const payload = { ...notification, recipientUserId: notification.recipientType === "user" ? Number(notification.recipientUserId) : null };
+      if (payload.recipientType === "user" && !payload.recipientUserId) return alert("Select a user");
+      await axios.post(`${API}/api/notifications/send`, payload, auth);
+      setNotification({ title: "", message: "", priority: "info", imageUrl: "", linkUrl: "", recipientType: "all", recipientUserId: "" });
       await fetchNotificationHistory();
-      alert("Notification sent to all users");
+      alert(payload.recipientType === "all" ? "Notification sent to all users" : "Notification sent to selected user");
     } catch (err) {
       alert(err.response?.data?.message || "Failed to send notification");
     } finally {
@@ -216,11 +218,21 @@ const filteredUsers = useMemo(() => {
         <select value={notification.priority} onChange={(e)=>setNotification((n)=>({...n,priority:e.target.value}))} style={{padding:10,marginRight:10}}>
           <option value="info">Info</option><option value="warning">Warning</option><option value="critical">Critical</option>
         </select>
+        <select value={notification.recipientType} onChange={(e)=>setNotification((n)=>({...n,recipientType:e.target.value,recipientUserId:""}))} style={{padding:10}}>
+          <option value="all">All Users</option>
+          <option value="user">Specific User</option>
+        </select>
+        {notification.recipientType === "user" && (
+          <select value={notification.recipientUserId} onChange={(e)=>setNotification((n)=>({...n,recipientUserId:e.target.value}))} style={{width:"100%",padding:10,marginTop:10}}>
+            <option value="">Select user by phone...</option>
+            {users.map((u)=><option key={u.id} value={u.id}>{u.phone} — User #{u.id}</option>)}
+          </select>
+        )}
         <input placeholder="Optional image URL" value={notification.imageUrl} onChange={(e)=>setNotification((n)=>({...n,imageUrl:e.target.value}))} style={{width:"100%",padding:10,marginTop:10}} />
         <input placeholder="Optional link URL" value={notification.linkUrl} onChange={(e)=>setNotification((n)=>({...n,linkUrl:e.target.value}))} style={{width:"100%",padding:10,marginTop:10}} />
         <button onClick={sendNotification} disabled={sendingNotification} style={{marginTop:12,padding:"10px 18px",background:"#111827",color:"#fff"}}>{sendingNotification?"Sending...":"Send Notification"}</button>
         <h4 style={{marginTop:22}}>History</h4>
-        <div style={{display:"grid",gap:8}}>{notificationHistory.map((n)=><div key={n.id} style={{padding:10,border:"1px solid #eee",borderRadius:8}}><strong>{n.title}</strong> — {n.priority}<div>{n.message}</div><small>{new Date(n.createdAt).toLocaleString()}</small></div>)}</div>
+        <div style={{display:"grid",gap:8}}>{notificationHistory.map((n)=><div key={n.id} style={{padding:10,border:"1px solid #eee",borderRadius:8}}><strong>{n.title}</strong> — {n.priority}<div>{n.message}</div><div><b>Recipient:</b> {n.recipientType === "user" ? (n.recipient?.phone || `User #${n.recipientUserId}`) : "All Users"} · <b>Read count:</b> {Number(n.readCount || 0)}</div><small>{new Date(n.createdAt).toLocaleString()}</small></div>)}</div>
       </section>
 
    
