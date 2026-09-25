@@ -92,6 +92,18 @@ export default function AdminDashboard() {
     setAmounts((s) => ({ ...s, [userId]: "" }));
   };
 
+  const handleAdminStatus = async (user) => {
+    const nextStatus = !user.isAdmin;
+    const action = nextStatus ? "promote this user to admin" : "remove admin access from this user";
+    if (!window.confirm(`Are you sure you want to ${action}?`)) return;
+    try {
+      await axios.patch(`${API}/api/admin/users/${user.id}/admin-status`, { isAdmin: nextStatus }, auth);
+      await fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to update admin status");
+    }
+  };
+
   const handleDeleteUser = async (userId) => {
     const confirmDelete = window.confirm("Delete this user?");
     if (!confirmDelete) return;
@@ -232,6 +244,7 @@ const filteredUsers = useMemo(() => {
             <th>ID</th>
             <th>Phone</th>
             <th>Points</th>
+            <th>Role</th>
             <th>Amount</th>
             <th>Actions</th>
           </tr>
@@ -244,6 +257,7 @@ const filteredUsers = useMemo(() => {
              <td>{index + 1}</td>
               <td>{u.phone}</td>
               <td>{u.points}</td>
+              <td>{u.isAdmin ? "👑 Admin" : "User"}</td>
 
               <td>
                 <input
@@ -260,6 +274,13 @@ const filteredUsers = useMemo(() => {
               </td>
               <td>
                 <button onClick={() => handleAddPwen(u.id)}>➕ Add</button>
+
+                <button
+                  onClick={() => handleAdminStatus(u)}
+                  style={{ marginLeft: 6, background: u.isAdmin ? "#6b7280" : "#d4af37", color: u.isAdmin ? "#fff" : "#111" }}
+                >
+                  {u.isAdmin ? "Remove Admin" : "👑 Make Admin"}
+                </button>
 
                 <button
                   onClick={() => handleRemovePwen(u.id)}
