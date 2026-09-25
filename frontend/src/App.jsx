@@ -18,6 +18,7 @@ import AdminBets from "./pages/AdminBets";
 import AdminClaims from "./pages/AdminClaims"; // ✅ NEW (admin claims manager)
 import Support from "./pages/Support";
 import InfinitePayment from "./pages/InfinitePayment";
+import BroadcastNotificationModal from "./components/BroadcastNotificationModal";
 
 // -------- Guard (supports admin-only) --------
 function ProtectedRoute({ children, requireAdmin = false }) {
@@ -175,6 +176,7 @@ function App() {
 
       {showRegister && <RegisterModal onClose={() => setShowRegister(false)} />}
 
+      <BroadcastNotificationModal />
       <div id="recaptcha-container" />
     </>
   );
