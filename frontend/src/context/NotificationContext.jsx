@@ -52,6 +52,12 @@ export function NotificationProvider({ children }) {
     return () => socket.disconnect();
   }, [token]);
 
+  // Closing the real-time modal only acknowledges the popup. The bell stays unread
+  // until the user intentionally opens that notification in notification history.
+  const dismissModal = (id) => {
+    setQueue((current) => current.filter((item) => item.id !== id));
+  };
+
   const markRead = async (id) => {
     try {
       await axios.post(`${API}/api/notifications/${id}/read`, {}, auth);
@@ -76,7 +82,7 @@ export function NotificationProvider({ children }) {
   const unreadCount = notifications.filter((item) => !item.read).length;
 
   return (
-    <NotificationContext.Provider value={{ notifications, queue, unreadCount, markRead, markAllRead, reload: loadNotifications }}>
+    <NotificationContext.Provider value={{ notifications, queue, unreadCount, dismissModal, markRead, markAllRead, reload: loadNotifications }}>
       {children}
     </NotificationContext.Provider>
   );
