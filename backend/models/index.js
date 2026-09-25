@@ -16,6 +16,7 @@ const DeChif = require("./dechif")(sequelize, DataTypes);
 const Katchif = require("./katchif")(sequelize, DataTypes);
 const Notification = require("./notification")(sequelize, DataTypes);
 const NotificationRead = require("./notificationRead")(sequelize, DataTypes);
+const NotificationTarget = require("./notificationTarget")(sequelize, DataTypes);
 
 // ==================== ASSOCIATIONS ====================
 // User -> YonChif
@@ -68,7 +69,10 @@ Pwen.belongsTo(User, { foreignKey: "userId", as: "user" });
 Notification.hasMany(NotificationRead, { foreignKey: "notificationId", onDelete: "CASCADE" });
 NotificationRead.belongsTo(Notification, { foreignKey: "notificationId" });
 User.hasMany(NotificationRead, { foreignKey: "userId", onDelete: "CASCADE" });
-Notification.belongsTo(User, { foreignKey: "recipientUserId", as: "recipient", constraints: false });
+Notification.hasOne(NotificationTarget, { foreignKey: "notificationId", as: "target", onDelete: "CASCADE" });
+NotificationTarget.belongsTo(Notification, { foreignKey: "notificationId" });
+User.hasMany(NotificationTarget, { foreignKey: "userId", onDelete: "CASCADE" });
+NotificationTarget.belongsTo(User, { foreignKey: "userId", as: "user" });
 NotificationRead.belongsTo(User, { foreignKey: "userId" });
 
 // ==================== MODEL OBJECT ====================
@@ -85,6 +89,7 @@ const models = {
   Katchif,
   Notification,
   NotificationRead,
+  NotificationTarget,
 };
 
 // Call associate method if it exists
