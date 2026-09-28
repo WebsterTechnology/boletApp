@@ -18,7 +18,7 @@ function shapeUser(u) {
     city: u.city || "",
     state: u.state || "",
     cep: u.cep || "",
-    profileComplete: !!u.profileOnboardingDone,
+    profileComplete: !!(u.fullName && u.email),
   };
 }
 
@@ -130,23 +130,19 @@ exports.completeProfile = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
-    const { fullName, cpf, birthDate, email, address, city, state, cep } = req.body;
-    const cleanCpf = cpf ? String(cpf).replace(/\D/g, "") : null;
-    const cleanCep = cep ? String(cep).replace(/\D/g, "") : null;
-    if (cleanCpf && cleanCpf.length !== 11) return res.status(400).json({ message: "CPF must have 11 digits" });
-    if (cleanCep && cleanCep.length !== 8) return res.status(400).json({ message: "CEP must have 8 digits" });
-    if (cleanCpf) {
-      const duplicate = await User.findOne({ where: { cpf: cleanCpf } });
-      if (duplicate && duplicate.id !== user.id) return res.status(400).json({ message: "CPF already registered" });
+
+    const fullName = String(req.body.fullName || "").trim();
+    const email = String(req.body.email || "").trim().toLowerCase();
+    if (!fullName || !email) {
+      return res.status(400).json({ message: "Name and email are required" });
     }
-    Object.assign(user, {
-      fullName: fullName?.trim() || null, cpf: cleanCpf, birthDate: birthDate || null,
-      email: email?.trim().toLowerCase() || null, address: address?.trim() || null,
-      city: city?.trim() || null, state: state?.trim().toUpperCase() || null, cep: cleanCep,
-      profileOnboardingDone: true
-    });
+
+    user.fullName = fullName;
+    user.email = email;
+    user.profileOnboardingDone = true;
     await user.save();
-    return res.json({ message: "Profile saved", user: shapeUser(user) });
+
+    return res.json({ message: "Account completed", user: shapeUser(user) });
   } catch (err) {
     console.error("Complete profile error:", err);
     return res.status(500).json({ message: "Server error" });
