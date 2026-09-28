@@ -202,7 +202,9 @@ const filteredUsers = useMemo(() => {
   const search = searchUser.trim();
 
   return users.filter((user) =>
-    String(user.phone).includes(search)
+    [user.phone,user.fullName,user.cpf,user.email].some((value) =>
+      String(value || "").toLowerCase().includes(search.toLowerCase())
+    )
   );
 }, [users, searchUser]);
   /* ================= UI ================= //remover el index do la do do u no map para parar el admin page*/
@@ -239,7 +241,7 @@ const filteredUsers = useMemo(() => {
 
 <input
   type="text"
-  placeholder="🔍 Search phone number..."
+  placeholder="🔍 Search name, CPF, phone or email..."
   value={searchUser}
   onChange={(e) => setSearchUser(e.target.value)}
   style={{
@@ -254,7 +256,10 @@ const filteredUsers = useMemo(() => {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Phone</th>
+            <th>Customer</th>
+            <th>CPF</th>
+            <th>Contact</th>
+            <th>Address</th>
             <th>Points</th>
             <th>Role</th>
             <th>Amount</th>
@@ -267,7 +272,10 @@ const filteredUsers = useMemo(() => {
           {filteredUsers.map((u, index) => (
             <tr key={u.id}>
              <td>{index + 1}</td>
-              <td>{u.phone}</td>
+              <td><strong>{u.fullName || "Cadastro pendente"}</strong><br/><small>{u.birthDate || "Nascimento pendente"}</small></td>
+              <td>{u.cpf || "Pendente"}</td>
+              <td>{u.phone}<br/><small>{u.email || "E-mail pendente"}</small></td>
+              <td>{u.address ? `${u.address}, ${u.city} - ${u.state}, CEP ${u.cep}` : "Cadastro pendente"}</td>
               <td>{u.points}</td>
               <td>{u.isAdmin ? "👑 Admin" : "User"}</td>
 
