@@ -67,6 +67,7 @@ export default function LoginModal({ onClose, openRegister }) {
       // Close the login modal first, then route the authenticated user.
       onClose?.();
       if (data.user?.isAdmin) navigate('/admin/dashboard', { replace: true });
+      else if (!data.user?.profileComplete) navigate('/complete-profile', { replace: true });
       else navigate('/game', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
