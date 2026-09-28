@@ -9,6 +9,9 @@ const shapeUser = (u) => ({
   phone: u.phone,
   points: Number(u.points ?? 0),
   isAdmin: !!u.isAdmin,
+  fullName: u.fullName || "",
+  email: u.email || "",
+  profileComplete: !!(u.fullName && u.email),
 });
 
 // GET /api/users/me
