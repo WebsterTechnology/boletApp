@@ -4,6 +4,25 @@ const app = require("./app");
 const sequelize = require("./config/database");
 const jwt = require("jsonwebtoken");
 
+async function ensureUserProfileColumns() {
+  const queryInterface = sequelize.getQueryInterface();
+  const table = await queryInterface.describeTable("users");
+  const columns = {
+    fullName: { type: require("sequelize").DataTypes.STRING, allowNull: true },
+    cpf: { type: require("sequelize").DataTypes.STRING(11), allowNull: true, unique: true },
+    birthDate: { type: require("sequelize").DataTypes.DATEONLY, allowNull: true },
+    email: { type: require("sequelize").DataTypes.STRING, allowNull: true },
+    address: { type: require("sequelize").DataTypes.STRING, allowNull: true },
+    city: { type: require("sequelize").DataTypes.STRING, allowNull: true },
+    state: { type: require("sequelize").DataTypes.STRING(2), allowNull: true },
+    cep: { type: require("sequelize").DataTypes.STRING(8), allowNull: true },
+    profileOnboardingDone: { type: require("sequelize").DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+  };
+  for (const [name, definition] of Object.entries(columns)) {
+    if (!table[name]) await queryInterface.addColumn("users", name, definition);
+  }
+}
+
 const PORT = process.env.PORT || 8000;
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -41,6 +60,9 @@ sequelize
   .authenticate()
   .then(() => {
     console.log("📦 Database connected successfully!");
+    return ensureUserProfileColumns();
+  })
+  .then(() => {
     return sequelize.sync();
   })
   .then(() => {
