@@ -15,6 +15,7 @@ module.exports = (sequelize, DataTypes) => {
       state: { type: DataTypes.STRING(2), allowNull: true },
       cep: { type: DataTypes.STRING(8), allowNull: true },
       profileOnboardingDone: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+      profileOnboardingDone: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       password: { type: DataTypes.STRING, allowNull: false },
       points: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
       isAdmin: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
