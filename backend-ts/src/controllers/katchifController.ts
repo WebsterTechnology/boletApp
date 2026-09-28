@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { currentUser } from "../middleware/authenticate";
 import { Katchif, User } from "../models";
 import { errorMessage } from "../utils/errors";
+import { disabledBetMessage } from "../utils/betRestrictions";
 import { queryString } from "../utils/http";
 
 const MAX_KATCHIF_POINTS = 20;
@@ -26,6 +27,9 @@ export async function createKatchif(req: Request, res: Response) {
     if (!betPwen || betPwen <= 0 || !location || !receiptId) {
       return res.status(400).json({ message: "Invalid pwen, missing location or receiptId" });
     }
+
+    const restriction = disabledBetMessage(number, location);
+    if (restriction) return res.status(400).json({ message: restriction });
 
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -98,6 +102,9 @@ export async function updateKatchif(req: Request, res: Response) {
     if (number && !/^\d{4}$/.test(number)) {
       return res.status(400).json({ message: "Number must be exactly 4 digits." });
     }
+
+    const restriction = disabledBetMessage(number ?? bet.number, location ?? bet.location);
+    if (restriction) return res.status(400).json({ message: restriction });
 
     bet.number = number;
     bet.pwen = pwen;
