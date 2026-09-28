@@ -64,11 +64,10 @@ export default function LoginModal({ onClose, openRegister }) {
       window.dispatchEvent(new Event('userLoggedIn'));
       window.dispatchEvent(new Event('pointsUpdated'));
 
-      // route by role
-      if (data.user?.isAdmin) navigate('/admin/dashboard', { replace: true });
-      else navigate('/', { replace: true });
-
+      // Close the login modal first, then route the authenticated user.
       onClose?.();
+      if (data.user?.isAdmin) navigate('/admin/dashboard', { replace: true });
+      else navigate('/game', { replace: true });
     } catch (err) {
       console.error('Login error:', err);
       alert('❌ Erè pandan login');
