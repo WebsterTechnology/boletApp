@@ -38,7 +38,7 @@ if (WinClaim && !WinClaim.associations?.User) WinClaim.belongsTo(User, { foreign
 router.get("/users", authenticate, adminOnly, async (_req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ["id", "phone", "points", "isAdmin"],
+      attributes: ["id", "phone", "points", "isAdmin", "fullName", "cpf", "birthDate", "email", "address", "city", "state", "cep"],
       order: [["id", "ASC"]],
     });
     res.json(users);

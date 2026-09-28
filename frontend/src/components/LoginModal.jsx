@@ -66,7 +66,7 @@ export default function LoginModal({ onClose, openRegister }) {
 
       // route by role
       if (data.user?.isAdmin) navigate('/admin/dashboard', { replace: true });
-      else navigate('/game', { replace: true });
+      else navigate('/', { replace: true });
 
       onClose?.();
     } catch (err) {

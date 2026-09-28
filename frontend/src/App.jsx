@@ -19,6 +19,7 @@ import AdminClaims from "./pages/AdminClaims"; // ✅ NEW (admin claims manager)
 import Support from "./pages/Support";
 import InfinitePayment from "./pages/InfinitePayment";
 import BroadcastNotificationModal from "./components/BroadcastNotificationModal";
+import CompleteProfile from "./pages/CompleteProfile";
 
 // -------- Guard (supports admin-only) --------
 function ProtectedRoute({ children, requireAdmin = false }) {
@@ -68,6 +69,8 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Home openLogin={() => setShowLogin(true)} />} />
+
+        <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
 
         <Route
           path="/profile"

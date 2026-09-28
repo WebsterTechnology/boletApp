@@ -10,6 +10,15 @@ function shapeUser(u) {
     phone: u.phone,
     points: Number(u.points ?? 0), // ensure number
     isAdmin: !!u.isAdmin,
+    fullName: u.fullName || "",
+    cpf: u.cpf || "",
+    birthDate: u.birthDate || "",
+    email: u.email || "",
+    address: u.address || "",
+    city: u.city || "",
+    state: u.state || "",
+    cep: u.cep || "",
+    profileComplete: !!u.profileOnboardingDone,
   };
 }
 
@@ -44,46 +53,13 @@ exports.login = async (req, res) => {
   }
 };
 
-// exports.register = async (req, res) => {
-//   const { phone, password, isAdmin } = req.body;
-
-//   if (!phone || !password) {
-//     return res.status(400).json({ message: "Phone and password are required" });
-//   }
-//   if (!/^\d{4}$/.test(password)) {
-//     return res.status(400).json({ message: "Password must be exactly 4 digits" });
-//   }
-
-//   try {
-//     const exists = await User.findOne({ where: { phone } });
-//     if (exists) return res.status(400).json({ message: "User already exists" });
-
-//     const hashedPassword = await bcrypt.hash(password, 10);
-
-//     const user = await User.create({
-//       phone,
-//       password: hashedPassword,
-//       isAdmin: !!isAdmin,
-//       // points uses model default (0)
-//     });
-
-//     return res.status(201).json({
-//       message: "User created",
-//       user: shapeUser(user),
-//     });
-//   } catch (err) {
-//     console.error("Register error:", err);
-//     return res.status(500).json({ message: "Server error" });
-//   }
-// };
-
 exports.register = async (req, res) => {
-  const { phone, password } = req.body;
+  const { phone, password, fullName, email } = req.body;
 
-  if (!phone || !password) {
-    return res.status(400).json({ message: "Phone and password are required" });
+  if (!phone || !password || !fullName || !email) {
+    return res.status(400).json({ message: "Name, email, phone and password are required" });
   }
-  if (!/^\d{4}$/.test(password)) {
+  if (String(password).length !== 4) {
     return res.status(400).json({ message: "Password must be exactly 4 digits" });
   }
 
@@ -92,26 +68,22 @@ exports.register = async (req, res) => {
     if (exists) return res.status(400).json({ message: "User already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const user = await User.create({
       phone,
       password: hashedPassword,
-      // Public registration can never grant administrator privileges.
+      fullName: String(fullName).trim(),
+      email: String(email).trim().toLowerCase(),
       isAdmin: false,
+      profileOnboardingDone: true,
     });
 
-    // 🔥 ADD THIS
     const token = jwt.sign(
       { id: user.id, phone: user.phone, isAdmin: user.isAdmin },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    return res.status(201).json({
-      message: "User created",
-      user: shapeUser(user),
-      token, // ✅ NOW USER IS LOGGED IN
-    });
+    return res.status(201).json({ message: "User created", user: shapeUser(user), token });
   } catch (err) {
     console.error("Register error:", err);
     return res.status(500).json({ message: "Server error" });
@@ -151,5 +123,32 @@ exports.deleteUser = async (req, res) => {
       message: "Server error",
       error: err.message,
     });
+  }
+};
+
+exports.completeProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const { fullName, cpf, birthDate, email, address, city, state, cep } = req.body;
+    const cleanCpf = cpf ? String(cpf).replace(/\D/g, "") : null;
+    const cleanCep = cep ? String(cep).replace(/\D/g, "") : null;
+    if (cleanCpf && cleanCpf.length !== 11) return res.status(400).json({ message: "CPF must have 11 digits" });
+    if (cleanCep && cleanCep.length !== 8) return res.status(400).json({ message: "CEP must have 8 digits" });
+    if (cleanCpf) {
+      const duplicate = await User.findOne({ where: { cpf: cleanCpf } });
+      if (duplicate && duplicate.id !== user.id) return res.status(400).json({ message: "CPF already registered" });
+    }
+    Object.assign(user, {
+      fullName: fullName?.trim() || null, cpf: cleanCpf, birthDate: birthDate || null,
+      email: email?.trim().toLowerCase() || null, address: address?.trim() || null,
+      city: city?.trim() || null, state: state?.trim().toUpperCase() || null, cep: cleanCep,
+      profileOnboardingDone: true
+    });
+    await user.save();
+    return res.json({ message: "Profile saved", user: shapeUser(user) });
+  } catch (err) {
+    console.error("Complete profile error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };

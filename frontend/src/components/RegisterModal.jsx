@@ -21,6 +21,8 @@ const RegisterModal = ({ onClose }) => {
   );
   const [showPicker, setShowPicker] = useState(false);
   const [phone, setPhone] = useState("");
+  const [form, setForm] = useState({ fullName:"", email:"", confirmPassword:"" });
+  const field = (name) => (e) => setForm((f) => ({ ...f, [name]: e.target.value }));
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isAdult, setIsAdult] = useState(false);
@@ -33,6 +35,9 @@ const API = import.meta.env.VITE_API_URL;
 
 const handleRegister = async () => {
   if (!isAdult) return alert("Ou dwe gen 18 lane oswa plis.");
+  if (!form.fullName.trim() || !form.email.trim()) return alert("Tanpri antre non ak e-mail ou.");
+  if (password !== form.confirmPassword) return alert("PIN yo pa menm.");
+
 
   try {
     const res = await fetch(`${API}/api/auth/register`, {
@@ -41,6 +46,8 @@ const handleRegister = async () => {
       body: JSON.stringify({
         phone: fullPhone.trim(),
         password: password.toString().trim(),
+        ...form,
+        confirmPassword: undefined,
       }),
     });
 
@@ -63,8 +70,8 @@ const handleRegister = async () => {
     window.dispatchEvent(new Event("userLoggedIn"));
     window.dispatchEvent(new Event("pointsUpdated"));
 
-    // go to game
-    window.location.href = "/game";
+    // new users already have a complete profile
+    window.location.href = "/";
   } catch (err) {
     console.error("Register error:", err);
     alert("❌ Erè pandan ou te kreye kont la");
@@ -79,7 +86,7 @@ const handleRegister = async () => {
 
         <h2 className={styles.title}>Ouvè yon kont</h2>
 
-        <div className={styles.phoneInputWrapper}>
+        <input className={styles.input} placeholder="Nome completo *" value={form.fullName} onChange={field("fullName")} />\n\n        <div className={styles.phoneInputWrapper}>
           <div
             className={styles.code}
             onClick={() => setShowPicker(!showPicker)}
@@ -114,7 +121,7 @@ const handleRegister = async () => {
           </div>
         )}
 
-        <div className={styles.passwordInputWrapper}>
+        <input className={styles.input} type="email" placeholder="E-mail *" value={form.email} onChange={field("email")} style={{marginTop:10}} />\n\n        <div className={styles.passwordInputWrapper}>
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Chwazi yon kòd sekrè *"
@@ -128,6 +135,7 @@ const handleRegister = async () => {
             onClick={() => setShowPassword(!showPassword)}
           />
         </div>
+        <input type="password" inputMode="numeric" maxLength={4} placeholder="Confirmar senha *" className={styles.input} value={form.confirmPassword} onChange={(e)=>setForm(f=>({...f,confirmPassword:e.target.value.replace(/\D/g,"").slice(0,4)}))} style={{marginTop:10}} />
         <small style={{ fontSize: "0.75rem", color: "#888" }}>
           *Pa plis pase 4 chif
         </small>
@@ -149,7 +157,7 @@ const handleRegister = async () => {
           disabled={
             !isAdult ||
             phone.length < 6 ||
-            password.length !== 4
+            password.length !== 4 || form.confirmPassword.length !== 4
           }
         >
           OUVÈ YON KONT
