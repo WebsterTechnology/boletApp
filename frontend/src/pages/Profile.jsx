@@ -18,8 +18,12 @@ export default function Profile() {
       const res = await fetch(`${API}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (res.ok) {
         const data = await res.json();
-        setUser(data);
-        localStorage.setItem("user", JSON.stringify(data));
+        const current = (() => {
+          try { return JSON.parse(localStorage.getItem("user") || "{}"); } catch { return {}; }
+        })();
+        const mergedUser = { ...current, ...data };
+        setUser(mergedUser);
+        localStorage.setItem("user", JSON.stringify(mergedUser));
         localStorage.setItem("userPhone", data.phone);
         localStorage.setItem("userPoints", String(data.points ?? 0));
         window.dispatchEvent(new Event("pointsUpdated"));
