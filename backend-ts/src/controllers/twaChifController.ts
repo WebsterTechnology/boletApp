@@ -20,22 +20,27 @@ export async function createTwaChif(req: Request, res: Response) {
     const restriction = disabledBetMessage(number, location);
     if (restriction) return res.status(400).json({ message: restriction });
 
+    const betPwen = Number(pwen);
+    if (!Number.isFinite(betPwen) || betPwen <= 0) {
+      return res.status(400).json({ message: "Pwen must be a positive number" });
+    }
+
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (user.points < pwen) {
+    if (user.points < betPwen) {
       return res.status(403).json({
         message: "Ou pa gen ase pwen pou mete parye a.",
-        required: pwen,
+        required: betPwen,
         currentBalance: user.points,
         redirectTo: "/buy-credits",
       });
     }
 
-    user.points -= pwen;
+    user.points -= betPwen;
     await user.save();
 
-    const bet = await TwaChif.create({ number, pwen, location, receiptId, userId });
+    const bet = await TwaChif.create({ number, pwen: betPwen, location, receiptId, userId });
 
     return res.status(201).json({
       message: "Parye Twa Chif soumèt avèk siksè",
