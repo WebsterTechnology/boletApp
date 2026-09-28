@@ -53,25 +53,36 @@ exports.login = async (req, res) => {
   }
 };
 
-// exports.register = async (req, res) => {
-  const { phone, password, fullName, cpf, birthDate, email, address, city, state, cep } = req.body;
-  if (!phone || !password) return res.status(400).json({ message: "Phone and password are required" });
-  if (!/^\d{4}$/.test(password)) return res.status(400).json({ message: "Password must be exactly 4 digits" });
+exports.register = async (req, res) => {
+  const { phone, password, fullName, email } = req.body;
+
+  if (!phone || !password || !fullName || !email) {
+    return res.status(400).json({ message: "Name, email, phone and password are required" });
+  }
+  if (String(password).length !== 4) {
+    return res.status(400).json({ message: "Password must be exactly 4 digits" });
+  }
+
   try {
-    if (await User.findOne({ where: { phone } })) return res.status(400).json({ message: "User already exists" });
-    const cleanCpf = cpf ? String(cpf).replace(/\D/g, "") : null;
-    const cleanCep = cep ? String(cep).replace(/\D/g, "") : null;
-    if (cleanCpf && cleanCpf.length !== 11) return res.status(400).json({ message: "CPF must have 11 digits" });
-    if (cleanCep && cleanCep.length !== 8) return res.status(400).json({ message: "CEP must have 8 digits" });
-    if (cleanCpf && await User.findOne({ where: { cpf: cleanCpf } })) return res.status(400).json({ message: "CPF already registered" });
+    const exists = await User.findOne({ where: { phone } });
+    if (exists) return res.status(400).json({ message: "User already exists" });
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await User.create({
-      phone, password: hashedPassword, isAdmin: false, profileOnboardingDone: true,
-      fullName: fullName?.trim() || null, cpf: cleanCpf, birthDate: birthDate || null,
-      email: email?.trim().toLowerCase() || null, address: address?.trim() || null,
-      city: city?.trim() || null, state: state?.trim().toUpperCase() || null, cep: cleanCep
+      phone,
+      password: hashedPassword,
+      fullName: String(fullName).trim(),
+      email: String(email).trim().toLowerCase(),
+      isAdmin: false,
+      profileOnboardingDone: true,
     });
-    const token = jwt.sign({ id: user.id, phone: user.phone, isAdmin: user.isAdmin }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+    const token = jwt.sign(
+      { id: user.id, phone: user.phone, isAdmin: user.isAdmin },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
     return res.status(201).json({ message: "User created", user: shapeUser(user), token });
   } catch (err) {
     console.error("Register error:", err);
