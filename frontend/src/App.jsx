@@ -41,6 +41,12 @@ function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
 
+  const openLogin = () => {
+    if (localStorage.getItem("token")) return;
+    setShowRegister(false);
+    setShowLogin(true);
+  };
+
   // Keep axios Authorization header in sync with localStorage token.
   useEffect(() => {
     const applyAuthHeader = () => {
@@ -65,10 +71,10 @@ function App() {
 
   return (
     <>
-      <Header openLogin={() => setShowLogin(true)} />
+      <Header openLogin={openLogin} />
 
       <Routes>
-        <Route path="/" element={<Home openLogin={() => setShowLogin(true)} />} />
+        <Route path="/" element={<Home openLogin={openLogin} />} />
 
         <Route path="/complete-profile" element={<ProtectedRoute><CompleteProfile /></ProtectedRoute>} />
 
@@ -167,7 +173,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
-      {showLogin && (
+      {showLogin && !localStorage.getItem("token") && (
         <LoginModal
           onClose={() => setShowLogin(false)}
           openRegister={() => {
@@ -177,7 +183,7 @@ function App() {
         />
       )}
 
-      {showRegister && <RegisterModal onClose={() => setShowRegister(false)} />}
+      {showRegister && !localStorage.getItem("token") && <RegisterModal onClose={() => setShowRegister(false)} />}
 
       <BroadcastNotificationModal />
       <div id="recaptcha-container" />
