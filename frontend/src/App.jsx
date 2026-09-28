@@ -34,6 +34,18 @@ function ProtectedRoute({ children, requireAdmin = false }) {
 
   if (!token) return <Navigate to="/" replace />;
   if (requireAdmin && !isAdmin) return <Navigate to="/" replace />;
+
+  if (!isAdmin) {
+    try {
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+      const complete = !!(user.fullName && user.email);
+      if (!complete && window.location.pathname !== "/complete-profile") {
+        return <Navigate to="/complete-profile" replace />;
+      }
+    } catch {
+      return <Navigate to="/complete-profile" replace />;
+    }
+  }
   return children;
 }
 
