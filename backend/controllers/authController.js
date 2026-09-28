@@ -10,6 +10,15 @@ function shapeUser(u) {
     phone: u.phone,
     points: Number(u.points ?? 0), // ensure number
     isAdmin: !!u.isAdmin,
+    fullName: u.fullName || "",
+    cpf: u.cpf || "",
+    birthDate: u.birthDate || "",
+    email: u.email || "",
+    address: u.address || "",
+    city: u.city || "",
+    state: u.state || "",
+    cep: u.cep || "",
+    profileComplete: !!(u.fullName && u.cpf && u.birthDate && u.email && u.address && u.city && u.state && u.cep),
   };
 }
 
@@ -90,12 +99,22 @@ exports.register = async (req, res) => {
   try {
     const exists = await User.findOne({ where: { phone } });
     if (exists) return res.status(400).json({ message: "User already exists" });
+    const cpfExists = await User.findOne({ where: { cpf: cleanCpf } });
+    if (cpfExists) return res.status(400).json({ message: "CPF already registered" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       phone,
       password: hashedPassword,
+      fullName: String(fullName).trim(),
+      cpf: cleanCpf,
+      birthDate,
+      email: String(email).trim().toLowerCase(),
+      address: String(address).trim(),
+      city: String(city).trim(),
+      state: String(state).trim().toUpperCase(),
+      cep: cleanCep,
       // Public registration can never grant administrator privileges.
       isAdmin: false,
     });
@@ -151,5 +170,28 @@ exports.deleteUser = async (req, res) => {
       message: "Server error",
       error: err.message,
     });
+  }
+};
+
+exports.completeProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    const { fullName, cpf, birthDate, email, address, city, state, cep } = req.body;
+    if (!fullName || !cpf || !birthDate || !email || !address || !city || !state || !cep) {
+      return res.status(400).json({ message: "All profile fields are required" });
+    }
+    const cleanCpf = String(cpf).replace(/\D/g, "");
+    const cleanCep = String(cep).replace(/\D/g, "");
+    if (!/^\d{11}$/.test(cleanCpf)) return res.status(400).json({ message: "CPF must have 11 digits" });
+    if (!/^\d{8}$/.test(cleanCep)) return res.status(400).json({ message: "CEP must have 8 digits" });
+    const duplicate = await User.findOne({ where: { cpf: cleanCpf } });
+    if (duplicate && duplicate.id !== user.id) return res.status(400).json({ message: "CPF already registered" });
+    Object.assign(user, { fullName: String(fullName).trim(), cpf: cleanCpf, birthDate, email: String(email).trim().toLowerCase(), address: String(address).trim(), city: String(city).trim(), state: String(state).trim().toUpperCase(), cep: cleanCep });
+    await user.save();
+    return res.json({ message: "Profile completed", user: shapeUser(user) });
+  } catch (err) {
+    console.error("Complete profile error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
