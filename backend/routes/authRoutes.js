@@ -6,6 +6,7 @@ const adminOnly = require("../middleware/adminOnly");
 
 router.post("/register", authController.register);
 router.post("/login", authController.login);
+router.patch("/complete-profile", authenticate, authController.completeProfile);
 router.delete(
   "/users/:id",
   authenticate,
