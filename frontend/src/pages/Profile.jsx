@@ -48,12 +48,12 @@ export default function Profile() {
   return (
     <main style={page}>
       <section style={card}>
-        <h1 style={{margin:"0 0 6px"}}>👤 Profil Ou</h1>
+        <h1 style={{margin:"0 0 6px",color:"#1f2937"}}>👤 Profil Ou</h1>
         <p style={{margin:"0 0 24px",color:"#666"}}>Enfòmasyon kont ou</p>
-        <div style={row}><span style={label}>Non</span><strong>{user.fullName || "—"}</strong></div>
-        <div style={row}><span style={label}>E-mail</span><strong style={{overflowWrap:"anywhere"}}>{user.email || "—"}</strong></div>
-        <div style={row}><span style={label}>Telefòn</span><strong>{user.phone}</strong></div>
-        <div style={row}><span style={label}>Pwen</span><strong>{user.points ?? 0}</strong></div>
+        <div style={row}><span style={label}>Non</span><strong style={value}>{user.fullName || "—"}</strong></div>
+        <div style={row}><span style={label}>E-mail</span><strong style={{...value,overflowWrap:"anywhere"}}>{user.email || "—"}</strong></div>
+        <div style={row}><span style={label}>Telefòn</span><strong style={value}>{user.phone || "—"}</strong></div>
+        <div style={row}><span style={label}>Pwen</span><strong style={value}>{user.points ?? 0}</strong></div>
         <button onClick={fetchUser} disabled={loading} style={primary}>{loading ? "Ap rafrechi..." : "RAFRECHI"}</button>
         <hr style={{border:0,borderTop:"1px solid #ddd",margin:"24px 0"}} />
         <button onClick={handleLogout} style={logout}>🚪 DEKONEKTE</button>
@@ -65,5 +65,6 @@ const page={minHeight:"calc(100vh - 80px)",padding:"24px 16px",display:"flex",ju
 const card={width:"100%",maxWidth:520,background:"#fff",borderRadius:16,padding:24,boxShadow:"0 8px 30px rgba(0,0,0,.10)"};
 const row={display:"flex",justifyContent:"space-between",gap:16,padding:"14px 0",borderBottom:"1px solid #eee"};
 const label={color:"#666"};
+const value={color:"#1f2937",textAlign:"right"};
 const primary={width:"100%",marginTop:22,padding:"13px 16px",border:0,borderRadius:10,background:"#3157d5",color:"#fff",fontWeight:800,cursor:"pointer"};
 const logout={width:"100%",padding:"15px 16px",border:0,borderRadius:10,background:"#c62828",color:"#fff",fontWeight:900,fontSize:16,cursor:"pointer"};
