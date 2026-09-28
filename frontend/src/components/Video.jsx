@@ -5,7 +5,7 @@ import htImage from "../assets/loto.jpg";
 const Video = () => {
   return (
     <div className={styles.videoContainer}>
-      <h3 className={styles.videoTitle}>HAITI LOTO DIGITAL</h3>
+      <h3 className={styles.videoTitle}>HT NOVA TECH</h3>
 
       <div className={styles.videoWrapper}>
         <img
