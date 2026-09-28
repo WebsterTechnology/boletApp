@@ -21,6 +21,8 @@ const RegisterModal = ({ onClose }) => {
   );
   const [showPicker, setShowPicker] = useState(false);
   const [phone, setPhone] = useState("");
+  const [form, setForm] = useState({ fullName:"", cpf:"", birthDate:"", email:"", address:"", city:"", state:"", cep:"", confirmPassword:"" });
+  const field = (name) => (e) => setForm((f) => ({ ...f, [name]: e.target.value }));
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isAdult, setIsAdult] = useState(false);
@@ -33,6 +35,8 @@ const API = import.meta.env.VITE_API_URL;
 
 const handleRegister = async () => {
   if (!isAdult) return alert("Ou dwe gen 18 lane oswa plis.");
+  if (password !== form.confirmPassword) return alert("PIN yo pa menm.");
+  if (!form.fullName || !form.cpf || !form.birthDate || !form.email || !form.address || !form.city || !form.state || !form.cep) return alert("Tanpri ranpli tout enfòmasyon yo.");
 
   try {
     const res = await fetch(`${API}/api/auth/register`, {
@@ -41,6 +45,8 @@ const handleRegister = async () => {
       body: JSON.stringify({
         phone: fullPhone.trim(),
         password: password.toString().trim(),
+        ...form,
+        confirmPassword: undefined,
       }),
     });
 
@@ -63,8 +69,8 @@ const handleRegister = async () => {
     window.dispatchEvent(new Event("userLoggedIn"));
     window.dispatchEvent(new Event("pointsUpdated"));
 
-    // go to game
-    window.location.href = "/game";
+    // new users already have a complete profile
+    window.location.href = "/";
   } catch (err) {
     console.error("Register error:", err);
     alert("❌ Erè pandan ou te kreye kont la");
@@ -78,6 +84,10 @@ const handleRegister = async () => {
         <button className={styles.closeBtn} onClick={onClose}>✕</button>
 
         <h2 className={styles.title}>Ouvè yon kont</h2>
+
+        <input className={styles.input} placeholder="Nome completo *" value={form.fullName} onChange={field("fullName")} />
+        <input className={styles.input} placeholder="CPF *" inputMode="numeric" value={form.cpf} onChange={(e)=>setForm(f=>({...f,cpf:e.target.value.replace(/\D/g,"").slice(0,11)}))} style={{marginTop:10}} />
+        <input className={styles.input} type="date" value={form.birthDate} onChange={field("birthDate")} style={{marginTop:10}} />
 
         <div className={styles.phoneInputWrapper}>
           <div
@@ -114,6 +124,12 @@ const handleRegister = async () => {
           </div>
         )}
 
+        <input className={styles.input} type="email" placeholder="E-mail *" value={form.email} onChange={field("email")} style={{marginTop:10}} />
+        <input className={styles.input} placeholder="Endereço *" value={form.address} onChange={field("address")} style={{marginTop:10}} />
+        <input className={styles.input} placeholder="Cidade *" value={form.city} onChange={field("city")} style={{marginTop:10}} />
+        <input className={styles.input} placeholder="Estado (UF) *" maxLength={2} value={form.state} onChange={(e)=>setForm(f=>({...f,state:e.target.value.replace(/[^a-z]/gi,"").toUpperCase().slice(0,2)}))} style={{marginTop:10}} />
+        <input className={styles.input} placeholder="CEP *" inputMode="numeric" value={form.cep} onChange={(e)=>setForm(f=>({...f,cep:e.target.value.replace(/\D/g,"").slice(0,8)}))} style={{marginTop:10}} />
+
         <div className={styles.passwordInputWrapper}>
           <input
             type={showPassword ? "text" : "password"}
@@ -128,6 +144,7 @@ const handleRegister = async () => {
             onClick={() => setShowPassword(!showPassword)}
           />
         </div>
+        <input type="password" inputMode="numeric" maxLength={4} placeholder="Confirmar senha *" className={styles.input} value={form.confirmPassword} onChange={(e)=>setForm(f=>({...f,confirmPassword:e.target.value.replace(/\D/g,"").slice(0,4)}))} style={{marginTop:10}} />
         <small style={{ fontSize: "0.75rem", color: "#888" }}>
           *Pa plis pase 4 chif
         </small>
@@ -149,7 +166,7 @@ const handleRegister = async () => {
           disabled={
             !isAdult ||
             phone.length < 6 ||
-            password.length !== 4
+            password.length !== 4 || form.confirmPassword.length !== 4
           }
         >
           OUVÈ YON KONT
