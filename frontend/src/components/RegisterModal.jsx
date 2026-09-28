@@ -86,7 +86,7 @@ const handleRegister = async () => {
 
         <h2 className={styles.title}>Ouvè yon kont</h2>
 
-        <input className={styles.input} placeholder="Nome completo *" value={form.fullName} onChange={field("fullName")} />\n\n        <div className={styles.phoneInputWrapper}>
+        <input className={styles.input} placeholder="Non konplè *" value={form.fullName} onChange={field("fullName")} />\n\n        <div className={styles.phoneInputWrapper}>
           <div
             className={styles.code}
             onClick={() => setShowPicker(!showPicker)}
@@ -121,7 +121,7 @@ const handleRegister = async () => {
           </div>
         )}
 
-        <input className={styles.input} type="email" placeholder="E-mail *" value={form.email} onChange={field("email")} style={{marginTop:10}} />\n\n        <div className={styles.passwordInputWrapper}>
+        <input className={styles.input} type="email" placeholder="Imèl *" value={form.email} onChange={field("email")} style={{marginTop:10}} />\n\n        <div className={styles.passwordInputWrapper}>
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Chwazi yon kòd sekrè *"
@@ -135,10 +135,8 @@ const handleRegister = async () => {
             onClick={() => setShowPassword(!showPassword)}
           />
         </div>
-        <input type="password" inputMode="numeric" maxLength={4} placeholder="Confirmar senha *" className={styles.input} value={form.confirmPassword} onChange={(e)=>setForm(f=>({...f,confirmPassword:e.target.value.replace(/\D/g,"").slice(0,4)}))} style={{marginTop:10}} />
-        <small style={{ fontSize: "0.75rem", color: "#888" }}>
-          *Pa plis pase 4 chif
-        </small>
+        <input type="password" inputMode="numeric" maxLength={4} placeholder="Konfime PIN ou *" className={styles.input} value={form.confirmPassword} onChange={(e)=>setForm(f=>({...f,confirmPassword:e.target.value.replace(/\D/g,"").slice(0,4)}))} style={{marginTop:10}} />
+        <small className={styles.pinHelp}>PIN nan dwe gen egzakteman 4 chif</small>
 
         <div className={styles.checkboxWrapper}>
           <input
@@ -167,7 +165,7 @@ const handleRegister = async () => {
           <span className={styles.orText}>OSWA</span>
         </div>
 
-        <button className={styles.altBtn}>RANTRE SOU KONT OU</button>
+        <button className={styles.altBtn} onClick={onClose}>RANTRE SOU KONT OU</button>
 
         <p className={styles.note}>
           Si'w jwe ak Websmobil, sa vle di ou aksepte tout kondisyon nou yo{" "}
