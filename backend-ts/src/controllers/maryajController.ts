@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { currentUser } from "../middleware/authenticate";
 import { Maryaj, User } from "../models";
 import { errorMessage } from "../utils/errors";
+import { disabledMaryajMessage } from "../utils/betRestrictions";
 import { queryString } from "../utils/http";
 
 const MAX_MARYAJ_POINTS = 20;
@@ -29,6 +30,9 @@ export async function createMaryaj(req: Request, res: Response) {
         message: "Pwen must be a positive number, location and receiptId are required",
       });
     }
+
+    const restriction = disabledMaryajMessage(part1, part2, location);
+    if (restriction) return res.status(400).json({ message: restriction });
 
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -107,6 +111,9 @@ export async function updateMaryaj(req: Request, res: Response) {
 
     const bet = await Maryaj.findOne({ where: { id: req.params.id, userId: currentUser(req).id } });
     if (!bet) return res.status(404).json({ message: "Bet not found" });
+
+    const restriction = disabledMaryajMessage(part1 ?? bet.part1, part2 ?? bet.part2, location ?? bet.location);
+    if (restriction) return res.status(400).json({ message: restriction });
 
     bet.part1 = part1;
     bet.part2 = part2;
