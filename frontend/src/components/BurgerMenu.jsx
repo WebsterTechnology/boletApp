@@ -24,15 +24,29 @@ const BurgerMenu = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      try { setUser(JSON.parse(stored)); } catch { setUser(null); }
-    }
-    try {
-      setIsAdmin(JSON.parse(localStorage.getItem('isAdmin') ?? 'false') === true);
-    } catch {
-      setIsAdmin(false);
-    }
+    const syncUser = () => {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        try { setUser(JSON.parse(stored)); } catch { setUser(null); }
+      } else {
+        setUser(null);
+      }
+      try {
+        setIsAdmin(JSON.parse(localStorage.getItem('isAdmin') ?? 'false') === true);
+      } catch {
+        setIsAdmin(false);
+      }
+    };
+
+    syncUser();
+    window.addEventListener('storage', syncUser);
+    window.addEventListener('userLoggedIn', syncUser);
+    window.addEventListener('userLoggedOut', syncUser);
+    return () => {
+      window.removeEventListener('storage', syncUser);
+      window.removeEventListener('userLoggedIn', syncUser);
+      window.removeEventListener('userLoggedOut', syncUser);
+    };
   }, []);
 
   const closeMenu = () => setOpen(false);
