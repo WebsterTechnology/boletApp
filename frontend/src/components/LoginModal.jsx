@@ -66,7 +66,6 @@ export default function LoginModal({ onClose, openRegister }) {
 
       // route by role
       if (data.user?.isAdmin) navigate('/admin/dashboard', { replace: true });
-      else if (!data.user?.profileComplete) navigate('/complete-profile', { replace: true });
       else navigate('/', { replace: true });
 
       onClose?.();
