@@ -135,108 +135,165 @@ exports.createPayment = async (req, res) => {
 
 exports.webhook = async (req, res) => {
     console.log("========= INFINITEPAY WEBHOOK =========");
-    console.log(JSON.stringify(req.body, null, 2));
 
-    const t = await sequelize.transaction();
+    const body = req.body || {};
+    const orderNsu = body.order_nsu;
+    const transactionNsu = body.transaction_nsu;
+    const invoiceSlug = body.invoice_slug;
+
+    if (!orderNsu || !transactionNsu || !invoiceSlug) {
+        console.warn("❌ InfinitePay webhook missing verification fields");
+        return res.status(400).json({
+            success: false,
+            message: "Missing payment verification fields",
+        });
+    }
 
     try {
-        const body = req.body || {};
-
-        const orderNsu = body.order_nsu;
-        const transactionNsu = body.transaction_nsu;
-        const invoiceSlug = body.invoice_slug;
-        const paidAmount = body.paid_amount;
-        const amount = body.amount;
-        const receiptUrl = body.receipt_url;
-
-        if (!orderNsu) {
-            console.log("❌ No order_nsu received");
-            await t.rollback();
-            return res.sendStatus(200);
-        }
-
-        const pay = await PixPayment.findOne({
-            where: { providerRef: orderNsu },
-            transaction: t,
-            lock: t.LOCK.UPDATE,
-        });
-
-        if (!pay) {
-            console.log("❌ Payment not found:", orderNsu);
-            await t.rollback();
-            return res.sendStatus(200);
-        }
-
-        if (pay.status === "credited") {
-            console.log("⚠️ Already credited");
-            await t.commit();
-            return res.sendStatus(200);
-        }
-
-        const user = await User.findByPk(pay.userId, {
-            transaction: t,
-            lock: t.LOCK.UPDATE,
-        });
-
-        if (!user) {
-            console.log("❌ User not found:", pay.userId);
-            await t.rollback();
-            return res.sendStatus(200);
-        }
-
-        const points = Number(pay.points || pay.amountBRL || 0);
-
-        user.points = Number(user.points || 0) + points;
-        await user.save({ transaction: t });
-
-        pay.status = "credited";
-        pay.rawPayload = {
-            ...(pay.rawPayload || {}),
-            webhook: body,
-            transactionNsu,
-            invoiceSlug,
-            receiptUrl,
-        };
-
-        if (amount && paidAmount) {
-            const gross = Number(amount) / 100;
-            const paid = Number(paidAmount) / 100;
-
-            pay.netValueBRL = paid;
-            pay.feeBRL = Math.max(0, gross - paid);
-        }
-
-        await pay.save({ transaction: t });
-
-        await PixPaymentRequest.update(
-            { isPaid: true },
+        // Never trust the webhook body alone for a balance-changing operation.
+        // Confirm the transaction directly with InfinitePay before crediting points.
+        const { data: verification } = await axios.post(
+            "https://api.checkout.infinitepay.io/payment_check",
             {
-                where: {
-                    userId: user.id,
-                    amount: pay.amountBRL,
-                    isPaid: false,
-                },
-                transaction: t,
+                handle: HANDLE,
+                order_nsu: orderNsu,
+                transaction_nsu: transactionNsu,
+                slug: invoiceSlug,
+            },
+            {
+                headers: { "Content-Type": "application/json" },
+                timeout: 5000,
             }
         );
 
-        await t.commit();
+        if (verification?.success !== true || verification?.paid !== true) {
+            console.warn("❌ InfinitePay did not confirm payment:", orderNsu);
+            return res.status(400).json({
+                success: false,
+                message: "Payment not confirmed",
+            });
+        }
 
-        console.log("✅ InfinitePay payment credited:", {
-            userId: user.id,
-            pointsAdded: points,
-            newBalance: user.points,
-            orderNsu,
-        });
+        const t = await sequelize.transaction();
 
-        return res.sendStatus(200);
+        try {
+            const pay = await PixPayment.findOne({
+                where: { providerRef: orderNsu },
+                transaction: t,
+                lock: t.LOCK.UPDATE,
+            });
+
+            if (!pay) {
+                await t.rollback();
+                console.warn("❌ Payment not found:", orderNsu);
+                return res.status(400).json({
+                    success: false,
+                    message: "Order not found",
+                });
+            }
+
+            const expectedAmountCents = Math.round(Number(pay.amountBRL) * 100);
+            const verifiedAmountCents = Number(verification.amount);
+
+            if (
+                !Number.isFinite(verifiedAmountCents) ||
+                verifiedAmountCents !== expectedAmountCents
+            ) {
+                await t.rollback();
+                console.warn("❌ InfinitePay amount mismatch:", {
+                    orderNsu,
+                    expectedAmountCents,
+                    verifiedAmountCents,
+                });
+                return res.status(400).json({
+                    success: false,
+                    message: "Payment amount mismatch",
+                });
+            }
+
+            if (pay.status === "credited") {
+                await t.commit();
+                console.log("⚠️ Already credited:", orderNsu);
+                return res.status(200).json({ success: true, message: null });
+            }
+
+            const user = await User.findByPk(pay.userId, {
+                transaction: t,
+                lock: t.LOCK.UPDATE,
+            });
+
+            if (!user) {
+                await t.rollback();
+                console.warn("❌ User not found:", pay.userId);
+                return res.status(400).json({
+                    success: false,
+                    message: "User not found",
+                });
+            }
+
+            const points = Number(pay.points || pay.amountBRL || 0);
+            user.points = Number(user.points || 0) + points;
+            await user.save({ transaction: t });
+
+            pay.status = "credited";
+            pay.rawPayload = {
+                ...(pay.rawPayload || {}),
+                webhook: body,
+                verification,
+                transactionNsu,
+                invoiceSlug,
+                receiptUrl: body.receipt_url,
+            };
+
+            const paidAmountCents = Number(verification.paid_amount);
+            if (Number.isFinite(paidAmountCents)) {
+                pay.netValueBRL = paidAmountCents / 100;
+                pay.feeBRL = Math.max(
+                    0,
+                    paidAmountCents / 100 - expectedAmountCents / 100
+                );
+            }
+
+            await pay.save({ transaction: t });
+
+            await PixPaymentRequest.update(
+                { isPaid: true },
+                {
+                    where: {
+                        userId: user.id,
+                        amount: pay.amountBRL,
+                        isPaid: false,
+                    },
+                    transaction: t,
+                }
+            );
+
+            await t.commit();
+
+            console.log("✅ InfinitePay payment verified and credited:", {
+                userId: user.id,
+                pointsAdded: points,
+                newBalance: user.points,
+                orderNsu,
+                transactionNsu,
+            });
+
+            return res.status(200).json({ success: true, message: null });
+        } catch (err) {
+            await t.rollback();
+            throw err;
+        }
     } catch (err) {
-        await t.rollback();
+        console.error(
+            "🔥 INFINITEPAY WEBHOOK VERIFICATION ERROR:",
+            err.response?.data || err.message
+        );
 
-        console.error("🔥 INFINITEPAY WEBHOOK ERROR:");
-        console.error(err.message);
-
-        return res.sendStatus(200);
+        // InfinitePay retries webhook deliveries when we return 400.
+        return res.status(400).json({
+            success: false,
+            message: "Payment verification failed",
+        });
     }
 };
 
