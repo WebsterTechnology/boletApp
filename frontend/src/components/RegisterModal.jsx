@@ -21,7 +21,7 @@ const RegisterModal = ({ onClose }) => {
   );
   const [showPicker, setShowPicker] = useState(false);
   const [phone, setPhone] = useState("");
-  const [form, setForm] = useState({ fullName:"", cpf:"", birthDate:"", email:"", address:"", city:"", state:"", cep:"", confirmPassword:"" });
+  const [form, setForm] = useState({ fullName:"", email:"", confirmPassword:"" });
   const field = (name) => (e) => setForm((f) => ({ ...f, [name]: e.target.value }));
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -35,6 +35,7 @@ const API = import.meta.env.VITE_API_URL;
 
 const handleRegister = async () => {
   if (!isAdult) return alert("Ou dwe gen 18 lane oswa plis.");
+  if (!form.fullName.trim() || !form.email.trim()) return alert("Tanpri antre non ak e-mail ou.");
   if (password !== form.confirmPassword) return alert("PIN yo pa menm.");
 
 
@@ -85,11 +86,7 @@ const handleRegister = async () => {
 
         <h2 className={styles.title}>Ouvè yon kont</h2>
 
-        <input className={styles.input} placeholder="Nome completo (opcional)" value={form.fullName} onChange={field("fullName")} />
-        <input className={styles.input} placeholder="CPF (opcional)" inputMode="numeric" value={form.cpf} onChange={(e)=>setForm(f=>({...f,cpf:e.target.value.replace(/\D/g,"").slice(0,11)}))} style={{marginTop:10}} />
-        <input className={styles.input} type="date" value={form.birthDate} onChange={field("birthDate")} style={{marginTop:10}} />
-
-        <div className={styles.phoneInputWrapper}>
+        <input className={styles.input} placeholder="Nome completo *" value={form.fullName} onChange={field("fullName")} />\n\n        <div className={styles.phoneInputWrapper}>
           <div
             className={styles.code}
             onClick={() => setShowPicker(!showPicker)}
@@ -124,13 +121,7 @@ const handleRegister = async () => {
           </div>
         )}
 
-        <input className={styles.input} type="email" placeholder="E-mail (opcional)" value={form.email} onChange={field("email")} style={{marginTop:10}} />
-        <input className={styles.input} placeholder="Endereço (opcional)" value={form.address} onChange={field("address")} style={{marginTop:10}} />
-        <input className={styles.input} placeholder="Cidade (opcional)" value={form.city} onChange={field("city")} style={{marginTop:10}} />
-        <input className={styles.input} placeholder="Estado (UF) (opcional)" maxLength={2} value={form.state} onChange={(e)=>setForm(f=>({...f,state:e.target.value.replace(/[^a-z]/gi,"").toUpperCase().slice(0,2)}))} style={{marginTop:10}} />
-        <input className={styles.input} placeholder="CEP (opcional)" inputMode="numeric" value={form.cep} onChange={(e)=>setForm(f=>({...f,cep:e.target.value.replace(/\D/g,"").slice(0,8)}))} style={{marginTop:10}} />
-
-        <div className={styles.passwordInputWrapper}>
+        <input className={styles.input} type="email" placeholder="E-mail *" value={form.email} onChange={field("email")} style={{marginTop:10}} />\n\n        <div className={styles.passwordInputWrapper}>
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Chwazi yon kòd sekrè *"
