@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import { currentUser } from "../middleware/authenticate";
 import { User, YonChif } from "../models";
 import { errorMessage } from "../utils/errors";
+import { disabledBetMessage } from "../utils/betRestrictions";
 
 export async function createYonChif(req: Request, res: Response) {
   try {
@@ -11,6 +12,9 @@ export async function createYonChif(req: Request, res: Response) {
     if (!number || number.length !== 1 || !pwen || !location || !receiptId) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    const restriction = disabledBetMessage(number, location);
+    if (restriction) return res.status(400).json({ message: restriction });
 
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -54,6 +58,9 @@ export async function updateYonChif(req: Request, res: Response) {
 
     const bet = await YonChif.findOne({ where: { id: req.params.id, userId: currentUser(req).id } });
     if (!bet) return res.status(404).json({ message: "Bet not found" });
+
+    const restriction = disabledBetMessage(number ?? bet.number, location ?? bet.location);
+    if (restriction) return res.status(400).json({ message: restriction });
 
     bet.number = number;
     bet.pwen = pwen;
