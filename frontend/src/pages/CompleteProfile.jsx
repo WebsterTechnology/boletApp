@@ -37,6 +37,6 @@ export default function CompleteProfile() {
       <input style={style} placeholder="CEP *" inputMode="numeric" value={form.cep} onChange={e=>set("cep",e.target.value.replace(/\D/g,"").slice(0,8))}/>
       <div style={{padding:12,background:"#f3f4f6",borderRadius:8,marginBottom:12}}>Telefone: <strong>{saved.phone || localStorage.getItem("userPhone")}</strong></div>
       <button type="submit" disabled={saving} style={{width:"100%",padding:13,border:0,borderRadius:8,background:"#111827",color:"#fff",fontWeight:700}}>{saving?"Salvando...":"CONTINUAR"}</button>
-    <button type="button" onClick={()=>navigate("/",{replace:true})} style={{width:"100%",padding:12,marginTop:10,border:"1px solid #999",borderRadius:8,background:"#fff"}}>PULAR POR AGORA</button></form>
+    <button type="button" onClick={submit} style={{width:"100%",padding:12,marginTop:10,border:"1px solid #999",borderRadius:8,background:"#fff"}}>PULAR POR AGORA</button></form>
   </main>;
 }
