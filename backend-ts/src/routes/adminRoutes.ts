@@ -44,7 +44,14 @@ router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => 
     user.points += toAdd;
     await user.save();
 
-    return res.json({ message: `Added ${toAdd} pwen to ${user.phone}`, user });
+    return res.json({ message: `Added ${toAdd} pwen to ${user.phone}`, user: {
+      id: user.id,
+      phone: user.phone,
+      points: Number(user.points ?? 0),
+      isAdmin: !!user.isAdmin,
+      fullName: user.fullName,
+      email: user.email,
+    } });
   } catch (err) {
     console.error("admin POST /users/:id/add-pwen error:", err);
     return res.status(500).json({ message: "Error adding pwen" });
@@ -105,7 +112,14 @@ router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) 
     user.points -= toRemove;
     await user.save();
 
-    return res.json({ message: `Removed ${toRemove} pwen from ${user.phone}`, user });
+    return res.json({ message: `Removed ${toRemove} pwen from ${user.phone}`, user: {
+      id: user.id,
+      phone: user.phone,
+      points: Number(user.points ?? 0),
+      isAdmin: !!user.isAdmin,
+      fullName: user.fullName,
+      email: user.email,
+    } });
   } catch (err) {
     console.error("admin POST /users/:id/remove-pwen error:", err);
     return res.status(500).json({ message: "Error removing pwen" });
