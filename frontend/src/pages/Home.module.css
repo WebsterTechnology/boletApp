@@ -512,7 +512,8 @@
 /* Desktop (901px and up) */
 @media (min-width: 901px) {
   .grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: minmax(280px, 360px);
+    justify-content: center;
   }
 
   .featuresGrid {
