@@ -648,3 +648,143 @@
     transform: scale(0.98);
   }
 }
+
+/* Registration form layout polish */
+.modal {
+  box-sizing: border-box;
+}
+
+.modal .input {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.phoneInputWrapper {
+  flex-wrap: nowrap;
+  align-items: stretch;
+  margin-bottom: 12px;
+}
+
+.phoneInputWrapper .input {
+  margin-bottom: 0;
+}
+
+.passwordInputWrapper {
+  margin: 0 0 12px;
+}
+
+.passwordInputWrapper .input {
+  margin-bottom: 0;
+  padding-right: 3rem;
+}
+
+.pinHelp {
+  display: block;
+  margin: -4px 2px 14px;
+  text-align: left;
+  color: #718096;
+  font-size: 0.78rem;
+}
+
+.checkboxWrapper label {
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.note {
+  margin: 16px 0 0;
+  color: #718096;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+@media (min-width: 768px) {
+  .modal {
+    width: min(92vw, 520px);
+    max-height: min(88vh, 760px);
+    padding: 36px 42px 32px;
+  }
+
+  .title {
+    margin-top: 4px;
+    margin-bottom: 22px;
+  }
+
+  .dividerLine {
+    margin: 22px 0 8px;
+  }
+
+  .altBtn {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .overlay {
+    align-items: center;
+    padding: 12px;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 480px;
+    max-height: calc(100dvh - 24px);
+    border-radius: 24px;
+    padding: 30px 20px 22px;
+  }
+
+  .title {
+    font-size: 1.65rem;
+    margin: 8px 40px 18px;
+  }
+
+  .phoneInputWrapper {
+    gap: 8px;
+  }
+
+  .code {
+    min-width: 78px;
+    padding: 0 10px;
+    border-radius: 14px;
+  }
+
+  .input {
+    min-height: 52px;
+    padding: 13px 14px;
+    border-radius: 14px;
+  }
+
+  .checkboxWrapper {
+    margin: 16px 2px 6px;
+  }
+
+  .submitBtn {
+    margin-top: 16px !important;
+  }
+
+  .dividerLine {
+    margin: 20px 0 10px;
+  }
+
+  .altBtn {
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 380px) {
+  .modal {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .code {
+    min-width: 70px;
+  }
+
+  .input {
+    font-size: 0.9rem;
+  }
+}
