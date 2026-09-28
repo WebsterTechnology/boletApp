@@ -5,6 +5,7 @@ import axios from "axios";
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function AdminDashboard() {
+  const [showBroadcast, setShowBroadcast] = useState(false);
   const [users, setUsers] = useState([]);
   const [amounts, setAmounts] = useState({});
   const [loading, setLoading] = useState(false);
@@ -213,8 +214,11 @@ const filteredUsers = useMemo(() => {
     <div style={{ padding: 24 }}>
       <h2>👑 Admin Dashboard</h2>
 
-      <section style={{ marginBottom: 30, padding: 20, border: "1px solid #ddd", borderRadius: 12 }}>
-        <h3>📣 Broadcast Notification</h3>
+      <section style={{ marginBottom: 20 }}>
+        <button onClick={() => setShowBroadcast((open) => !open)} aria-expanded={showBroadcast} style={{width:"100%",maxWidth:420,padding:"12px 16px",border:"1px solid #d1d5db",borderRadius:10,background:"#111827",color:"#fff",fontWeight:700,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>📣 Broadcast Notification</span><span>{showBroadcast ? "✕ Close" : "Open ▾"}</span></button>
+        {showBroadcast && (
+          <div style={{marginTop:10,padding:20,border:"1px solid #ddd",borderRadius:12,background:"#fff"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,marginBottom:14}}><h3 style={{margin:0}}>📣 Broadcast Notification</h3><button onClick={() => setShowBroadcast(false)} style={{border:0,background:"#eee",borderRadius:8,padding:"7px 10px",cursor:"pointer"}}>✕ Close</button></div>
         <input placeholder="Title" value={notification.title} onChange={(e)=>setNotification((n)=>({...n,title:e.target.value}))} style={{width:"100%",padding:10,marginBottom:10}} />
         <textarea placeholder="Message" value={notification.message} onChange={(e)=>setNotification((n)=>({...n,message:e.target.value}))} rows={4} style={{width:"100%",padding:10,marginBottom:10}} />
         <select value={notification.priority} onChange={(e)=>setNotification((n)=>({...n,priority:e.target.value}))} style={{padding:10,marginRight:10}}>
@@ -235,7 +239,7 @@ const filteredUsers = useMemo(() => {
         <button onClick={sendNotification} disabled={sendingNotification} style={{marginTop:12,padding:"10px 18px",background:"#111827",color:"#fff"}}>{sendingNotification?"Sending...":"Send Notification"}</button>
         <h4 style={{marginTop:22}}>History</h4>
         <div style={{display:"grid",gap:8}}>{notificationHistory.map((n)=><div key={n.id} style={{padding:10,border:"1px solid #eee",borderRadius:8}}><strong>{n.title}</strong> — {n.priority}<div>{n.message}</div><div><b>Recipient:</b> {n.recipientType === "user" ? (n.recipient?.phone || `User #${n.recipientUserId}`) : "All Users"} · <b>Read count:</b> {Number(n.readCount || 0)}</div><small>{new Date(n.createdAt).toLocaleString()}</small></div>)}</div>
-      </section>
+                </div>\n        )}\n      </section>
 
    
 
