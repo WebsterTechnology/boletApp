@@ -3,7 +3,6 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../style/LoginModal.module.css';
 import { getCountryCallingCode, getCountries } from 'libphonenumber-js';
-import * as countryList from 'country-codes-list';
 import { FaChevronDown } from 'react-icons/fa';
 import logo from '../assets/logo.png';
 
@@ -13,11 +12,9 @@ export default function LoginModal({ onClose, openRegister }) {
   const navigate = useNavigate();
 
   const countries = useMemo(() => {
-    const validISOs = getCountries();
-    return Object.entries(countryList.customList('countryCode', '{countryNameEn}'))
-      .filter(([iso]) => validISOs.includes(iso))
-      .map(([iso, name]) => ({ name, iso, code: '+' + getCountryCallingCode(iso) }))
-      .sort((a, b) => a.name.localeCompare(b.name));
+    return getCountries()
+      .map((iso) => ({ iso, name: iso, code: '+' + getCountryCallingCode(iso) }))
+      .sort((a, b) => a.iso.localeCompare(b.iso));
   }, []);
 
   const [selectedCountry, setSelectedCountry] = useState(
