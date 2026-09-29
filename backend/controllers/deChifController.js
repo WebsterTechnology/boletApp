@@ -15,6 +15,12 @@ exports.createDeChif = async (req, res) => {
       });
     }
 
+    // Security: direct API callers must not be able to increase their balance with negative wagers.
+    const betPwen = Number(pwen);
+    if (!Number.isFinite(betPwen) || betPwen <= 0) {
+      return res.status(400).json({ message: "Pwen must be a positive number" });
+    }
+
     // ✅ Fetch the user
     const user = await User.findByPk(userId);
     if (!user) {
@@ -24,23 +30,23 @@ exports.createDeChif = async (req, res) => {
     }
 
     // ✅ Check if user has enough points
-    if (user.points < pwen) {
+    if (user.points < betPwen) {
       return res.status(403).json({
         message: "Ou pa gen ase pwen pou mete parye a.",
-        required: pwen,
+        required: betPwen,
         currentBalance: user.points,
         redirectTo: "/buy-credits",
       });
     }
 
     // ✅ Deduct points
-    user.points -= pwen;
+    user.points -= betPwen;
     await user.save();
 
     // ✅ Save the bet
     const bet = await DeChif.create({
       number,
-      pwen,
+      pwen: betPwen,
       location,
       receiptId,
       userId,
