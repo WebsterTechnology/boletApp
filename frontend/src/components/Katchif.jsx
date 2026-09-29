@@ -1241,7 +1241,7 @@ const baseTotal = total;
         value={amount}
         onChange={(e) => {
           const value = e.target.value;
-          if (value === "" || /^\\d+$/.test(value)) setAmount(value);
+          if (value === "" || /^\d+$/.test(value)) setAmount(value);
         }}
       />
 
