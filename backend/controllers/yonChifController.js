@@ -56,6 +56,11 @@ exports.createYonChif = async (req, res) => {
   try {
     const { number, pwen, location, receiptId } = req.body;
     const userId = req.user.id;
+
+    const betPwen = Number(pwen);
+    if (!Number.isFinite(betPwen) || betPwen <= 0) {
+      return res.status(400).json({ message: "Pwen must be a positive number" });
+    }
       console.log({
   number,
   pwen: betPwen,
