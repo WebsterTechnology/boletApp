@@ -11,12 +11,6 @@ const { YonChif, User } = require("../models");
 //       return res.status(400).json({ message: "All fields are required" });
 //     }
 
-//     // Security: direct API callers must not be able to increase their balance with negative wagers.
-    const betPwen = Number(pwen);
-    if (!Number.isFinite(betPwen) || betPwen <= 0) {
-      return res.status(400).json({ message: "Pwen must be a positive number" });
-    }
-
     // ✅ Fetch the user
 //     const user = await User.findByPk(userId);
 //     if (!user) {
