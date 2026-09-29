@@ -15,12 +15,6 @@ const { TwaChif, User } = require("../models");
 //       return res.status(400).json({ message: "Missing required fields" });
 //     }
 
-//     // Security: direct API callers must not be able to increase their balance with negative wagers.
-    const betPwen = Number(pwen);
-    if (!Number.isFinite(betPwen) || betPwen <= 0) {
-      return res.status(400).json({ message: "Pwen must be a positive number" });
-    }
-
     // ✅ Get user from DB
 //     const user = await User.findByPk(userId);
 //     if (!user) {
