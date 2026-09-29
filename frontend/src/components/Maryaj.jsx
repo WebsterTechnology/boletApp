@@ -1283,11 +1283,14 @@ const Maryaj = () => {
 
       <input
         type="number"
+        min="1"
+        step="1"
         placeholder="Pwen"
         value={amount}
-        onChange={(e) =>
-          setAmount(e.target.value)
-        }
+        onChange={(e) => {
+          const value = e.target.value;
+          if (value === "" || /^\\d+$/.test(value)) setAmount(value);
+        }}
       />
 
       {remaining !== null && (
