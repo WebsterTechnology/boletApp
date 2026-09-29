@@ -94,7 +94,7 @@ exports.createYonChif = async (req, res) => {
     // ✅ Save the bet
     const bet = await YonChif.create({
       number,
-      pwen,
+      pwen: betPwen,
       location,
       receiptId,
       userId,
