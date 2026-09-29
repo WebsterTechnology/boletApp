@@ -11,24 +11,30 @@ const { YonChif, User } = require("../models");
 //       return res.status(400).json({ message: "All fields are required" });
 //     }
 
-//     // ✅ Fetch the user
+//     // Security: direct API callers must not be able to increase their balance with negative wagers.
+    const betPwen = Number(pwen);
+    if (!Number.isFinite(betPwen) || betPwen <= 0) {
+      return res.status(400).json({ message: "Pwen must be a positive number" });
+    }
+
+    // ✅ Fetch the user
 //     const user = await User.findByPk(userId);
 //     if (!user) {
 //       return res.status(404).json({ message: "User not found" });
 //     }
 
 //     // ✅ Check if user has enough pwen
-//     if (user.points < pwen) {
+//     if (user.points < betPwen) {
 //       return res.status(403).json({
 //         message: "Ou pa gen ase pwen pou mete parye a.",
-//         required: pwen,
+//         required: betPwen,
 //         currentBalance: user.points,
 //         redirectTo: "/buy-credits"
 //       });
 //     }
 
 //     // ✅ Deduct pwen
-//     user.points -= pwen;
+//     user.points -= betPwen;
 //     await user.save();
 
 //     // ✅ Save the bet
@@ -52,7 +58,7 @@ exports.createYonChif = async (req, res) => {
     const userId = req.user.id;
       console.log({
   number,
-  pwen,
+  pwen: betPwen,
   location,
   receiptId: req.body.receiptId,
 });
@@ -72,17 +78,17 @@ exports.createYonChif = async (req, res) => {
     }
 
     // ✅ Check if user has enough pwen
-    if (user.points < pwen) {
+    if (user.points < betPwen) {
       return res.status(403).json({
         message: "Ou pa gen ase pwen pou mete parye a.",
-        required: pwen,
+        required: betPwen,
         currentBalance: user.points,
         redirectTo: "/buy-credits",
       });
     }
 
     // ✅ Deduct pwen
-    user.points -= pwen;
+    user.points -= betPwen;
     await user.save();
 
     // ✅ Save the bet
