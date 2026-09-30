@@ -1,6 +1,8 @@
 import axios from "axios";
 import { Router } from "express";
 import { env } from "../config/env";
+import { adminOnly } from "../middleware/adminOnly";
+import { authenticate, currentUser } from "../middleware/authenticate";
 import { PixPayment, PixPaymentRequest, User } from "../models";
 import { errorMessage, providerErrorData, providerErrorMessage } from "../utils/errors";
 
@@ -38,7 +40,7 @@ async function getPixQrByPaymentId(paymentId: string) {
 }
 
 // ---------------- DEBUG ENDPOINTS ----------------
-router.get("/debug/users", async (_req, res) => {
+router.get("/debug/users", authenticate, adminOnly, async (_req, res) => {
   try {
     const users = await User.findAll({
       attributes: ["id", "phone", "points", "asaasCustomerId"],
@@ -51,7 +53,7 @@ router.get("/debug/users", async (_req, res) => {
   }
 });
 
-router.get("/debug/payments", async (_req, res) => {
+router.get("/debug/payments", authenticate, adminOnly, async (_req, res) => {
   try {
     const payments = await PixPayment.findAll({
       include: [{ model: User, attributes: ["id", "phone", "points"] }],
@@ -65,7 +67,7 @@ router.get("/debug/payments", async (_req, res) => {
   }
 });
 
-router.get("/debug/pix-requests", async (_req, res) => {
+router.get("/debug/pix-requests", authenticate, adminOnly, async (_req, res) => {
   try {
     const requests = await PixPaymentRequest.findAll({
       include: [{ model: User, as: "user", attributes: ["id", "phone", "points"] }],
@@ -80,11 +82,10 @@ router.get("/debug/pix-requests", async (_req, res) => {
 });
 
 // ---------------- CREATE PIX ----------------
-router.post("/create", async (req, res) => {
+router.post("/create", authenticate, async (req, res) => {
   try {
-    const { userId, amountBRL, description, name, cpfCnpj, email, phone } = req.body ?? {};
-
-    if (!userId) return res.status(400).json({ error: "userId is required" });
+    const { amountBRL, description, name, cpfCnpj, email, phone } = req.body ?? {};
+    const userId = currentUser(req).id;
 
     const amount = Number(amountBRL);
     if (!amount || amount <= 0) {
@@ -212,9 +213,9 @@ router.post("/create", async (req, res) => {
 });
 
 // ---------------- GET QR ----------------
-router.get("/qr/:paymentId", async (req, res) => {
+router.get("/qr/:paymentId", authenticate, async (req, res) => {
   try {
-    const local = await PixPayment.findByPk(req.params.paymentId);
+    const local = await PixPayment.findOne({ where: { id: req.params.paymentId, userId: currentUser(req).id } });
     if (!local) return res.status(404).json({ error: "Local payment not found" });
 
     const qr = await getPixQrByPaymentId(local.providerRef);
@@ -227,9 +228,9 @@ router.get("/qr/:paymentId", async (req, res) => {
 });
 
 // ---------------- CHECK PAYMENT STATUS ----------------
-router.get("/status/:paymentId", async (req, res) => {
+router.get("/status/:paymentId", authenticate, async (req, res) => {
   try {
-    const local = await PixPayment.findByPk(req.params.paymentId);
+    const local = await PixPayment.findOne({ where: { id: req.params.paymentId, userId: currentUser(req).id } });
     if (!local) return res.status(404).json({ error: "Local payment not found" });
 
     const { data: p } = await axios.get<{ status: string }>(
@@ -300,7 +301,7 @@ router.post("/webhook", async (req, res) => {
 });
 
 // ---------------- MANUAL CREDIT ENDPOINT ----------------
-router.post("/manual-credit", async (req, res) => {
+router.post("/manual-credit", authenticate, adminOnly, async (req, res) => {
   try {
     const { paymentId } = req.body ?? {};
     if (!paymentId) return res.status(400).json({ error: "paymentId is required" });
