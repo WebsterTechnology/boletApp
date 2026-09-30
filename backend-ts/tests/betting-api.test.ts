@@ -20,6 +20,7 @@ vi.mock("../src/utils/betRestrictions", () => ({
 }));
 
 vi.mock("../src/models", () => {
+  const transaction = { LOCK: { UPDATE: "UPDATE" } };
   const user = { id: 1, points: 100, save: vi.fn(async () => undefined) };
   const model = () => ({
     create: vi.fn(async (data: any) => ({ id: 1, status: "pending", ...data })),
@@ -30,6 +31,19 @@ vi.mock("../src/models", () => {
   });
   return {
     __testUser: user,
+    __testTransaction: transaction,
+    sequelize: {
+      transaction: vi.fn(async (callback: any) => {
+        const startingPoints = user.points;
+        try {
+          return await callback(transaction);
+        } catch (error) {
+          user.points = startingPoints;
+          throw error;
+        }
+      }),
+      query: vi.fn(async () => []),
+    },
     User: { findByPk: vi.fn(async () => user) },
     YonChif: model(),
     DeChif: model(),
@@ -63,7 +77,8 @@ beforeEach(() => {
   testUser.points = 100;
   testUser.save.mockClear();
   for (const game of games) {
-    game.model.create.mockClear();
+    game.model.create.mockReset();
+    game.model.create.mockImplementation(async (data: any) => ({ id: 1, status: "pending", ...data }));
     game.model.findOne.mockReset();
     game.model.findAll.mockClear();
     game.model.sum?.mockResolvedValue(0);
@@ -94,6 +109,17 @@ describe.each(games)("$name API pwen security", (game) => {
     expect(res.status).toBe(400);
     expect(testUser.points).toBe(100);
     expect(game.model.create).not.toHaveBeenCalled();
+  });
+
+  it("rolls the balance back when bet creation fails", async () => {
+    game.model.create.mockRejectedValueOnce(new Error("simulated database failure"));
+
+    const res = await request(app).post(game.path).send(game.valid);
+
+    expect(res.status).toBe(500);
+    expect(testUser.points).toBe(100);
+    expect(testUser.save).toHaveBeenCalledTimes(1);
+    expect(game.model.create).toHaveBeenCalledTimes(1);
   });
 
   it("rejects insufficient balance without creating a bet", async () => {
