@@ -3,6 +3,7 @@ import { currentUser } from "../middleware/authenticate";
 import { Maryaj, User } from "../models";
 import { errorMessage } from "../utils/errors";
 import { disabledMaryajMessage } from "../utils/betRestrictions";
+import { parsePwen, PWEN_LOCKED_MESSAGE, pwenChangeRejected } from "../utils/pwen";
 import { queryString } from "../utils/http";
 
 const MAX_MARYAJ_POINTS = 20;
@@ -23,9 +24,9 @@ export async function createMaryaj(req: Request, res: Response) {
       return res.status(400).json({ message: "Each part must be exactly 2 digits." });
     }
 
-    const betPwen = parseInt(pwen, 10);
+    const betPwen = parsePwen(pwen);
 
-    if (!betPwen || betPwen <= 0 || !location || !receiptId) {
+    if (!betPwen || !location || !receiptId) {
       return res.status(400).json({
         message: "Pwen must be a positive number, location and receiptId are required",
       });
@@ -112,12 +113,15 @@ export async function updateMaryaj(req: Request, res: Response) {
     const bet = await Maryaj.findOne({ where: { id: req.params.id, userId: currentUser(req).id } });
     if (!bet) return res.status(404).json({ message: "Bet not found" });
 
+    if (pwenChangeRejected(pwen, bet.pwen)) {
+      return res.status(400).json({ message: PWEN_LOCKED_MESSAGE });
+    }
+
     const restriction = disabledMaryajMessage(part1 ?? bet.part1, part2 ?? bet.part2, location ?? bet.location);
     if (restriction) return res.status(400).json({ message: restriction });
 
     bet.part1 = part1;
     bet.part2 = part2;
-    bet.pwen = pwen;
     bet.location = location;
     await bet.save();
 

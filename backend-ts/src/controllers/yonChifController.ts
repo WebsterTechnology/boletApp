@@ -3,6 +3,7 @@ import { currentUser } from "../middleware/authenticate";
 import { User, YonChif } from "../models";
 import { errorMessage } from "../utils/errors";
 import { disabledBetMessage } from "../utils/betRestrictions";
+import { INVALID_PWEN_MESSAGE, parsePwen, PWEN_LOCKED_MESSAGE, pwenChangeRejected } from "../utils/pwen";
 
 export async function createYonChif(req: Request, res: Response) {
   try {
@@ -12,6 +13,9 @@ export async function createYonChif(req: Request, res: Response) {
     if (!number || number.length !== 1 || !pwen || !location || !receiptId) {
       return res.status(400).json({ message: "All fields are required" });
     }
+
+    const betPwen = parsePwen(pwen);
+    if (!betPwen) return res.status(400).json({ message: INVALID_PWEN_MESSAGE });
 
     const restriction = disabledBetMessage(number, location);
     if (restriction) return res.status(400).json({ message: restriction });
@@ -64,11 +68,14 @@ export async function updateYonChif(req: Request, res: Response) {
     const bet = await YonChif.findOne({ where: { id: req.params.id, userId: currentUser(req).id } });
     if (!bet) return res.status(404).json({ message: "Bet not found" });
 
+    if (pwenChangeRejected(pwen, bet.pwen)) {
+      return res.status(400).json({ message: PWEN_LOCKED_MESSAGE });
+    }
+
     const restriction = disabledBetMessage(number ?? bet.number, location ?? bet.location);
     if (restriction) return res.status(400).json({ message: restriction });
 
     bet.number = number;
-    bet.pwen = pwen;
     bet.location = location;
     await bet.save();
 

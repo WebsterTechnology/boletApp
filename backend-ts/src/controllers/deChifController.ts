@@ -3,6 +3,7 @@ import { currentUser } from "../middleware/authenticate";
 import { DeChif, User } from "../models";
 import { errorMessage } from "../utils/errors";
 import { disabledBetMessage } from "../utils/betRestrictions";
+import { INVALID_PWEN_MESSAGE, parsePwen, PWEN_LOCKED_MESSAGE, pwenChangeRejected } from "../utils/pwen";
 
 export async function createDeChif(req: Request, res: Response) {
   try {
@@ -15,6 +16,9 @@ export async function createDeChif(req: Request, res: Response) {
         message: "All fields are required and number must be exactly 2 digits (00–99)",
       });
     }
+
+    const betPwen = parsePwen(pwen);
+    if (!betPwen) return res.status(400).json({ message: INVALID_PWEN_MESSAGE });
 
     const restriction = disabledBetMessage(number, location);
     if (restriction) return res.status(400).json({ message: restriction });
@@ -74,11 +78,14 @@ export async function updateDeChif(req: Request, res: Response) {
     const bet = await DeChif.findOne({ where: { id: req.params.id, userId: currentUser(req).id } });
     if (!bet) return res.status(404).json({ message: "Bet not found" });
 
+    if (pwenChangeRejected(pwen, bet.pwen)) {
+      return res.status(400).json({ message: PWEN_LOCKED_MESSAGE });
+    }
+
     const restriction = disabledBetMessage(number ?? bet.number, location ?? bet.location);
     if (restriction) return res.status(400).json({ message: restriction });
 
     bet.number = number ?? bet.number;
-    bet.pwen = pwen ?? bet.pwen;
     bet.location = location ?? bet.location;
     await bet.save();
 

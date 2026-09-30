@@ -3,6 +3,7 @@ import { currentUser } from "../middleware/authenticate";
 import { Katchif, User } from "../models";
 import { errorMessage } from "../utils/errors";
 import { disabledBetMessage } from "../utils/betRestrictions";
+import { parsePwen, PWEN_LOCKED_MESSAGE, pwenChangeRejected } from "../utils/pwen";
 import { queryString } from "../utils/http";
 
 const MAX_KATCHIF_POINTS = 20;
@@ -22,9 +23,9 @@ export async function createKatchif(req: Request, res: Response) {
       return res.status(400).json({ message: "Number must be exactly 4 digits." });
     }
 
-    const betPwen = parseInt(pwen, 10);
+    const betPwen = parsePwen(pwen);
 
-    if (!betPwen || betPwen <= 0 || !location || !receiptId) {
+    if (!betPwen || !location || !receiptId) {
       return res.status(400).json({ message: "Invalid pwen, missing location or receiptId" });
     }
 
@@ -103,11 +104,14 @@ export async function updateKatchif(req: Request, res: Response) {
       return res.status(400).json({ message: "Number must be exactly 4 digits." });
     }
 
+    if (pwenChangeRejected(pwen, bet.pwen)) {
+      return res.status(400).json({ message: PWEN_LOCKED_MESSAGE });
+    }
+
     const restriction = disabledBetMessage(number ?? bet.number, location ?? bet.location);
     if (restriction) return res.status(400).json({ message: restriction });
 
     bet.number = number;
-    bet.pwen = pwen;
     bet.location = location;
     await bet.save();
 
