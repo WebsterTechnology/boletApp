@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import { currentUser } from "../middleware/authenticate";
-import { Maryaj, User } from "../models";
+import { Maryaj } from "../models";
 import { errorMessage } from "../utils/errors";
+import { createBetWithPoints, InsufficientPointsError } from "../utils/betTransaction";
 import { disabledMaryajMessage } from "../utils/betRestrictions";
 import { parsePwen, PWEN_LOCKED_MESSAGE, pwenChangeRejected } from "../utils/pwen";
 import { queryString } from "../utils/http";
@@ -9,9 +10,9 @@ import { queryString } from "../utils/http";
 const MAX_MARYAJ_POINTS = 20;
 
 /** Points still available for a pair at a location. Pairs are sorted so 56-46 == 46-56. */
-async function remainingForPair(part1: string, part2: string, location: string) {
+async function remainingForPair(part1: string, part2: string, location: string, transaction?: any) {
   const [p1, p2] = [part1, part2].sort();
-  const totalPair = (await Maryaj.sum("pwen", { where: { part1: p1, part2: p2, location } })) || 0;
+  const totalPair = (await Maryaj.sum("pwen", { where: { part1: p1, part2: p2, location }, transaction })) || 0;
   return { p1, p2, remaining: Math.max(0, MAX_MARYAJ_POINTS - totalPair) };
 }
 
@@ -35,38 +36,23 @@ export async function createMaryaj(req: Request, res: Response) {
     const restriction = disabledMaryajMessage(part1, part2, location);
     if (restriction) return res.status(400).json({ message: restriction });
 
-    const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.points < betPwen) {
-      return res.status(403).json({
-        message: "Ou pa gen ase pwen pou mete Maryaj la.",
-        required: betPwen,
-        currentBalance: user.points,
-        redirectTo: "/buy-credits",
-      });
-    }
-
-    const { p1, p2, remaining } = await remainingForPair(part1, part2, location);
-
-    if (betPwen > remaining) {
-      return res.status(400).json({
-        message: `❌ Maryaj ${p1}-${p2} gen sèlman ${remaining} pwen ki rete.`,
-        remaining,
-      });
-    }
-
-    user.points -= betPwen;
-    await user.save();
-
-    const bet = await Maryaj.create({
-      part1: p1,
-      part2: p2,
-      pwen: betPwen,
-      location,
-      receiptId,
+    let remaining = 0;
+    const [p1, p2] = [part1, part2].sort();
+    const { user, bet } = await createBetWithPoints(
       userId,
-    });
+      betPwen,
+      Maryaj,
+      { part1: p1, part2: p2, location, receiptId },
+      async (transaction) => {
+        const result = await remainingForPair(p1, p2, location, transaction);
+        remaining = result.remaining;
+        if (betPwen > remaining) {
+          const error = new Error("MARYAJ_LIMIT");
+          (error as any).remaining = remaining;
+          throw error;
+        }
+      }
+    );
 
     return res.status(201).json({
       message: "Maryaj soumèt avèk siksè",
@@ -75,6 +61,12 @@ export async function createMaryaj(req: Request, res: Response) {
       remaining: remaining - betPwen,
     });
   } catch (err) {
+    if (err instanceof InsufficientPointsError) return res.status(403).json({ message: "Ou pa gen ase pwen pou mete Maryaj la.", required: err.required, currentBalance: err.currentBalance, redirectTo: "/buy-credits" });
+    if (err instanceof Error && err.message === "USER_NOT_FOUND") return res.status(404).json({ message: "User not found" });
+    if (err instanceof Error && err.message === "MARYAJ_LIMIT") {
+      const remaining = (err as any).remaining ?? 0;
+      return res.status(400).json({ message: `❌ Maryaj ${[part1, part2].sort().join("-")} gen sèlman ${remaining} pwen ki rete.`, remaining });
+    }
     return res.status(500).json({ message: "Server error", error: errorMessage(err) });
   }
 }
