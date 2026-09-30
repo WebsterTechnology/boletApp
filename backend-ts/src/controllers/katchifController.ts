@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { currentUser } from "../middleware/authenticate";
 import { Katchif } from "../models";
 import { errorMessage } from "../utils/errors";
-import { createBetWithPoints, InsufficientPointsError } from "../utils/betTransaction";
+import { createBetWithPoints, InsufficientPointsError, lockBetLimit } from "../utils/betTransaction";
 import { disabledBetMessage } from "../utils/betRestrictions";
 import { parsePwen, PWEN_LOCKED_MESSAGE, pwenChangeRejected } from "../utils/pwen";
 import { queryString } from "../utils/http";
@@ -40,10 +40,12 @@ export async function createKatchif(req: Request, res: Response) {
       Katchif,
       { number, location, receiptId },
       async (transaction) => {
+        await lockBetLimit(transaction, `katchif:${number}:${location}`);
         remaining = await remainingFor(number, location, transaction);
         if (betPwen > remaining) {
           const error = new Error("KATCHIF_LIMIT");
           (error as any).remaining = remaining;
+          (error as any).number = number;
           throw error;
         }
       }
@@ -60,7 +62,7 @@ export async function createKatchif(req: Request, res: Response) {
     if (err instanceof Error && err.message === "USER_NOT_FOUND") return res.status(404).json({ message: "User not found" });
     if (err instanceof Error && err.message === "KATCHIF_LIMIT") {
       const remaining = (err as any).remaining ?? 0;
-      return res.status(400).json({ message: `❌ Nimewo ${number} gen sèlman ${remaining} pwen ki rete.`, remaining });
+      return res.status(400).json({ message: `❌ Nimewo ${(err as any).number} gen sèlman ${remaining} pwen ki rete.`, remaining });
     }
     return res.status(500).json({ message: "Server error", error: errorMessage(err) });
   }
