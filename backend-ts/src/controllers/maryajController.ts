@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { currentUser } from "../middleware/authenticate";
 import { Maryaj } from "../models";
 import { errorMessage } from "../utils/errors";
-import { createBetWithPoints, InsufficientPointsError } from "../utils/betTransaction";
+import { createBetWithPoints, InsufficientPointsError, lockBetLimit } from "../utils/betTransaction";
 import { disabledMaryajMessage } from "../utils/betRestrictions";
 import { parsePwen, PWEN_LOCKED_MESSAGE, pwenChangeRejected } from "../utils/pwen";
 import { queryString } from "../utils/http";
@@ -44,11 +44,13 @@ export async function createMaryaj(req: Request, res: Response) {
       Maryaj,
       { part1: p1, part2: p2, location, receiptId },
       async (transaction) => {
+        await lockBetLimit(transaction, `maryaj:${p1}:${p2}:${location}`);
         const result = await remainingForPair(p1, p2, location, transaction);
         remaining = result.remaining;
         if (betPwen > remaining) {
           const error = new Error("MARYAJ_LIMIT");
           (error as any).remaining = remaining;
+          (error as any).pair = `${p1}-${p2}`;
           throw error;
         }
       }
@@ -65,7 +67,7 @@ export async function createMaryaj(req: Request, res: Response) {
     if (err instanceof Error && err.message === "USER_NOT_FOUND") return res.status(404).json({ message: "User not found" });
     if (err instanceof Error && err.message === "MARYAJ_LIMIT") {
       const remaining = (err as any).remaining ?? 0;
-      return res.status(400).json({ message: `❌ Maryaj ${[part1, part2].sort().join("-")} gen sèlman ${remaining} pwen ki rete.`, remaining });
+      return res.status(400).json({ message: `❌ Maryaj ${(err as any).pair} gen sèlman ${remaining} pwen ki rete.`, remaining });
     }
     return res.status(500).json({ message: "Server error", error: errorMessage(err) });
   }
