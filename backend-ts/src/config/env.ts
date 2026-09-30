@@ -20,6 +20,7 @@ export const env = {
     .map((o) => o.trim())
     .filter(Boolean),
   asaasApiKey: process.env.ASAAS_API_KEY,
+  asaasWebhookToken: process.env.ASAAS_WEBHOOK_TOKEN,
   asaasBaseUrl:
     process.env.ASAAS_BASE_URL ||
     (process.env.ASAAS_ENV === "production"
