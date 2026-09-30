@@ -26,6 +26,7 @@ vi.mock("../src/models", () => {
     findOne: vi.fn(),
     findAll: vi.fn(async () => []),
     sum: vi.fn(async () => 0),
+    destroy: vi.fn(),
   });
   return {
     __testUser: user,
@@ -66,6 +67,7 @@ beforeEach(() => {
     game.model.findOne.mockReset();
     game.model.findAll.mockClear();
     game.model.sum?.mockResolvedValue(0);
+    game.model.destroy?.mockClear();
   }
 });
 
@@ -125,3 +127,44 @@ describe.each(games)("$name API pwen security", (game) => {
     expect(current.save).not.toHaveBeenCalled();
   });
 });
+
+describe.each(games)("$name ownership security", (game) => {
+  it("scopes update lookup to the authenticated user", async () => {
+    game.model.findOne.mockResolvedValue(null);
+
+    const body = game.name === "Maryaj"
+      ? { part1: "25", part2: "46", pwen: 10, location: "New York" }
+      : { number: (game.valid as any).number, pwen: 10, location: "New York" };
+
+    const res = await request(app).put(`${game.path}/777`).send(body);
+
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe("Bet not found");
+    expect(game.model.findOne).toHaveBeenCalledWith({
+      where: { id: "777", userId: 1 },
+    });
+  });
+
+  it("scopes delete lookup to the authenticated user and cannot destroy another user's bet", async () => {
+    game.model.findOne.mockResolvedValue(null);
+
+    const res = await request(app).delete(`${game.path}/777`);
+
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe("Bet not found");
+    expect(game.model.findOne).toHaveBeenCalledWith({
+      where: { id: "777", userId: 1 },
+    });
+  });
+
+  it("allows the owner to delete their own bet", async () => {
+    const ownedBet = { id: 7, userId: 1, destroy: vi.fn(async () => undefined) };
+    game.model.findOne.mockResolvedValue(ownedBet);
+
+    const res = await request(app).delete(`${game.path}/7`);
+
+    expect(res.status).toBe(200);
+    expect(ownedBet.destroy).toHaveBeenCalledTimes(1);
+  });
+});
+
