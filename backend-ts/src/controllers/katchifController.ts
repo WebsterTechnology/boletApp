@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import { currentUser } from "../middleware/authenticate";
-import { Katchif, User } from "../models";
+import { Katchif } from "../models";
 import { errorMessage } from "../utils/errors";
+import { createBetWithPoints, InsufficientPointsError } from "../utils/betTransaction";
 import { disabledBetMessage } from "../utils/betRestrictions";
 import { parsePwen, PWEN_LOCKED_MESSAGE, pwenChangeRejected } from "../utils/pwen";
 import { queryString } from "../utils/http";
@@ -9,8 +10,8 @@ import { queryString } from "../utils/http";
 const MAX_KATCHIF_POINTS = 20;
 
 /** Points still available for this exact number + location. */
-async function remainingFor(number: string, location: string) {
-  const total = (await Katchif.sum("pwen", { where: { number, location } })) || 0;
+async function remainingFor(number: string, location: string, transaction?: any) {
+  const total = (await Katchif.sum("pwen", { where: { number, location }, transaction })) || 0;
   return Math.max(0, MAX_KATCHIF_POINTS - total);
 }
 
@@ -32,31 +33,21 @@ export async function createKatchif(req: Request, res: Response) {
     const restriction = disabledBetMessage(number, location);
     if (restriction) return res.status(400).json({ message: restriction });
 
-    const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.points < betPwen) {
-      return res.status(403).json({
-        message: "Ou pa gen ase pwen.",
-        required: betPwen,
-        currentBalance: user.points,
-        redirectTo: "/buy-credits",
-      });
-    }
-
-    const remaining = await remainingFor(number, location);
-
-    if (betPwen > remaining) {
-      return res.status(400).json({
-        message: `❌ Nimewo ${number} gen sèlman ${remaining} pwen ki rete.`,
-        remaining,
-      });
-    }
-
-    user.points -= betPwen;
-    await user.save();
-
-    const bet = await Katchif.create({ number, pwen: betPwen, location, receiptId, userId });
+    let remaining = 0;
+    const { user, bet } = await createBetWithPoints(
+      userId,
+      betPwen,
+      Katchif,
+      { number, location, receiptId },
+      async (transaction) => {
+        remaining = await remainingFor(number, location, transaction);
+        if (betPwen > remaining) {
+          const error = new Error("KATCHIF_LIMIT");
+          (error as any).remaining = remaining;
+          throw error;
+        }
+      }
+    );
 
     return res.status(201).json({
       message: "Katchif soumèt avèk siksè",
@@ -65,6 +56,12 @@ export async function createKatchif(req: Request, res: Response) {
       remaining: remaining - betPwen,
     });
   } catch (err) {
+    if (err instanceof InsufficientPointsError) return res.status(403).json({ message: "Ou pa gen ase pwen.", required: err.required, currentBalance: err.currentBalance, redirectTo: "/buy-credits" });
+    if (err instanceof Error && err.message === "USER_NOT_FOUND") return res.status(404).json({ message: "User not found" });
+    if (err instanceof Error && err.message === "KATCHIF_LIMIT") {
+      const remaining = (err as any).remaining ?? 0;
+      return res.status(400).json({ message: `❌ Nimewo ${number} gen sèlman ${remaining} pwen ki rete.`, remaining });
+    }
     return res.status(500).json({ message: "Server error", error: errorMessage(err) });
   }
 }
