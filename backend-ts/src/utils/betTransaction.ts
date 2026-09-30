@@ -43,3 +43,11 @@ export async function createBetWithPoints<T extends Record<string, unknown>>(
     return { user, bet };
   });
 }
+
+/** Serialize capacity checks for the same game/number/location across different users. PostgreSQL only. */
+export async function lockBetLimit(transaction: Transaction, key: string) {
+  await sequelize.query("SELECT pg_advisory_xact_lock(hashtext(:key))", {
+    replacements: { key },
+    transaction,
+  });
+}
