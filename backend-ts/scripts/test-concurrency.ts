@@ -47,8 +47,10 @@ async function balanceConcurrency(user: User) {
 
 async function cappedConcurrency(user: User, kind: "katchif" | "maryaj") {
   const prefix = `CONC-${kind.toUpperCase()}-${Date.now()}`;
-  const original = user.points;
-  await user.update({ points: Math.max(original, 100) });
+  const freshUser = await User.findByPk(user.id);
+  if (!freshUser) throw new Error("Test user disappeared.");
+  const original = freshUser.points;
+  await User.update({ points: Math.max(original, 100) }, { where: { id: user.id } });
 
   try {
     if (kind === "katchif") {
