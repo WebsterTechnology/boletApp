@@ -15,7 +15,9 @@
     "migrate": "node dist/scripts/migrate.js up",
     "migrate:down": "node dist/scripts/migrate.js down",
     "migrate:dev": "tsx src/scripts/migrate.ts up",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "license": "ISC",
   "dependencies": {
@@ -37,6 +39,9 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.6.3",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
+    "vitest": "^3.2.4"
   }
 }
