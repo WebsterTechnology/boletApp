@@ -82,6 +82,11 @@ async function cappedConcurrency(user: User, kind: "katchif" | "maryaj") {
 
       const results = await Promise.allSettled([place(1), place(2)]);
       const successes = results.filter((r) => r.status === "fulfilled").length;
+      for (const [index, result] of results.entries()) {
+        if (result.status === "rejected") {
+          console.log(`Maryaj attempt ${index + 1} rejected:`, result.reason);
+        }
+      }
       const total = (await Maryaj.sum("pwen", { where: { part1, part2, location } })) || 0;
       console.log(`Maryaj cap concurrency: successes=${successes}, total=${total}`);
       if (successes !== 1 || total !== 15) throw new Error("MARYAJ CAP CONCURRENCY FAILED");
