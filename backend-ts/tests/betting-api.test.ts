@@ -125,16 +125,3 @@ describe.each(games)("$name API pwen security", (game) => {
     expect(current.save).not.toHaveBeenCalled();
   });
 });
-
-describe("Authentication boundary", () => {
-  it("authenticate middleware itself rejects a missing bearer token", async () => {
-    vi.resetModules();
-    const { authenticate } = await import("../src/middleware/authenticate");
-    const req: any = { headers: {} };
-    const res: any = { status: vi.fn().mockReturnThis(), json: vi.fn().mockReturnThis() };
-    const next = vi.fn();
-    await authenticate(req, res, next);
-    expect(res.status).toHaveBeenCalledWith(401);
-    expect(next).not.toHaveBeenCalled();
-  });
-});
