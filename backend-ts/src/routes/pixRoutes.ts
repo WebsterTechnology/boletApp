@@ -249,6 +249,17 @@ const ASAAS_PAID_STATUSES = ["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"];
 
 router.post("/webhook", async (req, res) => {
   try {
+    const expectedWebhookToken = env.asaasWebhookToken;
+    if (!expectedWebhookToken) {
+      console.error("Asaas webhook authentication is not configured");
+      return res.sendStatus(503);
+    }
+
+    const receivedWebhookToken = req.get("asaas-access-token");
+    if (receivedWebhookToken !== expectedWebhookToken) {
+      return res.sendStatus(401);
+    }
+
     const body = req.body || {};
     const p = body.payment || body;
     const providerId: string | undefined = p.id;
