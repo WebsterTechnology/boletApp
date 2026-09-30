@@ -1,7 +1,8 @@
 import type { Request, Response } from "express";
 import { currentUser } from "../middleware/authenticate";
-import { TwaChif, User } from "../models";
+import { TwaChif } from "../models";
 import { errorMessage } from "../utils/errors";
+import { createBetWithPoints, InsufficientPointsError } from "../utils/betTransaction";
 import { disabledBetMessage } from "../utils/betRestrictions";
 import { INVALID_PWEN_MESSAGE, parsePwen, PWEN_LOCKED_MESSAGE, pwenChangeRejected } from "../utils/pwen";
 
@@ -24,22 +25,9 @@ export async function createTwaChif(req: Request, res: Response) {
     const restriction = disabledBetMessage(number, location);
     if (restriction) return res.status(400).json({ message: restriction });
 
-    const user = await User.findByPk(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    if (user.points < betPwen) {
-      return res.status(403).json({
-        message: "Ou pa gen ase pwen pou mete parye a.",
-        required: betPwen,
-        currentBalance: user.points,
-        redirectTo: "/buy-credits",
-      });
-    }
-
-    user.points -= betPwen;
-    await user.save();
-
-    const bet = await TwaChif.create({ number, pwen: betPwen, location, receiptId, userId });
+    const { user, bet } = await createBetWithPoints(userId, betPwen, TwaChif, {
+      number, location, receiptId,
+    });
 
     return res.status(201).json({
       message: "Parye Twa Chif soumèt avèk siksè",
@@ -47,6 +35,15 @@ export async function createTwaChif(req: Request, res: Response) {
       newBalance: user.points,
     });
   } catch (err) {
+    if (err instanceof InsufficientPointsError) {
+      return res.status(403).json({
+        message: "Ou pa gen ase pwen pou mete parye a.",
+        required: err.required,
+        currentBalance: err.currentBalance,
+        redirectTo: "/buy-credits",
+      });
+    }
+    if (err instanceof Error && err.message === "USER_NOT_FOUND") return res.status(404).json({ message: "User not found" });
     return res.status(500).json({ message: "Server error", error: errorMessage(err) });
   }
 }
