@@ -23,11 +23,6 @@ export async function createDeChif(req: Request, res: Response) {
     const restriction = disabledBetMessage(number, location);
     if (restriction) return res.status(400).json({ message: restriction });
 
-    const betPwen = Number(pwen);
-    if (!Number.isFinite(betPwen) || betPwen <= 0) {
-      return res.status(400).json({ message: "Pwen must be a positive number" });
-    }
-
     const user = await User.findByPk(userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
