@@ -1,5 +1,6 @@
 import cors from "cors";
 import express from "express";
+import helmet from "helmet";
 import { corsOrigin } from "./config/env";
 import { authenticate } from "./middleware/authenticate";
 import adminBetsRoutes from "./routes/adminBetsRoutes";
@@ -20,6 +21,9 @@ import userRoutes from "./routes/userRoutes";
 import yonChifRoutes from "./routes/yonChifRoutes";
 
 const app = express();
+
+// Add standard HTTP security headers to every API response.
+app.use(helmet());
 
 // cors() also answers preflight (OPTIONS) requests for every route.
 app.use(
