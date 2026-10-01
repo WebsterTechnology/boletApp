@@ -39,8 +39,12 @@ async function getPixQrByPaymentId(paymentId: string) {
   };
 }
 
-// ---------------- DEBUG ENDPOINTS ----------------
-router.get("/debug/users", authenticate, adminOnly, async (_req, res) => {
+// ---------------- ADMIN DIAGNOSTICS ----------------
+// Disabled entirely in production to avoid exposing payment/customer metadata.
+router.get("/debug/users", authenticate, adminOnly, (req, res, next) => {
+  if (process.env.NODE_ENV === "production") return res.sendStatus(404);
+  next();
+}, async (_req, res) => {
   try {
     const users = await User.findAll({
       attributes: ["id", "phone", "points", "asaasCustomerId"],
@@ -53,7 +57,10 @@ router.get("/debug/users", authenticate, adminOnly, async (_req, res) => {
   }
 });
 
-router.get("/debug/payments", authenticate, adminOnly, async (_req, res) => {
+router.get("/debug/payments", authenticate, adminOnly, (req, res, next) => {
+  if (process.env.NODE_ENV === "production") return res.sendStatus(404);
+  next();
+}, async (_req, res) => {
   try {
     const payments = await PixPayment.findAll({
       include: [{ model: User, attributes: ["id", "phone", "points"] }],
@@ -67,7 +74,10 @@ router.get("/debug/payments", authenticate, adminOnly, async (_req, res) => {
   }
 });
 
-router.get("/debug/pix-requests", authenticate, adminOnly, async (_req, res) => {
+router.get("/debug/pix-requests", authenticate, adminOnly, (req, res, next) => {
+  if (process.env.NODE_ENV === "production") return res.sendStatus(404);
+  next();
+}, async (_req, res) => {
   try {
     const requests = await PixPaymentRequest.findAll({
       include: [{ model: User, as: "user", attributes: ["id", "phone", "points"] }],
