@@ -117,7 +117,7 @@ router.post("/create", authenticate, async (req, res) => {
           await user.save();
         }
       } catch (err) {
-        console.error("❌ ASAAS LOOKUP ERROR:", providerErrorData(err));
+        console.error("Asaas customer lookup failed:", providerErrorMessage(err));
       }
 
       // 2) Create the customer if still missing
@@ -139,7 +139,7 @@ router.post("/create", authenticate, async (req, res) => {
           user.asaasCustomerId = cust.id;
           await user.save();
         } catch (err) {
-          console.error("🔥 ASAAS CUSTOMER CREATION ERROR:", providerErrorData(err));
+          console.error("Asaas customer creation failed:", providerErrorMessage(err));
 
           const provider = axios.isAxiosError(err) ? err.response?.data : undefined;
           return res.status(400).json({
@@ -172,7 +172,7 @@ router.post("/create", authenticate, async (req, res) => {
     try {
       ({ qrCode, copyPaste, expirationDate } = await getPixQrByPaymentId(payment.id));
     } catch (err) {
-      console.error("⚠️ Error fetching QR:", providerErrorData(err));
+      console.error("Asaas QR lookup failed:", providerErrorMessage(err));
     }
 
     const expiresAt = new Date();
@@ -207,7 +207,7 @@ router.post("/create", authenticate, async (req, res) => {
       userId: user.id,
     });
   } catch (err) {
-    console.error("🔥 GLOBAL PIX ERROR:", providerErrorData(err));
+    console.error("Pix request failed:", providerErrorMessage(err));
     return res.status(500).json({ error: providerErrorMessage(err) });
   }
 });
@@ -306,7 +306,7 @@ router.post("/webhook", async (req, res) => {
     console.log("✅ PIX webhook credited:", { userId: user.id, points: pts, newBalance: user.points });
     return res.sendStatus(200);
   } catch (err) {
-    console.error("🔥 Webhook error:", providerErrorData(err));
+    console.error("Asaas webhook processing failed:", providerErrorMessage(err));
     return res.sendStatus(200);
   }
 });
@@ -347,7 +347,7 @@ router.post("/manual-credit", authenticate, adminOnly, async (req, res) => {
       newBalance: user.points,
     });
   } catch (err) {
-    console.error("Manual credit error:", err);
+    console.error("Manual credit failed:", errorMessage(err));
     return res.status(500).json({ error: errorMessage(err) });
   }
 });
