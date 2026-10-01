@@ -34,11 +34,16 @@ async function start() {
   await sequelize.authenticate();
   console.log("📦 Database connected successfully!");
 
-  // Migrations first: they patch existing tables and skip tables that don't exist yet.
-  // sync() then creates any missing tables (and indexes) from the models.
+  // Production schema changes are controlled exclusively by migrations.
+  // sequelize.sync() is intentionally limited to non-production environments so
+  // a production startup cannot implicitly modify the database schema.
   await migrator.up();
-  await sequelize.sync();
-  console.log("🛠️ Database synchronized");
+  console.log("🛠️ Database migrations applied");
+
+  if (env.nodeEnv !== "production") {
+    await sequelize.sync();
+    console.log("🛠️ Development database synchronized");
+  }
 
   server.listen(env.port, () => {
     console.log(`🚀 Server is running on port ${env.port}`);
