@@ -40,7 +40,7 @@ async function start() {
   await migrator.up();
   console.log("🛠️ Database migrations applied");
 
-  if (env.nodeEnv !== "production") {
+  if (process.env.NODE_ENV !== "production") {
     await sequelize.sync();
     console.log("🛠️ Development database synchronized");
   }
