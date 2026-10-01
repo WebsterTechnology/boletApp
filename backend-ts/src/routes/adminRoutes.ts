@@ -33,9 +33,9 @@ router.get("/users", authenticate, adminOnly, async (_req, res) => {
 });
 
 router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => {
-  const toAdd = parseInt(req.body?.amount, 10);
-  if (!toAdd || Number.isNaN(toAdd)) {
-    return res.status(400).json({ message: "Amount is required and must be a number" });
+  const toAdd = Number(req.body?.amount);
+  if (!Number.isSafeInteger(toAdd) || toAdd <= 0) {
+    return res.status(400).json({ message: "Amount must be a positive whole number" });
   }
   try {
     const user = await User.findByPk(String(req.params.id));
@@ -96,9 +96,9 @@ router.patch("/users/:id/admin-status", authenticate, adminOnly, async (req, res
 });
 
 router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) => {
-  const toRemove = parseInt(req.body?.amount, 10);
-  if (!toRemove || Number.isNaN(toRemove)) {
-    return res.status(400).json({ message: "Amount is required and must be a number" });
+  const toRemove = Number(req.body?.amount);
+  if (!Number.isSafeInteger(toRemove) || toRemove <= 0) {
+    return res.status(400).json({ message: "Amount must be a positive whole number" });
   }
 
   try {
