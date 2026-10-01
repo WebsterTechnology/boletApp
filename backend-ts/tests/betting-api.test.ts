@@ -154,6 +154,41 @@ describe.each(games)("$name API pwen security", (game) => {
   });
 });
 
+describe.each(games)("$name partial update integrity", (game) => {
+  it("preserves omitted fields instead of overwriting them with undefined", async () => {
+    const current: any = {
+      id: 7,
+      pwen: 10,
+      number: (game.valid as any).number,
+      part1: (game.valid as any).part1,
+      part2: (game.valid as any).part2,
+      location: "New York",
+      save: vi.fn(async () => undefined),
+    };
+    game.model.findOne.mockResolvedValue(current);
+
+    const body = game.name === "Maryaj"
+      ? { location: "Florida" }
+      : { location: "Florida" };
+
+    const originalNumber = current.number;
+    const originalPart1 = current.part1;
+    const originalPart2 = current.part2;
+
+    const res = await request(app).put(`${game.path}/7`).send(body);
+
+    expect(res.status).toBe(200);
+    expect(current.location).toBe("Florida");
+    if (game.name === "Maryaj") {
+      expect(current.part1).toBe(originalPart1);
+      expect(current.part2).toBe(originalPart2);
+    } else {
+      expect(current.number).toBe(originalNumber);
+    }
+    expect(current.save).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe.each(games)("$name ownership security", (game) => {
   it("scopes update lookup to the authenticated user", async () => {
     game.model.findOne.mockResolvedValue(null);
