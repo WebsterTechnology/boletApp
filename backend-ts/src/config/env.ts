@@ -32,8 +32,8 @@ export const env = {
 };
 
 /** Value for the `cors` / socket.io `origin` option. Wildcard origins are intentionally rejected. */
-if (env.corsOrigins.includes("*")) {
-  throw new Error("CORS_ORIGINS must list explicit trusted origins; wildcard * is not allowed");
+if (env.corsOrigins.includes("*") && process.env.NODE_ENV === "production") {
+  throw new Error("CORS_ORIGINS must list explicit trusted origins in production; wildcard * is not allowed");
 }
 
 export const corsOrigin: string[] = env.corsOrigins;
