@@ -15,7 +15,7 @@ export const env = {
   databaseUrl: required("DATABASE_URL"),
   jwtSecret: required("JWT_SECRET"),
   dbSsl: process.env.DB_SSL !== "false",
-  corsOrigins: (process.env.CORS_ORIGINS || "*")
+  corsOrigins: (process.env.CORS_ORIGINS || "http://localhost:5173,http://localhost:8081,http://localhost:8082")
     .split(",")
     .map((o) => o.trim())
     .filter(Boolean),
@@ -31,6 +31,9 @@ export const env = {
   koyebAppId: process.env.KOYEB_APP_ID,
 };
 
-/** Value for the `cors` / socket.io `origin` option. */
-export const corsOrigin: string | string[] =
-  env.corsOrigins.length === 0 || env.corsOrigins.includes("*") ? "*" : env.corsOrigins;
+/** Value for the `cors` / socket.io `origin` option. Wildcard origins are intentionally rejected. */
+if (env.corsOrigins.includes("*")) {
+  throw new Error("CORS_ORIGINS must list explicit trusted origins; wildcard * is not allowed");
+}
+
+export const corsOrigin: string[] = env.corsOrigins;
