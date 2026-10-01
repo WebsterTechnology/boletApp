@@ -67,8 +67,8 @@ export async function updateYonChif(req: Request, res: Response) {
     const restriction = disabledBetMessage(number ?? bet.number, location ?? bet.location);
     if (restriction) return res.status(400).json({ message: restriction });
 
-    bet.number = number;
-    bet.location = location;
+    bet.number = number ?? bet.number;
+    bet.location = location ?? bet.location;
     await bet.save();
 
     return res.json(bet);
