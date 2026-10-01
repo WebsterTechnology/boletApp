@@ -114,9 +114,9 @@ export async function updateMaryaj(req: Request, res: Response) {
     const restriction = disabledMaryajMessage(part1 ?? bet.part1, part2 ?? bet.part2, location ?? bet.location);
     if (restriction) return res.status(400).json({ message: restriction });
 
-    bet.part1 = part1;
-    bet.part2 = part2;
-    bet.location = location;
+    bet.part1 = part1 ?? bet.part1;
+    bet.part2 = part2 ?? bet.part2;
+    bet.location = location ?? bet.location;
     await bet.save();
 
     return res.json(bet);
