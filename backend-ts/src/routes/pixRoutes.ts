@@ -3,7 +3,7 @@ import { Router } from "express";
 import { env } from "../config/env";
 import { adminOnly } from "../middleware/adminOnly";
 import { authenticate, currentUser } from "../middleware/authenticate";
-import { PixPayment, PixPaymentRequest, User } from "../models";
+import { PixPayment, PixPaymentRequest, sequelize, User } from "../models";
 import { errorMessage, providerErrorData, providerErrorMessage } from "../utils/errors";
 
 const router = Router();
@@ -279,41 +279,46 @@ router.post("/webhook", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    const pay = await PixPayment.findOne({ where: { providerRef: providerId } });
-    if (!pay) {
-      console.log("❌ PIX webhook: payment not found for providerRef:", providerId);
-      return res.sendStatus(200);
-    }
+    let credited: { userId: number; points: number; newBalance: number } | null = null;
 
-    const status = String(p.status || "").toUpperCase();
-    if (!ASAAS_PAID_STATUSES.includes(status)) return res.sendStatus(200);
+    await sequelize.transaction(async (transaction) => {
+      // Lock the payment row so concurrent/retried webhooks cannot credit it twice.
+      const pay = await PixPayment.findOne({
+        where: { providerRef: providerId },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!pay || pay.status === "credited") return;
 
-    // Idempotency: don't credit twice
-    if (pay.status === "credited") return res.sendStatus(200);
+      const status = String(p.status || "").toUpperCase();
+      if (!ASAAS_PAID_STATUSES.includes(status)) return;
 
-    const user = await User.findByPk(pay.userId);
-    if (!user) {
-      console.log("❌ PIX webhook: user not found:", pay.userId);
-      return res.sendStatus(200);
-    }
+      const user = await User.findByPk(pay.userId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (!user) return;
 
-    const pts = Number(pay.points || pay.amountBRL || 0);
-    user.points = Number(user.points || 0) + pts;
-    await user.save();
+      const pts = Number(pay.points || pay.amountBRL || 0);
+      user.points = Number(user.points || 0) + pts;
+      await user.save({ transaction });
 
-    const pixRequest = await PixPaymentRequest.findOne({
-      where: { userId: user.id, amount: Number(pay.amountBRL), isPaid: false },
+      const pixRequest = await PixPaymentRequest.findOne({
+        where: { userId: user.id, amount: Number(pay.amountBRL), isPaid: false },
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
+      if (pixRequest) {
+        pixRequest.isPaid = true;
+        await pixRequest.save({ transaction });
+      }
+
+      pay.status = "credited";
+      await pay.save({ transaction });
+      credited = { userId: user.id, points: pts, newBalance: user.points };
     });
-    if (pixRequest) {
-      pixRequest.isPaid = true;
-      await pixRequest.save();
-    }
 
-    // Mark credited so the webhook can't double-credit
-    pay.status = "credited";
-    await pay.save();
-
-    console.log("✅ PIX webhook credited:", { userId: user.id, points: pts, newBalance: user.points });
+    if (credited) console.log("PIX webhook credited:", credited);
     return res.sendStatus(200);
   } catch (err) {
     console.error("Asaas webhook processing failed:", providerErrorMessage(err));
