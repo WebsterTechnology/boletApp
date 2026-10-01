@@ -1,0 +1,59 @@
+/* src/pages/PlayPage.module.css */
+
+.playPage {
+  padding: 2rem;
+  background-color: #000;
+  color: #fff;
+  min-height: 100vh;
+}
+
+.title {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  justify-items: center;
+}
+
+.card {
+  background-color: #111;
+  border: 1px solid #333;
+  padding: 1rem;
+  border-radius: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: scale(1.05);
+  border-color: #fbc500;
+}
+.playPage {
+  padding: 16px;
+}
+.modeSelector {
+  display: flex;
+  gap: 8px;
+}
+.modeSelector button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: #444;
+  color: #fff;
+  border-radius: 4px;
+}
+.modeSelector button.active {
+  background: #ffcc00;
+  font-weight: bold;
+}
+
+.content {
+  margin-top: 16px;
+}

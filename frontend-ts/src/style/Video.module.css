@@ -1,0 +1,36 @@
+.videoContainer {
+  padding: 16px;
+  text-align: center;
+}
+
+.videoTitle {
+  font-size: 18px;
+  font-weight: bold;
+  animation: flash 1s infinite alternate;
+  margin-bottom: 10px;
+}
+
+@keyframes flash {
+  0% {
+    color: #fff700;
+    text-shadow: 0 0 4px #fff700;
+  }
+  100% {
+    color: #ffffff;
+    text-shadow: 0 0 8px #ff0000;
+  }
+}
+
+.videoWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.videoImage {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  border-radius: 12px;
+}

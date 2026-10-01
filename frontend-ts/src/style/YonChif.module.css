@@ -1,0 +1,271 @@
+.container {
+  background: #222;
+  color: #fff;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+/* Entry form row */
+.entryRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.entryRow input {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  font-size: 16px;
+}
+
+.entryRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  min-height: 120px;
+
+  justify-content: space-between; /* 🔥 keeps spacing nice */
+}
+
+.plusBtn {
+  padding: 10px;
+  background: #ffc107; /* yellow */
+  color: black;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Bet list */
+.betsList {
+  margin-bottom: 16px;
+}
+
+.betsList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #333;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+}
+
+.num {
+  font-weight: bold;
+  font-size: 16px;
+  width: 40px;
+}
+
+.amt {
+  font-size: 16px;
+  flex: 1;
+  text-align: left;
+  padding-left: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.actions button {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.submitBtn {
+  background: #28a745;
+  border: none;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+/* Responsive for wider screens */
+@media (min-width: 600px) {
+  .entryRow {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .entryRow input {
+    flex: 1;
+  }
+
+  .plusBtn {
+    flex-shrink: 0;
+  }
+}
+
+.container {
+  background: #1e1e1e;
+  color: #fff;
+  padding: 18px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 700px;
+  margin: auto;
+}
+
+/* Entry Form */
+
+.entryRow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.entryRow input {
+  width: 100%;
+  height: 52px;
+  padding: 0 15px;
+  border-radius: 12px;
+  border: 1px solid #444;
+  background: #2b2b2b;
+  color: white;
+  font-size: 18px;
+}
+
+.entryRow input:focus {
+  outline: none;
+  border-color: #ffc107;
+}
+
+.plusBtn {
+  height: 54px;
+  border: none;
+  border-radius: 12px;
+  background: #ffc107;
+  color: black;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.plusBtn:hover {
+  transform: scale(1.02);
+}
+
+/* Times */
+
+.timeRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  font-size: 14px;
+  color: #ddd;
+}
+
+/* Bets */
+
+.betsList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.betsList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #2d2d2d;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.betsList span:nth-child(1) {
+  font-size: 22px;
+  font-weight: bold;
+  width: 40px;
+}
+
+.betsList span:nth-child(2) {
+  flex: 1;
+  text-align: center;
+  font-size: 18px;
+}
+
+.betsList button {
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: #444;
+  color: white;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: .2s;
+}
+
+.betsList button:hover {
+  background: #ffc107;
+  color: black;
+}
+
+/* Footer */
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer span {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.footer button {
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.footer button:hover {
+  background: #1f8f3b;
+}
+
+/* Desktop */
+
+@media (min-width:768px){
+
+.entryRow{
+    flex-direction:row;
+}
+
+.entryRow input{
+    flex:1;
+}
+
+.plusBtn{
+    width:70px;
+}
+
+}
