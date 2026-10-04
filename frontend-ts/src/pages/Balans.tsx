@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { MeUser } from "../api/types";
 import { useNavigate } from "react-router-dom";
 import Pwen from "../components/Pwen";
 import WithdrawModal from "../components/WithdrawModal";
@@ -7,7 +8,44 @@ export default function Balans() {
   const navigate = useNavigate();
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawable, setWithdrawable] = useState(0);
-  useEffect(()=>{const token=localStorage.getItem("token");if(!token)return;fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/users/me`,{headers:{Authorization:`Bearer ${token}`}}).then(r=>r.json()).then(u=>setWithdrawable(Number(u.withdrawablePoints||0))).catch(console.error);},[showWithdraw]);
+  const refreshBalances = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      if (!response.ok) return;
+
+      const user: MeUser = await response.json();
+      setWithdrawable(Number(user.withdrawablePoints ?? 0));
+
+      // Keep the same current-user cache used by the rest of the app in sync.
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("userPoints", String(Number(user.points ?? 0)));
+    } catch (error) {
+      console.error("Failed to refresh balances:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshBalances();
+
+    // Refresh again when the user returns to this tab/page.
+    const onFocus = () => refreshBalances();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") refreshBalances();
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [refreshBalances, showWithdraw]);
 
   return (
     <main style={{maxWidth:560,margin:"32px auto",padding:"0 16px"}}>
