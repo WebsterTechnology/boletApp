@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios, { isAxiosError } from "axios";
+import AdminChat from "../components/AdminChat";
 import type {
   AdminUser,
   DisabledLocationsResponse,
@@ -229,6 +230,7 @@ const filteredUsers = useMemo(() => {
   return (
     <div style={{ padding: 24 }}>
       <h2>👑 Admin Dashboard</h2>
+      <AdminChat />
 
       <section style={{ marginBottom: 20 }}>
         <button onClick={() => setShowBroadcast((open) => !open)} aria-expanded={showBroadcast} style={{width:"100%",maxWidth:420,padding:"12px 16px",border:"1px solid #d1d5db",borderRadius:10,background:"#111827",color:"#fff",fontWeight:700,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>📣 Broadcast Notification</span><span>{showBroadcast ? "✕ Close" : "Open ▾"}</span></button>
