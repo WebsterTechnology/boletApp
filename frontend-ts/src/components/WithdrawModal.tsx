@@ -64,7 +64,7 @@ const WithdrawModal = ({ onClose }: { onClose: () => void }) => {
       }
 
       const user = await res.json();
-      const userPoints = Number(user.points || 0);
+      const userPoints = Number(user.withdrawablePoints || 0);
 
       // 🛑 HARD SECURITY CHECKS
       if (userPoints < MIN_WITHDRAW) {
@@ -79,7 +79,12 @@ const WithdrawModal = ({ onClose }: { onClose: () => void }) => {
         return;
       }
 
-      // ✅ STEP 2 — Send Email (now safe)
+      // Reserve/deduct the withdrawal on the server so repeated requests cannot exceed the balance.
+      const withdrawRes = await fetch(`${API}/api/withdraw`, { method:"POST", headers:{ "Content-Type":"application/json", Authorization:`Bearer ${token}` }, body:JSON.stringify({ amount }) });
+      const withdrawData = await withdrawRes.json();
+      if (!withdrawRes.ok) { alert(`❌ ${withdrawData.message || "Retrait impossible"}`); return; }
+
+      // ✅ STEP 2 — Send Email
       await emailjs.send(
         SERVICE_ID,
         TEMPLATE_ID,
