@@ -6,14 +6,11 @@ import logoFull from "../assets/logo.png";
 import logoSmall from "../assets/loto.png";
 import { FaBell } from "react-icons/fa";
 import NotificationPanel from "./NotificationPanel";
-import Pwen from "./Pwen";
-import WithdrawModal from "./WithdrawModal"; // ✅ ADD THIS
 import { useNotifications } from "../context/NotificationContext";
 
 const Header = ({ openLogin }: { openLogin: () => void }) => {
   const [userPhone, setUserPhone] = useState(localStorage.getItem("userPhone"));
   const [showNotif, setShowNotif] = useState(false);
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false); // ✅ ADD
   const navigate = useNavigate();
   const { unreadCount } = useNotifications();
 
@@ -61,22 +58,8 @@ const Header = ({ openLogin }: { openLogin: () => void }) => {
             </Link>
           ) : (
             <div className={styles.pointsContainer}>
-              <Pwen />
-
-              {/* BUY POINTS */}
-              <button
-                className={styles.buyButton}
-                onClick={() => navigate("/buy-credits")}
-              >
-                Achte Pwen
-              </button>
-
-              {/* ✅ WITHDRAW → OPEN MODAL */}
-              <button
-                className={styles.withdrawButton}
-                onClick={() => setShowWithdrawModal(true)}
-              >
-                Retire Pwen
+              <button className={styles.buyButton} onClick={() => navigate("/balans")}>
+                💰 Balans
               </button>
 
               <button
@@ -93,10 +76,6 @@ const Header = ({ openLogin }: { openLogin: () => void }) => {
 
       {showNotif && <NotificationPanel onClose={() => setShowNotif(false)} />}
 
-      {/* ✅ WITHDRAW MODAL */}
-      {showWithdrawModal && (
-        <WithdrawModal onClose={() => setShowWithdrawModal(false)} />
-      )}
     </header>
   );
 };

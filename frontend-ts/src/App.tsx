@@ -21,6 +21,7 @@ import InfinitePayment from "./pages/InfinitePayment";
 import BroadcastNotificationModal from "./components/BroadcastNotificationModal";
 import CompleteProfile from "./pages/CompleteProfile";
 import ChatWidget from "./components/ChatWidget";
+import Balans from "./pages/Balans";
 
 // -------- Guard (supports admin-only) --------
 function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNode; requireAdmin?: boolean }) {
@@ -108,6 +109,8 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route path="/balans" element={<ProtectedRoute><Balans /></ProtectedRoute>} />
 
         <Route
           path="/buy-credits"
