@@ -25,6 +25,7 @@ export default function AdminDashboard() {
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [amounts, setAmounts] = useState<Record<number, string>>({});
+  const [balanceTypes, setBalanceTypes] = useState<Record<number, "play" | "withdraw">>({});
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<NotificationForm>({ title: "", message: "", priority: "info", imageUrl: "", linkUrl: "", recipientType: "all", recipientUserId: "" });
   const [notificationHistory, setNotificationHistory] = useState<NotificationHistoryItem[]>([]);
@@ -104,7 +105,7 @@ export default function AdminDashboard() {
 
     await axios.post(
       `${API}/api/admin/users/${userId}/add-pwen`,
-      { amount },
+      { amount, balanceType: balanceTypes[userId] || "play" },
       auth
     );
 
@@ -142,7 +143,7 @@ export default function AdminDashboard() {
 
     await axios.post(
       `${API}/api/admin/users/${userId}/remove-pwen`,
-      { amount },
+      { amount, balanceType: balanceTypes[userId] || "play" },
       auth
     );
 
@@ -284,7 +285,8 @@ const filteredUsers = useMemo(() => {
             <th>CPF</th>
             <th>Contact</th>
             <th>Address</th>
-            <th>Points</th>
+            <th>Disponib pou jwe</th>
+            <th>Disponib pou retire</th>
             <th>Role</th>
             <th>Amount</th>
             <th>Actions</th>
@@ -301,6 +303,7 @@ const filteredUsers = useMemo(() => {
               <td>{u.phone}<br/><small>{u.email || "E-mail pendente"}</small></td>
               <td>{u.address ? `${u.address}, ${u.city} - ${u.state}, CEP ${u.cep}` : "Cadastro pendente"}</td>
               <td>{u.points}</td>
+              <td>{u.withdrawablePoints || 0}</td>
               <td>{u.isAdmin ? "👑 Admin" : "User"}</td>
 
               <td>
@@ -315,6 +318,10 @@ const filteredUsers = useMemo(() => {
                   }
                   style={{ width: 80 }}
                 />
+                <select value={balanceTypes[u.id] || "play"} onChange={(e)=>setBalanceTypes(s=>({...s,[u.id]:e.target.value as "play"|"withdraw"}))} style={{display:"block",marginTop:6}}>
+                  <option value="play">Disponib pou jwe</option>
+                  <option value="withdraw">Disponib pou retire</option>
+                </select>
               </td>
               <td>
                 <button onClick={() => handleAddPwen(u.id)}>➕ Add</button>
