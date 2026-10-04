@@ -20,6 +20,7 @@ import Support from "./pages/Support";
 import InfinitePayment from "./pages/InfinitePayment";
 import BroadcastNotificationModal from "./components/BroadcastNotificationModal";
 import CompleteProfile from "./pages/CompleteProfile";
+import ChatWidget from "./components/ChatWidget";
 
 // -------- Guard (supports admin-only) --------
 function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNode; requireAdmin?: boolean }) {
@@ -198,6 +199,7 @@ function App() {
       {showRegister && !localStorage.getItem("token") && <RegisterModal onClose={() => setShowRegister(false)} />}
 
       <BroadcastNotificationModal />
+      <ChatWidget />
       <div id="recaptcha-container" />
     </>
   );
