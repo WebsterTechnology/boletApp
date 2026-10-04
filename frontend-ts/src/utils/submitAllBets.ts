@@ -12,12 +12,14 @@ function getUserAndPoints() {
           localStorage.getItem("userPoints") ??
           0
       ),
+      withdrawablePoints: Number(user.withdrawablePoints ?? 0),
     };
   } catch {
     return {
       points: Number(
         localStorage.getItem("userPoints") || 0
       ),
+      withdrawablePoints: 0,
     };
   }
 }
@@ -124,7 +126,7 @@ export default async function submitAllBets({
   selectedLocations,
   deleteBet,
 }: SubmitAllBetsOptions): Promise<SubmitAllBetsResult> {
-  const { points } = getUserAndPoints();
+  const { points, withdrawablePoints } = getUserAndPoints();
 
   // One receipt per location
   const receiptIdsByLocation: Record<string, string> = {};
@@ -141,7 +143,7 @@ export default async function submitAllBets({
   const finalTotal =
     total * selectedLocations.length;
 
-  if (points < finalTotal) {
+  if (points + withdrawablePoints < finalTotal) {
     throw new Error("Ou pa gen ase pwen.");
   }
 
@@ -162,14 +164,19 @@ export default async function submitAllBets({
     }
   }
 
-  const updatedPoints =
-    points - finalTotal;
+  // Keep the frontend in sync with the backend: spend play-only points
+  // first, then use withdrawable points for any remainder.
+  const fromPlay = Math.min(points, finalTotal);
+  const fromWithdraw = finalTotal - fromPlay;
+  const updatedPoints = points - fromPlay;
+  const updatedWithdrawablePoints = withdrawablePoints - fromWithdraw;
 
   const user: StoredUser = JSON.parse(
     localStorage.getItem("user") || "{}"
   );
 
   user.points = updatedPoints;
+  user.withdrawablePoints = updatedWithdrawablePoints;
 
   localStorage.setItem(
     "user",
