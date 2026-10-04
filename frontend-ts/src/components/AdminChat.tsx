@@ -12,7 +12,7 @@ export default function AdminChat(){
  const scrollRef=useRef<HTMLDivElement>(null), activeRef=useRef<number|null>(null);
  const load=()=>axios.get<Thread[]>(`${API}/api/chat/admin/threads`,auth()).then(r=>setThreads(r.data));
  useEffect(()=>{activeRef.current=active},[active]);
- useEffect(()=>{load().catch(console.error);const token=localStorage.getItem("token");if(!token)return;const s=io(API,{auth:{token},transports:["websocket","polling"]});s.on("chat-message",(m:Message)=>{load().catch(console.error);if(m.userId===activeRef.current)setMessages(c=>c.some(x=>x.id===m.id)?c:[...c,m]);});return()=>s.disconnect()},[]);
+ useEffect(()=>{load().catch(console.error);const token=localStorage.getItem("token");if(!token)return;const s=io(API,{auth:{token},transports:["websocket","polling"]});s.on("chat-message",(m:Message)=>{load().catch(console.error);if(m.userId===activeRef.current)setMessages(c=>c.some(x=>x.id===m.id)?c:[...c,m]);});return()=>{s.disconnect();}},[]);
  useEffect(()=>{scrollRef.current?.scrollTo({top:scrollRef.current.scrollHeight})},[messages]);
  const open=async(id:number)=>{setActive(id);const r=await axios.get<Message[]>(`${API}/api/chat/admin/threads/${id}/messages`,auth());setMessages(r.data);load().catch(console.error)};
  const send=async(e:React.FormEvent)=>{e.preventDefault();if(active===null||!text.trim())return;const r=await axios.post<Message>(`${API}/api/chat/admin/threads/${active}/messages`,{text:text.trim()},auth());setMessages(c=>c.some(x=>x.id===r.data.id)?c:[...c,r.data]);setText("");load().catch(console.error)};
