@@ -20,7 +20,7 @@ router.get("/users", authenticate, adminOnly, async (_req, res) => {
   try {
     const users = await User.findAll({
       attributes: [
-        "id", "phone", "points", "isAdmin", "fullName", "cpf",
+        "id", "phone", "points", "withdrawablePoints", "isAdmin", "fullName", "cpf",
         "birthDate", "email", "address", "city", "state", "cep",
       ],
       order: [["id", "ASC"]],
@@ -34,6 +34,7 @@ router.get("/users", authenticate, adminOnly, async (_req, res) => {
 
 router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => {
   const toAdd = Number(req.body?.amount);
+  const balanceType = req.body?.balanceType === "withdraw" ? "withdraw" : "play";
   if (!Number.isSafeInteger(toAdd) || toAdd <= 0) {
     return res.status(400).json({ message: "Amount must be a positive whole number" });
   }
@@ -41,13 +42,15 @@ router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => 
     const user = await User.findByPk(String(req.params.id));
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    user.points += toAdd;
+    if (balanceType === "withdraw") user.withdrawablePoints = Number(user.withdrawablePoints || 0) + toAdd;
+    else user.points += toAdd;
     await user.save();
 
     return res.json({ message: `Added ${toAdd} pwen to ${user.phone}`, user: {
       id: user.id,
       phone: user.phone,
       points: Number(user.points ?? 0),
+      withdrawablePoints: Number(user.withdrawablePoints ?? 0),
       isAdmin: !!user.isAdmin,
       fullName: user.fullName,
       email: user.email,
@@ -97,6 +100,7 @@ router.patch("/users/:id/admin-status", authenticate, adminOnly, async (req, res
 
 router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) => {
   const toRemove = Number(req.body?.amount);
+  const balanceType = req.body?.balanceType === "withdraw" ? "withdraw" : "play";
   if (!Number.isSafeInteger(toRemove) || toRemove <= 0) {
     return res.status(400).json({ message: "Amount must be a positive whole number" });
   }
@@ -105,11 +109,11 @@ router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) 
     const user = await User.findByPk(String(req.params.id));
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (user.points < toRemove) {
-      return res.status(400).json({ message: "User does not have enough points" });
-    }
+    const currentBalance = balanceType === "withdraw" ? Number(user.withdrawablePoints || 0) : Number(user.points || 0);
+    if (currentBalance < toRemove) return res.status(400).json({ message: "User does not have enough points in this balance" });
 
-    user.points -= toRemove;
+    if (balanceType === "withdraw") user.withdrawablePoints = currentBalance - toRemove;
+    else user.points = currentBalance - toRemove;
     await user.save();
 
     return res.json({ message: `Removed ${toRemove} pwen from ${user.phone}`, user: {
