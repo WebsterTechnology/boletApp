@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "../style/BetForm.module.css";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { useBet } from "../context/BetContext";
@@ -63,6 +63,8 @@ function getUserAndPoints() {
 
 const Katchif = () => {
   const [nums, setNums] = useState("");
+  const numberRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
   const [amount, setAmount] = useState("");
 
   const [nyTime, setNyTime] = useState("");
@@ -213,6 +215,7 @@ const baseTotal = total;
 
     setNums("");
     setAmount("");
+  numberRef.current?.focus();
   };
 
   const handleEdit = (bet: CartBet) => {
@@ -280,16 +283,20 @@ const baseTotal = total;
     <div className={styles.entryRow}>
 
       <input
-        type="text"
+        ref={numberRef}
+      type="text"
         placeholder="XXXX"
         maxLength={4}
         value={nums}
-        onChange={(e) =>
-          setNums(e.target.value.replace(/\D/g, ""))
-        }
+        onChange={(e) => {
+        const value = e.target.value.replace(/\D/g, "");
+        setNums(value);
+        if (value.length === 4) amountRef.current?.focus();
+      }}
       />
 
       <input
+      ref={amountRef}
         type="number"
         min="1"
         step="1"
