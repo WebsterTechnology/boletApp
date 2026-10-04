@@ -58,6 +58,9 @@ export default function ChatWidget() {
       </div>
       <form onSubmit={send} style={{display:"flex",gap:8,padding:10,borderTop:"1px solid #eee"}}><input value={text} onChange={e=>setText(e.target.value)} placeholder="Ekri mesaj ou..." maxLength={4000} style={{flex:1,padding:10,border:"1px solid #ccc",borderRadius:10}}/><button disabled={sending||!text.trim()} style={{padding:"8px 14px",border:0,borderRadius:10,background:"#111827",color:"#fff"}}>{sending?"...":"Voye"}</button></form>
     </div>}
-    <button onClick={()=>setOpen(v=>!v)} aria-label="Chat with support" style={{position:"relative",width:58,height:58,borderRadius:"50%",border:0,background:"#111827",color:"#fff",fontSize:25,cursor:"pointer",boxShadow:"0 6px 18px rgba(0,0,0,.25)"}}>{open?"✕":"💬"}{!open&&unread&&<span style={{position:"absolute",right:1,top:1,width:13,height:13,borderRadius:"50%",background:"red",border:"2px solid white"}}/>}</button>
+    <div style={{display:"flex",alignItems:"center",gap:10,justifyContent:"flex-end"}}>
+      {!open&&<button onClick={()=>setOpen(true)} style={{border:0,borderRadius:18,padding:"8px 13px",background:"#fff",color:"#111827",fontWeight:800,fontSize:14,cursor:"pointer",boxShadow:"0 4px 16px rgba(0,0,0,.22)",whiteSpace:"nowrap"}}>Chat avek nou</button>}
+      <button onClick={()=>setOpen(v=>!v)} aria-label="Chat avek nou" style={{position:"relative",width:58,height:58,borderRadius:"50%",border:"2px solid rgba(255,255,255,.85)",background:"#111827",color:"#fff",fontSize:25,cursor:"pointer",boxShadow:"0 0 0 5px rgba(99,102,241,.20), 0 6px 18px rgba(0,0,0,.28)"}}>{open?"✕":"💬"}{!open&&unread&&<span style={{position:"absolute",right:1,top:1,width:13,height:13,borderRadius:"50%",background:"red",border:"2px solid white"}}/>}</button>
+    </div>
   </div>;
 }
