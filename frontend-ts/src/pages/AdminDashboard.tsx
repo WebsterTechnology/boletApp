@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import "./AdminDashboard.css";
 import axios, { isAxiosError } from "axios";
 import AdminChat from "../components/AdminChat";
 import type {
@@ -229,14 +230,14 @@ const filteredUsers = useMemo(() => {
   /* ================= UI ================= //remover el index do la do do u no map para parar el admin page*/
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="admin-dashboard">
       <h2>👑 Admin Dashboard</h2>
       <AdminChat />
 
       <section style={{ marginBottom: 20 }}>
-        <button onClick={() => setShowBroadcast((open) => !open)} aria-expanded={showBroadcast} style={{width:"100%",maxWidth:420,padding:"12px 16px",border:"1px solid #d1d5db",borderRadius:10,background:"#111827",color:"#fff",fontWeight:700,cursor:"pointer",display:"flex",justifyContent:"space-between",alignItems:"center"}}><span>📣 Broadcast Notification</span><span>{showBroadcast ? "✕ Close" : "Open ▾"}</span></button>
+        <button onClick={() => setShowBroadcast((open) => !open)} aria-expanded={showBroadcast} className="admin-broadcast-toggle"><span>📣 Broadcast Notification</span><span>{showBroadcast ? "✕ Close" : "Open ▾"}</span></button>
         {showBroadcast && (
-          <div style={{marginTop:10,padding:20,border:"1px solid #ddd",borderRadius:12}}>
+          <div className="admin-broadcast-panel">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,marginBottom:14}}><h3 style={{margin:0}}>📣 Broadcast Notification</h3><button onClick={() => setShowBroadcast(false)} style={{border:0,background:"#eee",borderRadius:8,padding:"7px 10px",cursor:"pointer"}}>✕ Close</button></div>
         <input placeholder="Title" value={notification.title} onChange={(e)=>setNotification((n)=>({...n,title:e.target.value}))} style={{width:"100%",padding:10,marginBottom:10}} />
         <textarea placeholder="Message" value={notification.message} onChange={(e)=>setNotification((n)=>({...n,message:e.target.value}))} rows={4} style={{width:"100%",padding:10,marginBottom:10}} />
@@ -269,15 +270,10 @@ const filteredUsers = useMemo(() => {
   placeholder="🔍 Search name, CPF, phone or email..."
   value={searchUser}
   onChange={(e) => setSearchUser(e.target.value)}
-  style={{
-    width: 300,
-    padding: 10,
-    marginBottom: 15,
-    fontSize: 16,
-  }}
+  className="admin-search"
 />
 
-      <table border={1} width="100%">
+      <div className="admin-users-table-wrap"><table className="admin-users-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -351,7 +347,7 @@ const filteredUsers = useMemo(() => {
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
 
       {loading && <p>Loading…</p>}
 
