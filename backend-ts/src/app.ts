@@ -9,6 +9,7 @@ import adminRoutes from "./routes/adminRoutes";
 import authRoutes from "./routes/authRoutes";
 import betsRoutes from "./routes/betsRoutes";
 import claimRoutes from "./routes/claimRoutes";
+import chatRoutes from "./routes/chatRoutes";
 import deChifRoutes from "./routes/deChifRoutes";
 import infinitepayRoutes from "./routes/infinitepayRoutes";
 import katchifRoutes from "./routes/katchifRoutes";
@@ -59,5 +60,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/claims", claimRoutes);
 app.use("/api/admin/payments", adminPaymentsRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/chat", chatRoutes);
 
 export default app;

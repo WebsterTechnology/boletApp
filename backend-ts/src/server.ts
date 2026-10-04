@@ -4,7 +4,7 @@ import app from "./app";
 import { corsOrigin, env } from "./config/env";
 import { userIdFromToken } from "./middleware/authenticate";
 import { migrator } from "./migrations";
-import { sequelize } from "./models";
+import { sequelize, User } from "./models";
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -26,8 +26,10 @@ io.use((socket, next) => {
   }
 });
 
-io.on("connection", (socket) => {
+io.on("connection", async (socket) => {
   socket.join(`user:${socket.data.userId}`);
+  const user = await User.findByPk(socket.data.userId, { attributes: ["isAdmin"] });
+  if (user?.isAdmin) socket.join("admin");
 });
 
 async function start() {
