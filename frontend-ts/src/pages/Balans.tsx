@@ -13,7 +13,7 @@ export default function Balans() {
       <div style={{background:"#111827",borderRadius:18,padding:24,boxShadow:"0 10px 30px rgba(0,0,0,.18)"}}>
         <h2 style={{color:"#fff",marginTop:0,marginBottom:22}}>💰 Balans</h2>
         <div style={{background:"#fff",borderRadius:14,padding:18,marginBottom:16,display:"flex",justifyContent:"center"}}>
-          <Pwen />
+          <Pwen label />
         </div>
         <div style={{display:"grid",gap:12}}>
           <button onClick={()=>navigate("/buy-credits")} style={{border:0,borderRadius:12,padding:"14px 18px",background:"#16a34a",color:"#fff",fontWeight:800,fontSize:17,cursor:"pointer"}}>Achte Pwen</button>
