@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "../style/BetForm.module.css";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { useBet } from "../context/BetContext";
@@ -40,6 +40,8 @@ function getUserAndPoints() {
 
 const YonChif = () => {
   const [number, setNumber] = useState("");
+  const numberRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
   const [amount, setAmount] = useState("");
 
   const [nyTime, setNyTime] = useState("");
@@ -185,6 +187,7 @@ const YonChif = () => {
 
     setNumber("");
     setAmount("");
+    numberRef.current?.focus();
   };
 
   const handleEdit = (bet: CartBet) => {
@@ -252,18 +255,20 @@ const YonChif = () => {
       <div className={styles.entryRow}>
 
         <input
+          ref={numberRef}
           type="text"
           placeholder="X"
           maxLength={1}
           value={number}
-          onChange={(e) =>
-            setNumber(
-              e.target.value.replace(/\D/g, "")
-            )
-          }
+          onChange={(e) => {
+          const value = e.target.value.replace(/\D/g, "");
+          setNumber(value);
+          if (value.length === 1) amountRef.current?.focus();
+        }}
         />
 
         <input
+        ref={amountRef}
           type="number"
           min="1"
           step="1"
