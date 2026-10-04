@@ -8,7 +8,7 @@
 .admin-users-table{width:100%;border-collapse:collapse;min-width:0}
 .admin-users-table th{display:none}
 .admin-users-table,.admin-users-table tbody,.admin-users-table tr,.admin-users-table td{display:block;width:100%}
-.admin-users-table tr{margin-bottom:16px;padding:14px;border:1px solid #d1d5db;border-radius:12px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.admin-users-table tr{margin-bottom:16px;padding:14px;border:1px solid #d1d5db;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
 .admin-users-table td{border:0;padding:7px 0;overflow-wrap:anywhere}
 .admin-users-table td:nth-child(1)::before{content:"ID: ";font-weight:700}
 .admin-users-table td:nth-child(2)::before{content:"Customer: ";font-weight:700}
