@@ -1,6 +1,5 @@
 import { Router, type Request } from "express";
 import type { Server } from "socket.io";
-import { fn, col } from "sequelize";
 import { adminOnly } from "../middleware/adminOnly";
 import { authenticate, currentUser } from "../middleware/authenticate";
 import { ChatMessage, User } from "../models";
