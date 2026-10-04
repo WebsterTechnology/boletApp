@@ -24,6 +24,7 @@ export const authUser = (over: Partial<AuthUser> = {}): AuthUser => ({
   id: 1,
   phone: "+5511999990001",
   points: 100,
+  withdrawablePoints: 0,
   isAdmin: false,
   fullName: "Ana",
   cpf: "",
