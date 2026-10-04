@@ -48,7 +48,7 @@ function getUserAndPoints() {
         u.points ??
         localStorage.getItem("userPoints") ??
         0
-      ),,
+      ),
       withdrawablePoints: Number(u.withdrawablePoints ?? 0),
     };
 
@@ -57,7 +57,7 @@ function getUserAndPoints() {
       id: localStorage.getItem("userId"),
       points: Number(
         localStorage.getItem("userPoints") || 0
-      ),,
+      ),
       withdrawablePoints: 0,
     };
   }
