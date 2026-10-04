@@ -48,14 +48,16 @@ function getUserAndPoints() {
         u.points ??
           localStorage.getItem("userPoints") ??
           0
-      ),
+      ),,
+      withdrawablePoints: Number(u.withdrawablePoints ?? 0),
     };
   } catch {
     return {
       id: localStorage.getItem("userId"),
       points: Number(
         localStorage.getItem("userPoints") || 0
-      ),
+      ),,
+      withdrawablePoints: 0,
     };
   }
 }
@@ -146,7 +148,8 @@ const TwaChif = () => {
 const handleAdd = () => {
 const betAmount = parseInt(amount, 10);
 
-const { points: userPoints } = getUserAndPoints();
+const { points: userPoints, withdrawablePoints } = getUserAndPoints();
+    const availableToBet = userPoints + withdrawablePoints;
 
 const pendingTotal = Number(total) || 0;
 
@@ -164,7 +167,7 @@ if (disabledNumbers.includes(numTrim)) {
 return alert(`Nimewo ${numTrim} dezaktive.`);
 }
 
-if (pendingTotal + betAmount > userPoints) {
+if (pendingTotal + betAmount > availableToBet) {
 const confirmBuy = window.confirm(
 "Ou pa gen ase pwen. Ou vle achte plis?"
 );
