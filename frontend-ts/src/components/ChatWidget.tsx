@@ -37,7 +37,7 @@ export default function ChatWidget() {
       if(m.sender==="admin"&&!openRef.current) setUnread(true);
     };
     socket.on("chat-message",receive);
-    return ()=>socket.disconnect();
+    return ()=>{ socket.disconnect(); };
   },[token]);
 
   if(!token) return null;
