@@ -24,15 +24,25 @@ export async function createBetWithPoints<T extends Record<string, unknown>>(
     });
     if (!user) throw new Error("USER_NOT_FOUND");
 
-    if (user.points < betPwen) {
-      throw new InsufficientPointsError(betPwen, user.points);
+    const playBalance = Number(user.points || 0);
+    const withdrawBalance = Number(user.withdrawablePoints || 0);
+    const totalBetBalance = playBalance + withdrawBalance;
+
+    if (totalBetBalance < betPwen) {
+      throw new InsufficientPointsError(betPwen, totalBetBalance);
     }
 
     if (validateInsideTransaction) {
       await validateInsideTransaction(transaction);
     }
 
-    user.points -= betPwen;
+    // Bets spend play-only points first. If the bet is larger than the
+    // play balance, the remainder is taken from withdrawable points.
+    const fromPlay = Math.min(playBalance, betPwen);
+    const fromWithdraw = betPwen - fromPlay;
+
+    user.points = playBalance - fromPlay;
+    user.withdrawablePoints = withdrawBalance - fromWithdraw;
     await user.save({ transaction });
 
     const bet = await Bet.create(
