@@ -1,6 +1,7 @@
 import { sequelize } from "../config/database";
 import { initUser, User } from "./User";
 import { ChatMessage, initChatMessage } from "./ChatMessage";
+import { WithdrawalRequest, initWithdrawalRequest } from "./WithdrawalRequest";
 import { DeChif, initBets, Katchif, Maryaj, TwaChif, YonChif } from "./bets";
 import { initPayments, PixPayment, PixPaymentRequest, Pwen } from "./payments";
 import { initWinClaim, WinClaim } from "./WinClaim";
@@ -17,9 +18,12 @@ initPayments(sequelize);
 initWinClaim(sequelize);
 initNotifications(sequelize);
 initChatMessage(sequelize);
+initWithdrawalRequest(sequelize);
 
 // ==================== ASSOCIATIONS ====================
 User.hasMany(ChatMessage, { foreignKey: "userId", onDelete: "CASCADE" });
+User.hasMany(WithdrawalRequest, { foreignKey: "userId", onDelete: "CASCADE" });
+WithdrawalRequest.belongsTo(User, { foreignKey: "userId" });
 ChatMessage.belongsTo(User, { foreignKey: "userId" });
 for (const BetModel of [YonChif, DeChif, TwaChif, Maryaj, Katchif] as unknown as (typeof YonChif)[]) {
   User.hasMany(BetModel, { foreignKey: "userId" });
@@ -70,4 +74,5 @@ export {
   NotificationRead,
   NotificationTarget,
   ChatMessage,
+  WithdrawalRequest,
 };
