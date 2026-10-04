@@ -2,6 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from '../style/LoginModal.module.css';
 import { getCountryCallingCode, getCountries } from 'libphonenumber-js';
+import countryNames from 'i18n-iso-countries';
+import enLocale from 'i18n-iso-countries/langs/en.json';
+
+countryNames.registerLocale(enLocale);
 import { FaChevronDown } from 'react-icons/fa';
 import logo from '../assets/logo.png';
 
@@ -17,8 +21,12 @@ export default function LoginModal({ onClose, openRegister }: LoginModalProps) {
 
   const countries = useMemo(() => {
     return getCountries()
-      .map((iso) => ({ iso, name: iso, code: '+' + getCountryCallingCode(iso) }))
-      .sort((a, b) => a.iso.localeCompare(b.iso));
+      .map((iso) => ({
+        iso,
+        name: countryNames.getName(iso, 'en') || iso,
+        code: '+' + getCountryCallingCode(iso),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, []);
 
   const [selectedCountry, setSelectedCountry] = useState(
