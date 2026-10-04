@@ -84,6 +84,8 @@ const Katchif = () => {
   const [selectedLocations, setSelectedLocations] =
     useState<string[]>([]);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const {
     bets,
     addBet,
@@ -249,6 +251,9 @@ const baseTotal = total;
     return alert("Tanpri chwazi omwen yon lokasyon.");
   }
 
+
+  if (isSubmitting) return;
+  setIsSubmitting(true);
   try {
     await submitAllBets({
       bets,
@@ -265,6 +270,7 @@ const baseTotal = total;
     alert("Tout pari yo soumèt avèk siksè!");
 
   } catch (err) {
+    setIsSubmitting(false);
     alert((err as Error).message);
   }
 };
@@ -454,6 +460,7 @@ const baseTotal = total;
 
             <button
               onClick={handleFinalizeBet}
+              disabled={isSubmitting}
               style={{
                 flex: 1,
                 background: "#28a745",
@@ -461,11 +468,12 @@ const baseTotal = total;
                 border: "none",
                 borderRadius: 12,
                 padding: 14,
-                cursor: "pointer",
+                cursor: isSubmitting ? "not-allowed" : "pointer",
                 fontWeight: "bold",
+                  opacity: isSubmitting ? 0.65 : 1,
               }}
             >
-              Finalize Paryaj ou
+              {isSubmitting ? "Ap finalize..." : "Finalize Paryaj ou"}
             </button>
           </div>
         </div>
