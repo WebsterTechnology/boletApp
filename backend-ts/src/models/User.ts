@@ -22,6 +22,7 @@ export class User extends Model<InferAttributes<User>, InferCreationAttributes<U
   declare profileOnboardingDone: CreationOptional<boolean>;
   declare password: string;
   declare points: CreationOptional<number>;
+  declare withdrawablePoints: CreationOptional<number>;
   declare isAdmin: CreationOptional<boolean>;
   declare asaasCustomerId: CreationOptional<string | null>;
   /** Not a real column; kept because the auth middleware checks it. */
@@ -44,6 +45,7 @@ export function initUser(sequelize: Sequelize): typeof User {
       profileOnboardingDone: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       password: { type: DataTypes.STRING, allowNull: false },
       points: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+      withdrawablePoints: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
       isAdmin: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
       // Asaas integration
       asaasCustomerId: { type: DataTypes.STRING, allowNull: true },
