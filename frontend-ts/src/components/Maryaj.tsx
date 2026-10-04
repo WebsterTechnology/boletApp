@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styles from "../style/BetForm.module.css";
 import { FaEdit, FaTrash } from "react-icons/fa";
 import { useBet } from "../context/BetContext";
@@ -63,6 +63,9 @@ function getUserAndPoints() {
 
 const Maryaj = () => {
   const [part1, setPart1] = useState("");
+  const part1Ref = useRef<HTMLInputElement>(null);
+  const part2Ref = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
   const [part2, setPart2] = useState("");
   const [amount, setAmount] = useState("");
 
@@ -226,6 +229,7 @@ const Maryaj = () => {
     setPart1("");
     setPart2("");
     setAmount("");
+  part1Ref.current?.focus();
   };
 
   const handleEdit = (bet: CartBet) => {
@@ -295,31 +299,34 @@ const Maryaj = () => {
 
       <div className={styles.doubleInput}>
         <input
+          ref={part1Ref}
           type="text"
           maxLength={2}
           placeholder="XX"
           value={part1}
-          onChange={(e) =>
-            setPart1(
-              e.target.value.replace(/\D/g, "")
-            )
-          }
+          onChange={(e) => {
+            const value = e.target.value.replace(/\D/g, "");
+            setPart1(value);
+            if (value.length === 2) part2Ref.current?.focus();
+          }}
         />
 
         <input
+          ref={part2Ref}
           type="text"
           maxLength={2}
           placeholder="XX"
           value={part2}
-          onChange={(e) =>
-            setPart2(
-              e.target.value.replace(/\D/g, "")
-            )
-          }
+          onChange={(e) => {
+            const value = e.target.value.replace(/\D/g, "");
+            setPart2(value);
+            if (value.length === 2) amountRef.current?.focus();
+          }}
         />
       </div>
 
       <input
+      ref={amountRef}
         type="number"
         min="1"
         step="1"
