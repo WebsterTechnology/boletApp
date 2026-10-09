@@ -84,21 +84,28 @@ const WithdrawModal = ({ onClose }: { onClose: () => void }) => {
       const withdrawData = await withdrawRes.json();
       if (!withdrawRes.ok) { alert(`❌ ${withdrawData.message || "Retrait impossible"}`); return; }
 
-      // ✅ STEP 2 — Send Email
-      await emailjs.send(
-        SERVICE_ID,
-        TEMPLATE_ID,
-        {
-          name: form.name,
-          email: form.email || "N/A",
-          phone: form.phone,
-          amount,
-          message: form.message || "Aucun message",
-        },
-        PUBLIC_KEY
-      );
+      // The server has already reserved the funds and created the withdrawal.
+      // A notification failure must never turn that successful withdrawal into
+      // a generic error that encourages the user to submit it again.
+      try {
+        await emailjs.send(
+          SERVICE_ID,
+          TEMPLATE_ID,
+          {
+            name: form.name,
+            email: form.email || "N/A",
+            phone: form.phone,
+            amount,
+            message: form.message || "Aucun message",
+          },
+          PUBLIC_KEY
+        );
+      } catch (emailError) {
+        console.error("Withdrawal accepted, but email notification failed:", emailError);
+      }
 
-      alert("✅ Demande de retrait envoyée !");
+      window.dispatchEvent(new Event("pointsUpdated"));
+      alert("✅ Demann retrè ou an anrejistre. Li annatant tretman.");
       onClose();
     } catch (err) {
       console.error("Withdraw error:", err);
