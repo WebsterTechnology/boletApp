@@ -21,6 +21,7 @@ const Home = ({ openLogin }: { openLogin: () => void }) => {
       {/* <h1 className={styles.title}>Jwe</h1> */}
       <div className={styles.grid}>
         <LottoCard openLogin={openLogin} />
+        <div><h2>Sòl</h2><button onClick={openLogin}>ANTRE NAN SÒL</button></div>
       </div>
     </div>
   );
