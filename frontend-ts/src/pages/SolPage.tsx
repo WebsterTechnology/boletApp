@@ -24,6 +24,7 @@ export default function SolPage() {
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftError, setDraftError] = useState("");
   const [savingDraft, setSavingDraft] = useState(false);
+  const [deletingDraftId, setDeletingDraftId] = useState<number | null>(null);
   const [draftSuccess, setDraftSuccess] = useState("");
   const loadDrafts = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -60,6 +61,24 @@ export default function SolPage() {
     finally { setSavingDraft(false); }
   };
 
+
+
+  const deleteDraft = async (draft: SolDraft) => {
+    if (draft.status !== "draft" || draft.paidMonths !== 0 || deletingDraftId !== null) return;
+    if (!window.confirm("Efase bouyon pake sa a? Aksyon sa a pa kapab anile.")) return;
+    const token = localStorage.getItem("token");
+    if (!token) { setDraftError("Tanpri konekte ankò."); return; }
+    setDeletingDraftId(draft.id);
+    setDraftError("");
+    try {
+      const response = await fetch(API + "/api/sol/packages/" + draft.id, {
+        method: "DELETE", headers: { Authorization: "Bearer " + token },
+      });
+      if (response.status !== 204) throw new Error("HTTP " + response.status);
+      setDrafts(previous => previous.filter(item => item.id !== draft.id));
+    } catch { setDraftError("Nou pa kapab efase bouyon sa a. Eseye ankò."); }
+    finally { setDeletingDraftId(null); }
+  };
 
   const showSavedDraft = async (id: number) => {
     const token = localStorage.getItem("token");
@@ -116,6 +135,7 @@ export default function SolPage() {
                   <p>Estati: {draft.status === "draft" ? "Bouyon — pa aktive" : draft.status}</p>
                   <p>Jou peman: {draft.dueDay} | Mwa peye: {draft.paidMonths}/12</p>
                   <button className={styles.back} onClick={() => void showSavedDraft(draft.id)}>Gade 12 kontribisyon yo →</button>
+                  {draft.status === "draft" && draft.paidMonths === 0 && <button className={styles.back} disabled={deletingDraftId !== null} onClick={() => void deleteDraft(draft)}>{deletingDraftId === draft.id ? "Ap efase..." : "Efase bouyon"}</button>}
                 </article>)}
               </div>
             ) : <p>Ou poko gen okenn pake Sòl ki anrejistre.</p>}
