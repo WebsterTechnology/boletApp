@@ -8,7 +8,7 @@ const PACKAGES = [100, 200, 500, 1000] as const;
 type PackageAmount = (typeof PACKAGES)[number];
 const money = (amount: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(amount);
 
-export default function SolPage() {
+export default function SolPage({ onOpenSupport }: { onOpenSupport: () => void }) {
   const [view, setView] = useState<View>("home");
   const [amount, setAmount] = useState<PackageAmount>(100);
   const [dueDay, setDueDay] = useState(15);
@@ -21,7 +21,6 @@ export default function SolPage() {
     } catch { return "zanmi"; }
   });
 
-  const openSupportChat = () => window.dispatchEvent(new Event("htnovatech:open-support-chat"));
   const go = (next: View) => { setView(next); setShowPaymentNotice(false); };
   const openDetails = (selected: PackageAmount) => { setAmount(selected); go("details"); };
 
@@ -50,7 +49,7 @@ export default function SolPage() {
               <button onClick={() => go("packages")}><span>📦</span>Pake mwen yo<small>Chwazi yon pake</small></button>
               <button onClick={() => go("packages")}><span>💳</span>Peman mwen yo<small>Plan peman</small></button>
               <button onClick={() => go("transactions")}><span>📋</span>Tranzaksyon<small>Istwa peman</small></button>
-              <button onClick={openSupportChat}><span>💬</span>Sipò<small>Jwenn èd</small></button>
+              <button onClick={onOpenSupport}><span>💬</span>Sipò<small>Jwenn èd</small></button>
             </div>
             <div className={styles.promo}><span>🌱</span><div><strong>Peye 12, resevwa 13</strong><p>Kontribye pandan 12 mwa. Dekouvri kat pake Sòl yo.</p></div></div>
             <button className={styles.primary} onClick={() => go("packages")}>Chwazi pake mwen <span>→</span></button>
@@ -117,7 +116,7 @@ export default function SolPage() {
             <div className={styles.menuList}>
               <button onClick={() => go("packages")}>📦 Gade pake yo <span>→</span></button>
               <button onClick={() => go("transactions")}>📋 Istwa tranzaksyon <span>→</span></button>
-              <button onClick={openSupportChat}>💬 Kontakte sipò <span>→</span></button>
+              <button onClick={onOpenSupport}>💬 Kontakte sipò <span>→</span></button>
               <Link to="/">🏠 Retounen nan HTNovaTech <span>→</span></Link>
             </div>
           </section>
