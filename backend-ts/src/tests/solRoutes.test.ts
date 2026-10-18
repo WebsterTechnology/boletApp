@@ -27,7 +27,7 @@ app.use(express.json());
 app.use("/api/sol", solRoutes);
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.transaction.mockImplementation(async (callback: (t: object) => Promise<unknown>) => callback({}));
+  mocks.transaction.mockImplementation(async (callback: (t: object) => Promise<unknown>) => callback({ LOCK: { UPDATE: "UPDATE" } }));
 });
 describe("Sòl draft package API", () => {
   it.each([10000, 20000, 50000, 100000])("accepts approved amount %i cents and creates 12 pending installments", async amount => {
