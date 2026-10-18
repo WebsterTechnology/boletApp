@@ -28,6 +28,7 @@ export default function SolPage() {
   const [paymentPreviewLoading, setPaymentPreviewLoading] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState<SolPaymentAttempt[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
   const [historyError, setHistoryError] = useState("");
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftError, setDraftError] = useState("");
@@ -97,6 +98,7 @@ export default function SolPage() {
     setPaymentPreview(null);
     setPaymentPreviewError("");
     setPaymentHistory([]);
+    setHistoryLoaded(false);
     setHistoryError("");
     setView("saved");
     try {
@@ -134,6 +136,7 @@ export default function SolPage() {
     const token = localStorage.getItem("token");
     if (!token) { setHistoryError("Tanpri konekte ankò."); return; }
     setHistoryLoading(true);
+    setHistoryLoaded(false);
     setHistoryError("");
     setPaymentHistory([]);
     try {
@@ -144,6 +147,7 @@ export default function SolPage() {
       const result: unknown = await response.json();
       if (!Array.isArray(result)) throw new Error("Invalid history");
       setPaymentHistory(result as SolPaymentAttempt[]);
+      setHistoryLoaded(true);
     } catch { setHistoryError("Nou pa kapab chaje istwa peman yo."); }
     finally { setHistoryLoading(false); }
   };
@@ -296,7 +300,7 @@ export default function SolPage() {
                     <small>{attempt.confirmedAt ? "Konfime" : "Pa konfime"}</small>
                   </article>)}
                 </div>}
-                {!historyLoading && !historyError && paymentHistory.length === 0 && <p className={styles.hint}>Pa gen tantativ peman ki chaje.</p>}
+                {historyLoaded && !historyLoading && !historyError && paymentHistory.length === 0 && <p className={styles.hint}>Pa gen tantativ peman ki chaje.</p>}
                 <p className={styles.hint}>Pake bouyon yo pa aktive. Pa gen peman ki disponib pou kounye a.</p>
               </>
             )}
