@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { UniqueConstraintError } from "sequelize";
 import { authenticate, currentUser } from "../middleware/authenticate";
 import { sequelize } from "../config/database";
 import { SolContribution, SolPackage, SOL_MONTHLY_AMOUNTS_CENTS } from "../models/Sol";
@@ -115,4 +116,56 @@ router.get("/packages/:id/payment-attempts", async (req, res) => {
     return res.json(attempts);
   } catch { return res.status(500).json({ message: "Unable to load payment history" }); }
 });
+
+/**
+ * Create an idempotent payment INTENT only. Does not debit a wallet, call
+ * InfinitePay, activate a package or confirm a contribution.
+ * The request never supplies an amount: the locked installment is authoritative.
+ */
+router.post("/packages/:id/payment-intents", async (req, res) => {
+  const rawId = req.params.id as string;
+  const method = req.body?.method;
+  const key = req.get("Idempotency-Key");
+  if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
+    return res.status(400).json({ message: "Invalid package ID" });
+  }
+  if (method !== "wallet" && method !== "pix") return res.status(400).json({ message: "Invalid payment method" });
+  if (!key || !/^[A-Za-z0-9_-]{16,128}$/.test(key)) return res.status(400).json({ message: "Invalid Idempotency-Key" });
+  const userId = currentUser(req).id;
+  try {
+    const result = await sequelize.transaction(async transaction => {
+      // Lock package to serialize concurrent requests for its next installment.
+      const item = await SolPackage.findOne({ where: { id: Number(rawId), userId }, transaction, lock: transaction.LOCK.UPDATE });
+      if (!item) return { code: 404, message: "Package not found" };
+      // Idempotency keys cannot be reused for different requests, even across packages.
+      const existing = await SolPaymentAttempt.findOne({ where: { userId, idempotencyKey: key }, transaction });
+      if (existing) {
+        if (existing.packageId !== item.id || existing.method !== method) return { code: 409, message: "Idempotency key already used for a different request" };
+        return { code: 200, attempt: existing };
+      }
+      if (item.status !== "draft" && item.status !== "active") return { code: 409, message: "Package is not eligible" };
+      const contributions = await SolContribution.findAll({ where: { packageId: item.id }, order: [["installmentNumber", "ASC"]], transaction, lock: transaction.LOCK.UPDATE });
+      const next = contributions.find(i => i.status === "pending" && !i.paidAt && !i.paymentReference);
+      if (!next || next.amountCents !== item.monthlyAmountCents) return { code: 409, message: "No eligible installment" };
+      const attempt = await SolPaymentAttempt.create({
+        userId, packageId: item.id, contributionId: next.id,
+        amountCents: next.amountCents, method, idempotencyKey: key,
+        currency: "BRL", status: "created",
+      }, { transaction });
+      return { code: 201, attempt };
+    });
+    if (!result.attempt) return res.status(result.code).json({ message: result.message });
+    return res.status(result.code).json({
+      id: result.attempt.id, packageId: result.attempt.packageId,
+      contributionId: result.attempt.contributionId, amountCents: result.attempt.amountCents,
+      currency: result.attempt.currency, method: result.attempt.method,
+      status: result.attempt.status, paymentEnabled: false,
+      message: "Payment intent saved; no money moved",
+    });
+  } catch (error) {
+    if (error instanceof UniqueConstraintError) return res.status(409).json({ message: "Duplicate payment request; retry using the original key" });
+    return res.status(500).json({ message: "Unable to create payment intent" });
+  }
+});
+
 export default router;
