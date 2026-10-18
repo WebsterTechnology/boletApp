@@ -16,7 +16,9 @@ router.get("/packages", async (req, res) => {
 router.get("/packages/:id", async (req, res) => {
   try {
     if (!/^\d+$/.test(req.params.id as string)) return res.status(400).json({ message: "Invalid package ID" });
-    const item = await SolPackage.findOne({ where: { id: Number(req.params.id), userId: currentUser(req).id }, include: [{ model: SolContribution, as: "contributions" }] });
+    const packageId = Number(req.params.id);
+    if (!Number.isSafeInteger(packageId) || packageId < 1) return res.status(400).json({ message: "Invalid package ID" });
+    const item = await SolPackage.findOne({ where: { id: packageId, userId: currentUser(req).id }, include: [{ model: SolContribution, as: "contributions" }] });
     if (!item) return res.status(404).json({ message: "Package not found" });
     return res.json(item);
   } catch { return res.status(500).json({ message: "Unable to load Sòl package" }); }
