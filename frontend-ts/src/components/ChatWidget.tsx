@@ -6,7 +6,7 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 type Message = { id:number; userId:number; sender:"user"|"admin"; text:string; createdAt:string };
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } });
 
-export default function ChatWidget({ openRequest = 0 }: { openRequest?: number }) {
+export default function ChatWidget() {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -26,14 +26,12 @@ export default function ChatWidget({ openRequest = 0 }: { openRequest?: number }
   }, []);
 
   useEffect(() => {
-    if (openRequest > 0) setOpen(true);
-  }, [openRequest]);
-
-  useEffect(() => {
     const openFromSupport = () => setOpen(true);
     window.addEventListener("htnovatech:open-support-chat", openFromSupport);
     return () => window.removeEventListener("htnovatech:open-support-chat", openFromSupport);
-  }, []);\n\n  useEffect(() => { openRef.current=open; if(open) setUnread(false); }, [open]);
+  }, []);
+
+  useEffect(() => { openRef.current=open; if(open) setUnread(false); }, [open]);
   useEffect(() => { if(open && token) axios.get<Message[]>(`${API}/api/chat/messages`,auth()).then(r=>setMessages(r.data)).catch(console.error); }, [open,token]);
   useEffect(() => { scrollRef.current?.scrollTo({top:scrollRef.current.scrollHeight}); }, [messages,open]);
 
