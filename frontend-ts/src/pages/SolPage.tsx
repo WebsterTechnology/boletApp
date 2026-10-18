@@ -2,9 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "./SolPage.module.css";
 
-type View = "home" | "packages" | "details" | "transactions" | "menu";
+type View = "home" | "packages" | "details" | "saved" | "transactions" | "menu";
 type PaymentMethod = "wallet" | "pix";
-type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number };
+type SolContribution = { id: number; installmentNumber: number; amountCents: number; status: string; paidAt: string | null };
+type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; contributions?: SolContribution[] };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PACKAGES = [100, 200, 500, 1000] as const;
 type PackageAmount = (typeof PACKAGES)[number];
@@ -17,6 +18,9 @@ export default function SolPage() {
   const [method, setMethod] = useState<PaymentMethod>("wallet");
   const [showPaymentNotice, setShowPaymentNotice] = useState(false);
   const [drafts, setDrafts] = useState<SolDraft[]>([]);
+  const [selectedDraft, setSelectedDraft] = useState<SolDraft | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState("");
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftError, setDraftError] = useState("");
   const [savingDraft, setSavingDraft] = useState(false);
@@ -56,6 +60,24 @@ export default function SolPage() {
     finally { setSavingDraft(false); }
   };
 
+
+  const showSavedDraft = async (id: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) { setDraftError("Tanpri konekte ankò."); return; }
+    setDetailLoading(true);
+    setDetailError("");
+    setSelectedDraft(null);
+    setView("saved");
+    try {
+      const response = await fetch(API + "/api/sol/packages/" + id, { headers: { Authorization: "Bearer " + token } });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const item = (await response.json()) as SolDraft;
+      if (!item || item.id !== id || !Array.isArray(item.contributions)) throw new Error("Invalid response");
+      setSelectedDraft(item);
+    } catch { setDetailError("Nou pa kapab chaje detay pake a. Eseye ankò."); }
+    finally { setDetailLoading(false); }
+  };
+
   const [userName] = useState(() => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -93,6 +115,7 @@ export default function SolPage() {
                   <strong>{money(draft.monthlyAmountCents / 100)} <small>/ mwa</small></strong>
                   <p>Estati: {draft.status === "draft" ? "Bouyon — pa aktive" : draft.status}</p>
                   <p>Jou peman: {draft.dueDay} | Mwa peye: {draft.paidMonths}/12</p>
+                  <button className={styles.back} onClick={() => void showSavedDraft(draft.id)}>Gade 12 kontribisyon yo →</button>
                 </article>)}
               </div>
             ) : <p>Ou poko gen okenn pake Sòl ki anrejistre.</p>}
@@ -158,6 +181,34 @@ export default function SolPage() {
           </section>
         )}
 
+        {view === "saved" && (
+          <section className={styles.content}>
+            <button className={styles.back} onClick={() => go("home")}>← Retounen nan pake mwen yo</button>
+            <h2>Detay pake Sòl</h2>
+            {detailLoading ? <p role="status">Ap chaje detay pake a...</p> : detailError ? <p role="alert" className={styles.notice}>{detailError}</p> : selectedDraft && (
+              <>
+                <div className={styles.summary}>
+                  <div><span>Kontribisyon chak mwa</span><strong>{money(selectedDraft.monthlyAmountCents / 100)}</strong></div>
+                  <div><span>Jou peman</span><strong>{selectedDraft.dueDay}</strong></div>
+                  <div><span>Estati</span><strong>{selectedDraft.status === "draft" ? "Bouyon — pa aktive" : selectedDraft.status}</strong></div>
+                  <div><span>Mwa peye</span><strong>{selectedDraft.paidMonths}/12</strong></div>
+                </div>
+                <h3>12 kontribisyon yo</h3>
+                <div className={styles.packageGrid}>
+                  {[...(selectedDraft.contributions || [])].sort((a, b) => a.installmentNumber - b.installmentNumber).map(item => (
+                    <article className={styles.package} key={item.id}>
+                      <div className={styles.packageTop}><span>Mwa {item.installmentNumber}</span><span className={styles.duration}>{item.status === "pending" ? "Annatant" : item.status}</span></div>
+                      <strong>{money(item.amountCents / 100)}</strong>
+                      <small>{item.paidAt ? "Peye: " + new Date(item.paidAt).toLocaleDateString("pt-BR") : "Peman poko fèt"}</small>
+                    </article>
+                  ))}
+                </div>
+                <p className={styles.hint}>Pake bouyon yo pa aktive. Pa gen peman ki disponib pou kounye a.</p>
+              </>
+            )}
+          </section>
+        )}
+
         {view === "transactions" && (
           <section className={styles.content}>
             <h2>Istwa tranzaksyon</h2>
@@ -178,7 +229,7 @@ export default function SolPage() {
 
         <nav className={styles.bottomNav} aria-label="Navigasyon Sòl">
           {([["home", "⌂", "Kay"], ["packages", "▣", "Pake"], ["transactions", "⇄", "Tranzaksyon"], ["menu", "☰", "Menu"]] as const).map(([id, symbol, label]) => (
-            <button key={id} className={(view === id || (view === "details" && id === "packages")) ? styles.activeTab : ""} aria-current={(view === id || (view === "details" && id === "packages")) ? "page" : undefined} onClick={() => go(id)}><span>{symbol}</span>{label}</button>
+            <button key={id} className={(view === id || ((view === "details" || view === "saved") && id === "packages")) ? styles.activeTab : ""} aria-current={(view === id || (view === "details" && id === "packages")) ? "page" : undefined} onClick={() => go(id)}><span>{symbol}</span>{label}</button>
           ))}
         </nav>
       </div>
