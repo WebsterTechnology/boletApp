@@ -42,7 +42,7 @@ router.post("/packages", async (req, res) => {
 
 router.delete("/packages/:id", async (req, res) => {
   const id = Number(req.params.id);
-  if (!/^\\d+$/.test(req.params.id as string) || !Number.isSafeInteger(id) || id < 1) {
+  if (!/^\d+$/.test(req.params.id as string) || !Number.isSafeInteger(id) || id < 1) {
     return res.status(400).json({ message: "Invalid package ID" });
   }
   try {
@@ -70,7 +70,7 @@ router.delete("/packages/:id", async (req, res) => {
  */
 router.get("/packages/:id/payment-preview", async (req, res) => {
   const rawId = req.params.id as string;
-  if (!/^\\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
+  if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
     return res.status(400).json({ message: "Invalid package ID" });
   }
   try {
