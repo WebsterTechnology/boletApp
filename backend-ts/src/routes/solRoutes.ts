@@ -42,7 +42,7 @@ router.post("/packages", async (req, res) => {
 
 router.delete("/packages/:id", async (req, res) => {
   const id = Number(req.params.id);
-  if (!/^\\d+$/.test(req.params.id as string) || !Number.isSafeInteger(id) || id < 1) {
+  if (!/^\d+$/.test(req.params.id as string) || !Number.isSafeInteger(id) || id < 1) {
     return res.status(400).json({ message: "Invalid package ID" });
   }
   try {
@@ -62,5 +62,33 @@ router.delete("/packages/:id", async (req, res) => {
     if (!removed) return res.status(404).json({ message: "Draft not found or cannot be deleted" });
     return res.status(204).send();
   } catch { return res.status(500).json({ message: "Unable to delete Sòl draft" }); }
+});
+
+/**
+ * Phase 3 payment preflight only. The server is authoritative for price and
+ * installment selection. No checkout, wallet debit or payment capture occurs.
+ */
+router.get("/packages/:id/payment-preview", async (req, res) => {
+  const rawId = req.params.id as string;
+  if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
+    return res.status(400).json({ message: "Invalid package ID" });
+  }
+  try {
+    const item = await SolPackage.findOne({ where: { id: Number(rawId), userId: currentUser(req).id } });
+    if (!item) return res.status(404).json({ message: "Package not found" });
+    if (item.status !== "draft" && item.status !== "active") return res.status(409).json({ message: "Package is not eligible" });
+    const installments = await SolContribution.findAll({ where: { packageId: item.id }, order: [["installmentNumber", "ASC"]] });
+    const next = installments.find(i => i.status === "pending" && !i.paidAt && !i.paymentReference);
+    if (!next || next.amountCents !== item.monthlyAmountCents) return res.status(409).json({ message: "No eligible installment" });
+    return res.json({
+      packageId: item.id,
+      installmentNumber: next.installmentNumber,
+      amountCents: next.amountCents,
+      currency: "BRL",
+      methods: ["wallet", "pix"],
+      paymentEnabled: false,
+      message: "Preview only: payment collection is not enabled",
+    });
+  } catch { return res.status(500).json({ message: "Unable to prepare payment preview" }); }
 });
 export default router;

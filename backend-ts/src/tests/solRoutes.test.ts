@@ -76,6 +76,22 @@ describe("Sòl draft package API", () => {
     expect((await request(app).delete("/api/sol/packages/42")).status).toBe(404);
     expect(mocks.contributionsDestroy).not.toHaveBeenCalled();
   });
+  it("returns a server-priced preview without collecting payment", async () => {
+    mocks.findOne.mockResolvedValue({ id: 42, monthlyAmountCents: 10000, status: "draft" });
+    mocks.contributionsFindAll.mockResolvedValue([{ installmentNumber: 1, amountCents: 10000, status: "pending", paidAt: null, paymentReference: null }]);
+    const response = await request(app).get("/api/sol/packages/42/payment-preview");
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject({ amountCents: 10000, installmentNumber: 1, paymentEnabled: false, currency: "BRL" });
+    expect(mocks.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 42, userId: 7 } }));
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+  it("does not preview another customer's package", async () => {
+    mocks.findOne.mockResolvedValue(null);
+    expect((await request(app).get("/api/sol/packages/42/payment-preview")).status).toBe(404);
+  });
+  it("rejects invalid preview IDs", async () => {
+    expect((await request(app).get("/api/sol/packages/abc/payment-preview")).status).toBe(400);
+  });
   it("rejects malformed package identifiers", async () => {
     expect((await request(app).get("/api/sol/packages/not-an-id")).status).toBe(400);
     expect(mocks.findOne).not.toHaveBeenCalled();
