@@ -39,4 +39,28 @@ router.post("/packages", async (req, res) => {
     return res.status(201).json({ ...item.toJSON(), message: "Draft created; no payment taken" });
   } catch { return res.status(500).json({ message: "Unable to create Sòl draft" }); }
 });
+
+router.delete("/packages/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!/^\\d+$/.test(req.params.id as string) || !Number.isSafeInteger(id) || id < 1) {
+    return res.status(400).json({ message: "Invalid package ID" });
+  }
+  try {
+    const removed = await sequelize.transaction(async transaction => {
+      const draft = await SolPackage.findOne({
+        where: { id, userId: currentUser(req).id, status: "draft" },
+        transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (!draft) return false;
+      // Only pristine drafts can be deleted. Never remove a package with payment activity.
+      const installments = await SolContribution.findAll({ where: { packageId: id }, transaction, lock: transaction.LOCK.UPDATE });
+      if (draft.paidMonths !== 0 || installments.length !== 12 || installments.some(i => i.status !== "pending" || i.paidAt || i.paymentReference)) return false;
+      await SolContribution.destroy({ where: { packageId: id }, transaction });
+      await draft.destroy({ transaction });
+      return true;
+    });
+    if (!removed) return res.status(404).json({ message: "Draft not found or cannot be deleted" });
+    return res.status(204).send();
+  } catch { return res.status(500).json({ message: "Unable to delete Sòl draft" }); }
+});
 export default router;
