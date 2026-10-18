@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   contributionsFindAll: vi.fn(),
   contributionsDestroy: vi.fn(),
   paymentAttemptsFindAll: vi.fn(),
+  paymentAttemptFindOne: vi.fn(),
+  paymentAttemptCreate: vi.fn(),
   transaction: vi.fn(),
 }));
 vi.mock("../middleware/authenticate", () => ({ authenticate: mocks.authenticate, currentUser: mocks.currentUser }));
@@ -19,7 +21,7 @@ vi.mock("../models/Sol", () => ({
   SolPackage: { findAll: mocks.findAll, findOne: mocks.findOne, create: mocks.create },
   SolContribution: { bulkCreate: mocks.bulkCreate, findAll: mocks.contributionsFindAll, destroy: mocks.contributionsDestroy },
 }));
-vi.mock("../models/SolPaymentAttempt", () => ({ SolPaymentAttempt: { findAll: mocks.paymentAttemptsFindAll } }));
+vi.mock("../models/SolPaymentAttempt", () => ({ SolPaymentAttempt: { findAll: mocks.paymentAttemptsFindAll, findOne: mocks.paymentAttemptFindOne, create: mocks.paymentAttemptCreate } }));
 import express from "express";
 import request from "supertest";
 import solRoutes from "../routes/solRoutes";
@@ -112,6 +114,27 @@ describe("Sòl draft package API", () => {
   });
   it("rejects malformed payment history IDs", async () => {
     expect((await request(app).get("/api/sol/packages/nope/payment-attempts")).status).toBe(400);
+  });
+  it("creates a payment intent using locked server-side installment price without charging", async () => {
+    mocks.findOne.mockResolvedValue({ id: 42, monthlyAmountCents: 10000, status: "draft" });
+    mocks.paymentAttemptFindOne.mockResolvedValue(null);
+    mocks.contributionsFindAll.mockResolvedValue([{ id: 81, installmentNumber: 1, amountCents: 10000, status: "pending" }]);
+    mocks.paymentAttemptCreate.mockResolvedValue({ id: 5, packageId: 42, contributionId: 81, amountCents: 10000, currency: "BRL", method: "pix", status: "created" });
+    const response = await request(app).post("/api/sol/packages/42/payment-intents").set("Idempotency-Key", "unique_request_1234").send({ method: "pix", amountCents: 1 });
+    expect(response.status).toBe(201);
+    expect(response.body).toMatchObject({ amountCents: 10000, paymentEnabled: false, status: "created" });
+    expect(mocks.paymentAttemptCreate).toHaveBeenCalledWith(expect.objectContaining({ amountCents: 10000, contributionId: 81, userId: 7 }), expect.anything());
+  });
+  it("replays the same idempotency key without creating a new attempt", async () => {
+    mocks.findOne.mockResolvedValue({ id: 42 });
+    mocks.paymentAttemptFindOne.mockResolvedValue({ id: 5, packageId: 42, contributionId: 81, amountCents: 10000, currency: "BRL", method: "pix", status: "created" });
+    const response = await request(app).post("/api/sol/packages/42/payment-intents").set("Idempotency-Key", "unique_request_1234").send({ method: "pix" });
+    expect(response.status).toBe(200);
+    expect(mocks.paymentAttemptCreate).not.toHaveBeenCalled();
+  });
+  it("rejects short idempotency keys", async () => {
+    const response = await request(app).post("/api/sol/packages/42/payment-intents").set("Idempotency-Key", "short").send({ method: "pix" });
+    expect(response.status).toBe(400);
   });
   it("rejects malformed package identifiers", async () => {
     expect((await request(app).get("/api/sol/packages/not-an-id")).status).toBe(400);
