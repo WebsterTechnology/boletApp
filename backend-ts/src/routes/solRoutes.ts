@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authenticate, currentUser } from "../middleware/authenticate";
 import { sequelize } from "../config/database";
 import { SolContribution, SolPackage, SOL_MONTHLY_AMOUNTS_CENTS } from "../models/Sol";
+import { SolPaymentAttempt } from "../models/SolPaymentAttempt";
 
 const router = Router();
 router.use(authenticate);
@@ -90,5 +91,28 @@ router.get("/packages/:id/payment-preview", async (req, res) => {
       message: "Preview only: payment collection is not enabled",
     });
   } catch { return res.status(500).json({ message: "Unable to prepare payment preview" }); }
+});
+
+/**
+ * Read-only transaction history. Payment attempts are never created or marked
+ * successful by this route; the response excludes provider secrets and keys.
+ */
+router.get("/packages/:id/payment-attempts", async (req, res) => {
+  const rawId = req.params.id as string;
+  if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
+    return res.status(400).json({ message: "Invalid package ID" });
+  }
+  try {
+    const userId = currentUser(req).id;
+    const item = await SolPackage.findOne({ where: { id: Number(rawId), userId } });
+    if (!item) return res.status(404).json({ message: "Package not found" });
+    const attempts = await SolPaymentAttempt.findAll({
+      where: { packageId: item.id, userId },
+      attributes: ["id", "contributionId", "amountCents", "currency", "method", "status", "confirmedAt", "createdAt"],
+      order: [["createdAt", "DESC"]],
+      limit: 100,
+    });
+    return res.json(attempts);
+  } catch { return res.status(500).json({ message: "Unable to load payment history" }); }
 });
 export default router;
