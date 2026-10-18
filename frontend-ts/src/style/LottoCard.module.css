@@ -168,3 +168,8 @@
     transform: scale(1.05);
   }
 }
+/* Keep Loto the same height as the neighboring Sòl card. */
+.card { height: 100%; display: flex; flex-direction: column; }
+.imageWrap { flex: 0 0 auto; }
+.content { flex: 1; display: flex; flex-direction: column; }
+.playBtn { margin-top: auto; }
