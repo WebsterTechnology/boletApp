@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "./SolPage.module.css";
 
 type View = "home" | "packages" | "details" | "transactions" | "menu";
 type PaymentMethod = "wallet" | "pix";
+type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number };
+const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PACKAGES = [100, 200, 500, 1000] as const;
 type PackageAmount = (typeof PACKAGES)[number];
 const money = (amount: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(amount);
@@ -14,6 +16,46 @@ export default function SolPage() {
   const [dueDay, setDueDay] = useState(15);
   const [method, setMethod] = useState<PaymentMethod>("wallet");
   const [showPaymentNotice, setShowPaymentNotice] = useState(false);
+  const [drafts, setDrafts] = useState<SolDraft[]>([]);
+  const [draftLoading, setDraftLoading] = useState(true);
+  const [draftError, setDraftError] = useState("");
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draftSuccess, setDraftSuccess] = useState("");
+  const loadDrafts = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) { setDraftError("Tanpri konekte ankò."); setDraftLoading(false); return; }
+    setDraftLoading(true);
+    try {
+      const response = await fetch(API + "/api/sol/packages", { headers: { Authorization: "Bearer " + token } });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const items: unknown = await response.json();
+      if (!Array.isArray(items)) throw new Error("Invalid response");
+      setDrafts(items as SolDraft[]);
+      setDraftError("");
+    } catch { setDraftError("Nou pa kapab chaje pake Sòl yo kounye a."); }
+    finally { setDraftLoading(false); }
+  }, []);
+  useEffect(() => { void loadDrafts(); }, [loadDrafts]);
+  const saveDraft = async () => {
+    if (savingDraft) return;
+    const token = localStorage.getItem("token");
+    if (!token) { setDraftError("Tanpri konekte ankò."); return; }
+    setSavingDraft(true);
+    setDraftSuccess("");
+    setDraftError("");
+    try {
+      const response = await fetch(API + "/api/sol/packages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ monthlyAmountCents: amount * 100, dueDay }),
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      setDraftSuccess("Pake ou anrejistre kòm bouyon. Okenn peman pa fèt.");
+      await loadDrafts();
+    } catch { setDraftError("Nou pa kapab anrejistre pake a. Okenn peman pa fèt."); }
+    finally { setSavingDraft(false); }
+  };
+
   const [userName] = useState(() => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -44,6 +86,16 @@ export default function SolPage() {
               <strong>{money(0)}</strong>
               <small>Pa gen kontribisyon ki anrejistre pou kounye a.</small>
             </div>
+            <h2>Pake mwen yo</h2>
+            {draftLoading ? <p role="status">Ap chaje pake ou yo...</p> : draftError ? <p role="alert" className={styles.notice}>{draftError} <button type="button" onClick={() => void loadDrafts()}>Eseye ankò</button></p> : drafts.length ? (
+              <div className={styles.packageGrid}>
+                {drafts.map(draft => <article className={styles.package} key={draft.id}>
+                  <strong>{money(draft.monthlyAmountCents / 100)} <small>/ mwa</small></strong>
+                  <p>Estati: {draft.status === "draft" ? "Bouyon — pa aktive" : draft.status}</p>
+                  <p>Jou peman: {draft.dueDay} | Mwa peye: {draft.paidMonths}/12</p>
+                </article>)}
+              </div>
+            ) : <p>Ou poko gen okenn pake Sòl ki anrejistre.</p>}
             <h2>Ki sa ou vle fè?</h2>
             <div className={styles.quickGrid}>
               <button onClick={() => go("packages")}><span>📦</span>Pake mwen yo<small>Chwazi yon pake</small></button>
@@ -98,8 +150,11 @@ export default function SolPage() {
             ) : (
               <div className={styles.fixedAmount}><span>Montan pou retire nan balans Loto yo</span><strong>{money(amount)}</strong><small>Sistèm nan pral itilize balans pou jwe an premye, epi balans pou retire. Si total la pa sifi, ou dwe rechaje kont ou anvan.</small></div>
             )}
-            <button className={styles.primary} onClick={() => setShowPaymentNotice(true)}>Kòmanse</button>
-            {showPaymentNotice && <p role="status" className={styles.notice}>Sa a se yon aperçu. Nou poko aktive kreyasyon pake, dediksyon balans oswa peman PIX. Okenn lajan pa retire.</p>}
+            <button className={styles.primary} disabled={savingDraft} onClick={() => void saveDraft()}>{savingDraft ? "Ap anrejistre..." : "Anrejistre pake kòm bouyon"}</button>
+            {draftSuccess && <p role="status" className={styles.notice}>{draftSuccess}</p>}
+            {draftError && <p role="alert" className={styles.notice}>{draftError}</p>}
+            <button className={styles.back} onClick={() => setShowPaymentNotice(true)}>Kijan peman ap mache?</button>
+            {showPaymentNotice && <p role="status" className={styles.notice}>Sa a se yon aperçu. Nou poko aktive dediksyon balans oswa peman PIX. Okenn lajan pa retire.</p>}
           </section>
         )}
 
