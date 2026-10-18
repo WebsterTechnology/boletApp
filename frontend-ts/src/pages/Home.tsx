@@ -1,26 +1,21 @@
 // src/pages/Home.jsx
-import React, { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./Home.module.css";
 import LottoCard from "../components/LottoCard";
 
 const Home = ({ openLogin }: { openLogin: () => void }) => {
   const navigate = useNavigate();
-  const location = useLocation();
+  const enter = (destination: string) => { if (localStorage.getItem("token")) { navigate(destination); return; } sessionStorage.setItem("postAuthDestination", destination); openLogin(); };
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    // Redirect only if truly logged in
-    if (token && location.pathname === "/") {
-      navigate("/game", { replace: true });
-    }
-  }, [navigate, location.pathname]);
+
 
   return (
     <div className={styles.container}>
       {/* <h1 className={styles.title}>Jwe</h1> */}
       <div className={styles.grid}>
-        <LottoCard openLogin={openLogin} />
+        <LottoCard openLogin={() => enter("/game")} />
+        <article className={styles.solCard}><div className={styles.solHero}>Sòl <span>BYENTO</span></div><div className={styles.solBody}><h3>Sòl</h3><p>Yon nouvo espas ap vini byento.</p><button type="button" onClick={() => enter("/sol")}>ANTRE NAN SÒL</button></div></article>
       </div>
     </div>
   );

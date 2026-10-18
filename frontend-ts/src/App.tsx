@@ -22,6 +22,7 @@ import BroadcastNotificationModal from "./components/BroadcastNotificationModal"
 import CompleteProfile from "./pages/CompleteProfile";
 import ChatWidget from "./components/ChatWidget";
 import Balans from "./pages/Balans";
+import SolPage from "./pages/SolPage";
 
 // -------- Guard (supports admin-only) --------
 function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNode; requireAdmin?: boolean }) {
@@ -110,6 +111,7 @@ function App() {
           }
         />
 
+        <Route path="/sol" element={<ProtectedRoute><SolPage /></ProtectedRoute>} />
         <Route path="/balans" element={<ProtectedRoute><Balans /></ProtectedRoute>} />
 
         <Route
