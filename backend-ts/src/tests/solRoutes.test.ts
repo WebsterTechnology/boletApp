@@ -132,6 +132,15 @@ describe("Sòl draft package API", () => {
     expect(response.status).toBe(200);
     expect(mocks.paymentAttemptCreate).not.toHaveBeenCalled();
   });
+  it("blocks a second open intent for the same installment", async () => {
+    mocks.findOne.mockResolvedValue({ id: 42, monthlyAmountCents: 10000, status: "draft" });
+    mocks.paymentAttemptFindOne.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: 5, status: "created" });
+    mocks.contributionsFindAll.mockResolvedValue([{ id: 81, installmentNumber: 1, amountCents: 10000, status: "pending" }]);
+    const response = await request(app).post("/api/sol/packages/42/payment-intents")
+      .set("Idempotency-Key", "another_request_1234").send({ method: "pix" });
+    expect(response.status).toBe(409);
+    expect(mocks.paymentAttemptCreate).not.toHaveBeenCalled();
+  });
   it("rejects short idempotency keys", async () => {
     const response = await request(app).post("/api/sol/packages/42/payment-intents").set("Idempotency-Key", "short").send({ method: "pix" });
     expect(response.status).toBe(400);
