@@ -57,6 +57,12 @@ router.delete("/packages/:id", async (req, res) => {
       // Only pristine drafts can be deleted. Never remove a package with payment activity.
       const installments = await SolContribution.findAll({ where: { packageId: id }, transaction, lock: transaction.LOCK.UPDATE });
       if (draft.paidMonths !== 0 || installments.length !== 12 || installments.some(i => i.status !== "pending" || i.paidAt || i.paymentReference)) return false;
+      // Payment attempts are audit records with RESTRICT foreign keys.
+      // Never delete an installment/package after an intent was recorded.
+      const recordedAttempt = await SolPaymentAttempt.findOne({
+        where: { packageId: id }, transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (recordedAttempt) return false;
       await SolContribution.destroy({ where: { packageId: id }, transaction });
       await draft.destroy({ transaction });
       return true;
