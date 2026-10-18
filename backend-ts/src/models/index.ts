@@ -1,6 +1,7 @@
 import { sequelize } from "../config/database";
 import { initUser, User } from "./User";
 import { initSol, SolPackage, SolContribution } from "./Sol";
+import { initSolPaymentAttempt, SolPaymentAttempt } from "./SolPaymentAttempt";
 import { ChatMessage, initChatMessage } from "./ChatMessage";
 import { WithdrawalRequest, initWithdrawalRequest } from "./WithdrawalRequest";
 import { DeChif, initBets, Katchif, Maryaj, TwaChif, YonChif } from "./bets";
@@ -15,6 +16,7 @@ import {
 
 initUser(sequelize);
 initSol(sequelize);
+initSolPaymentAttempt(sequelize);
 initBets(sequelize);
 initPayments(sequelize);
 initWinClaim(sequelize);
@@ -81,4 +83,5 @@ export {
   WithdrawalRequest,
   SolPackage,
   SolContribution,
+  SolPaymentAttempt,
 };
