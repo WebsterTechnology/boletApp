@@ -5,6 +5,7 @@ import styles from "./SolPage.module.css";
 type View = "home" | "packages" | "details" | "saved" | "transactions" | "menu";
 type PaymentMethod = "wallet" | "pix";
 type SolContribution = { id: number; installmentNumber: number; amountCents: number; status: string; paidAt: string | null };
+type PaymentPreview = { packageId: number; installmentNumber: number; amountCents: number; currency: string; methods: string[]; paymentEnabled: boolean };
 type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; contributions?: SolContribution[] };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PACKAGES = [100, 200, 500, 1000] as const;
@@ -21,6 +22,9 @@ export default function SolPage() {
   const [selectedDraft, setSelectedDraft] = useState<SolDraft | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
+  const [paymentPreview, setPaymentPreview] = useState<PaymentPreview | null>(null);
+  const [paymentPreviewError, setPaymentPreviewError] = useState("");
+  const [paymentPreviewLoading, setPaymentPreviewLoading] = useState(false);
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftError, setDraftError] = useState("");
   const [savingDraft, setSavingDraft] = useState(false);
@@ -86,6 +90,8 @@ export default function SolPage() {
     setDetailLoading(true);
     setDetailError("");
     setSelectedDraft(null);
+    setPaymentPreview(null);
+    setPaymentPreviewError("");
     setView("saved");
     try {
       const response = await fetch(API + "/api/sol/packages/" + id, { headers: { Authorization: "Bearer " + token } });
@@ -95,6 +101,27 @@ export default function SolPage() {
       setSelectedDraft(item);
     } catch { setDetailError("Nou pa kapab chaje detay pake a. Eseye ankò."); }
     finally { setDetailLoading(false); }
+  };
+
+
+  const loadPaymentPreview = async (packageId: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) { setPaymentPreviewError("Tanpri konekte ankò."); return; }
+    setPaymentPreviewLoading(true);
+    setPaymentPreviewError("");
+    setPaymentPreview(null);
+    try {
+      const response = await fetch(API + "/api/sol/packages/" + packageId + "/payment-preview", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const result = (await response.json()) as PaymentPreview;
+      if (result.packageId !== packageId || !Number.isSafeInteger(result.amountCents) || result.amountCents <= 0 || result.currency !== "BRL" || result.paymentEnabled !== false) {
+        throw new Error("Invalid payment preview");
+      }
+      setPaymentPreview(result);
+    } catch { setPaymentPreviewError("Nou pa kapab prepare enfòmasyon peman an. Eseye ankò."); }
+    finally { setPaymentPreviewLoading(false); }
   };
 
   const [userName] = useState(() => {
@@ -213,6 +240,15 @@ export default function SolPage() {
                   <div><span>Estati</span><strong>{selectedDraft.status === "draft" ? "Bouyon — pa aktive" : selectedDraft.status}</strong></div>
                   <div><span>Mwa peye</span><strong>{selectedDraft.paidMonths}/12</strong></div>
                 </div>
+                <h3>Pwochen peman (aperçu sèlman)</h3>
+                <button className={styles.back} type="button" disabled={paymentPreviewLoading} onClick={() => void loadPaymentPreview(selectedDraft.id)}>{paymentPreviewLoading ? "Ap chaje..." : "Gade pwochen peman an"}</button>
+                {paymentPreviewError && <p role="alert" className={styles.notice}>{paymentPreviewError}</p>}
+                {paymentPreview && <div className={styles.summary}>
+                  <div><span>Mwa pou peye</span><strong>{paymentPreview.installmentNumber}</strong></div>
+                  <div><span>Montan fiks</span><strong>{money(paymentPreview.amountCents / 100)}</strong></div>
+                  <div><span>Fason peman prevwa</span><strong>{paymentPreview.methods.join(" / ").toUpperCase()}</strong></div>
+                  <p className={styles.hint}>🔒 Sa se yon aperçu sèlman. Peman yo poko aktive. Pa gen lajan ki retire.</p>
+                </div>}
                 <h3>12 kontribisyon yo</h3>
                 <div className={styles.packageGrid}>
                   {[...(selectedDraft.contributions || [])].sort((a, b) => a.installmentNumber - b.installmentNumber).map(item => (
