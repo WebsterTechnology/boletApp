@@ -1,0 +1,39 @@
+name: Sòl backend checks
+
+on:
+  pull_request:
+    paths:
+      - 'backend-ts/**'
+      - '.github/workflows/sol-backend-checks.yml'
+  push:
+    branches:
+      - migration/backend-typescript
+    paths:
+      - 'backend-ts/**'
+      - '.github/workflows/sol-backend-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-ts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend-ts/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript typecheck
+        run: npm run typecheck
+      - name: Run backend tests
+        run: npm test -- --reporter=default
+      - name: Compile backend
+        run: npm run build
