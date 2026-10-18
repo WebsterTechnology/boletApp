@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   findOne: vi.fn(),
   create: vi.fn(),
   bulkCreate: vi.fn(),
+  contributionsFindAll: vi.fn(),
+  contributionsDestroy: vi.fn(),
   transaction: vi.fn(),
 }));
 vi.mock("../middleware/authenticate", () => ({ authenticate: mocks.authenticate, currentUser: mocks.currentUser }));
@@ -14,7 +16,7 @@ vi.mock("../config/database", () => ({ sequelize: { transaction: mocks.transacti
 vi.mock("../models/Sol", () => ({
   SOL_MONTHLY_AMOUNTS_CENTS: [10000, 20000, 50000, 100000],
   SolPackage: { findAll: mocks.findAll, findOne: mocks.findOne, create: mocks.create },
-  SolContribution: { bulkCreate: mocks.bulkCreate },
+  SolContribution: { bulkCreate: mocks.bulkCreate, findAll: mocks.contributionsFindAll, destroy: mocks.contributionsDestroy },
 }));
 import express from "express";
 import request from "supertest";
@@ -25,7 +27,7 @@ app.use(express.json());
 app.use("/api/sol", solRoutes);
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.transaction.mockImplementation(async (callback: (t: object) => Promise<unknown>) => callback({}));
+  mocks.transaction.mockImplementation(async (callback: (t: object) => Promise<unknown>) => callback({ LOCK: { UPDATE: "UPDATE" } }));
 });
 describe("Sòl draft package API", () => {
   it.each([10000, 20000, 50000, 100000])("accepts approved amount %i cents and creates 12 pending installments", async amount => {
@@ -50,6 +52,29 @@ describe("Sòl draft package API", () => {
     mocks.findOne.mockResolvedValue(null);
     expect((await request(app).get("/api/sol/packages/88")).status).toBe(404);
     expect(mocks.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 88, userId: 7 } }));
+  });
+  it("deletes only a pristine draft belonging to the user", async () => {
+    const destroy = vi.fn().mockResolvedValue(undefined);
+    mocks.findOne.mockResolvedValue({ paidMonths: 0, destroy });
+    mocks.contributionsFindAll.mockResolvedValue(Array.from({ length: 12 }, () => ({ status: "pending", paidAt: null, paymentReference: null })));
+    const response = await request(app).delete("/api/sol/packages/42");
+    expect(response.status).toBe(204);
+    expect(mocks.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 42, userId: 7, status: "draft" } }));
+    expect(mocks.contributionsDestroy).toHaveBeenCalledWith(expect.objectContaining({ where: { packageId: 42 } }));
+    expect(destroy).toHaveBeenCalled();
+  });
+  it("refuses to delete a draft with recorded payment activity", async () => {
+    const destroy = vi.fn();
+    mocks.findOne.mockResolvedValue({ paidMonths: 0, destroy });
+    mocks.contributionsFindAll.mockResolvedValue(Array.from({ length: 12 }, (_, i) => ({ status: i === 0 ? "paid" : "pending" })));
+    expect((await request(app).delete("/api/sol/packages/42")).status).toBe(404);
+    expect(mocks.contributionsDestroy).not.toHaveBeenCalled();
+    expect(destroy).not.toHaveBeenCalled();
+  });
+  it("does not delete another customer's draft", async () => {
+    mocks.findOne.mockResolvedValue(null);
+    expect((await request(app).delete("/api/sol/packages/42")).status).toBe(404);
+    expect(mocks.contributionsDestroy).not.toHaveBeenCalled();
   });
   it("rejects malformed package identifiers", async () => {
     expect((await request(app).get("/api/sol/packages/not-an-id")).status).toBe(400);
