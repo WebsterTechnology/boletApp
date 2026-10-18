@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   bulkCreate: vi.fn(),
   contributionsFindAll: vi.fn(),
   contributionsDestroy: vi.fn(),
+  paymentAttemptsFindAll: vi.fn(),
   transaction: vi.fn(),
 }));
 vi.mock("../middleware/authenticate", () => ({ authenticate: mocks.authenticate, currentUser: mocks.currentUser }));
@@ -18,6 +19,7 @@ vi.mock("../models/Sol", () => ({
   SolPackage: { findAll: mocks.findAll, findOne: mocks.findOne, create: mocks.create },
   SolContribution: { bulkCreate: mocks.bulkCreate, findAll: mocks.contributionsFindAll, destroy: mocks.contributionsDestroy },
 }));
+vi.mock("../models/SolPaymentAttempt", () => ({ SolPaymentAttempt: { findAll: mocks.paymentAttemptsFindAll } }));
 import express from "express";
 import request from "supertest";
 import solRoutes from "../routes/solRoutes";
@@ -91,6 +93,25 @@ describe("Sòl draft package API", () => {
   });
   it("rejects invalid preview IDs", async () => {
     expect((await request(app).get("/api/sol/packages/abc/payment-preview")).status).toBe(400);
+  });
+  it("returns only own package payment history with safe public fields", async () => {
+    mocks.findOne.mockResolvedValue({ id: 42 });
+    mocks.paymentAttemptsFindAll.mockResolvedValue([]);
+    const response = await request(app).get("/api/sol/packages/42/payment-attempts");
+    expect(response.status).toBe(200);
+    expect(mocks.findOne).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 42, userId: 7 } }));
+    expect(mocks.paymentAttemptsFindAll).toHaveBeenCalledWith(expect.objectContaining({
+      where: { packageId: 42, userId: 7 },
+      attributes: expect.not.arrayContaining(["idempotencyKey", "providerReference"]),
+    }));
+  });
+  it("does not expose another customer's payment history", async () => {
+    mocks.findOne.mockResolvedValue(null);
+    expect((await request(app).get("/api/sol/packages/42/payment-attempts")).status).toBe(404);
+    expect(mocks.paymentAttemptsFindAll).not.toHaveBeenCalled();
+  });
+  it("rejects malformed payment history IDs", async () => {
+    expect((await request(app).get("/api/sol/packages/nope/payment-attempts")).status).toBe(400);
   });
   it("rejects malformed package identifiers", async () => {
     expect((await request(app).get("/api/sol/packages/not-an-id")).status).toBe(400);
