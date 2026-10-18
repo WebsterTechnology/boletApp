@@ -49,6 +49,7 @@ export default function SolPage() {
               <button onClick={() => go("packages")}><span>📦</span>Pake mwen yo<small>Chwazi yon pake</small></button>
               <button onClick={() => go("packages")}><span>💳</span>Peman mwen yo<small>Plan peman</small></button>
               <button onClick={() => go("transactions")}><span>📋</span>Tranzaksyon<small>Istwa peman</small></button>
+              <button onClick={() => window.dispatchEvent(new Event("htnovatech:open-support-chat"))}><span>💬</span>Sipò<small>Chat avèk nou</small></button>
             </div>
             <div className={styles.promo}><span>🌱</span><div><strong>Peye 12, resevwa 13</strong><p>Kontribye pandan 12 mwa. Dekouvri kat pake Sòl yo.</p></div></div>
             <button className={styles.primary} onClick={() => go("packages")}>Chwazi pake mwen <span>→</span></button>
