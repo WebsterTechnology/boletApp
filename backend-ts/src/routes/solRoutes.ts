@@ -147,6 +147,13 @@ router.post("/packages/:id/payment-intents", async (req, res) => {
       const contributions = await SolContribution.findAll({ where: { packageId: item.id }, order: [["installmentNumber", "ASC"]], transaction, lock: transaction.LOCK.UPDATE });
       const next = contributions.find(i => i.status === "pending" && !i.paidAt && !i.paymentReference);
       if (!next || next.amountCents !== item.monthlyAmountCents) return { code: 409, message: "No eligible installment" };
+      // One unresolved intent per installment. A new key must not create a
+      // second payable request while an earlier attempt is still open.
+      const openAttempt = await SolPaymentAttempt.findOne({
+        where: { contributionId: next.id, status: "created" },
+        transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (openAttempt) return { code: 409, message: "An existing payment intent is pending for this installment" };
       const attempt = await SolPaymentAttempt.create({
         userId, packageId: item.id, contributionId: next.id,
         amountCents: next.amountCents, method, idempotencyKey: key,
