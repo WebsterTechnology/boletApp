@@ -25,7 +25,11 @@ export default function ChatWidget() {
     return () => { window.removeEventListener("storage",sync); window.removeEventListener("userLoggedIn",sync); window.removeEventListener("userLoggedOut",sync); window.removeEventListener("authChanged",sync); };
   }, []);
 
-  useEffect(() => { openRef.current=open; if(open) setUnread(false); }, [open]);
+  useEffect(() => {
+    const openFromSupport = () => setOpen(true);
+    window.addEventListener("htnovatech:open-support-chat", openFromSupport);
+    return () => window.removeEventListener("htnovatech:open-support-chat", openFromSupport);
+  }, []);\n\n  useEffect(() => { openRef.current=open; if(open) setUnread(false); }, [open]);
   useEffect(() => { if(open && token) axios.get<Message[]>(`${API}/api/chat/messages`,auth()).then(r=>setMessages(r.data)).catch(console.error); }, [open,token]);
   useEffect(() => { scrollRef.current?.scrollTo({top:scrollRef.current.scrollHeight}); }, [messages,open]);
 
