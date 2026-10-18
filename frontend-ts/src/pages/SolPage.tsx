@@ -5,6 +5,7 @@ import styles from "./SolPage.module.css";
 type View = "home" | "packages" | "details" | "saved" | "transactions" | "menu";
 type PaymentMethod = "wallet" | "pix";
 type SolContribution = { id: number; installmentNumber: number; amountCents: number; status: string; paidAt: string | null };
+type SolPaymentAttempt = { id: number; contributionId: number; amountCents: number; currency: string; method: string; status: string; confirmedAt: string | null; createdAt: string };
 type PaymentPreview = { packageId: number; installmentNumber: number; amountCents: number; currency: string; methods: string[]; paymentEnabled: boolean };
 type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; contributions?: SolContribution[] };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -25,6 +26,9 @@ export default function SolPage() {
   const [paymentPreview, setPaymentPreview] = useState<PaymentPreview | null>(null);
   const [paymentPreviewError, setPaymentPreviewError] = useState("");
   const [paymentPreviewLoading, setPaymentPreviewLoading] = useState(false);
+  const [paymentHistory, setPaymentHistory] = useState<SolPaymentAttempt[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftError, setDraftError] = useState("");
   const [savingDraft, setSavingDraft] = useState(false);
@@ -92,6 +96,8 @@ export default function SolPage() {
     setSelectedDraft(null);
     setPaymentPreview(null);
     setPaymentPreviewError("");
+    setPaymentHistory([]);
+    setHistoryError("");
     setView("saved");
     try {
       const response = await fetch(API + "/api/sol/packages/" + id, { headers: { Authorization: "Bearer " + token } });
@@ -122,6 +128,24 @@ export default function SolPage() {
       setPaymentPreview(result);
     } catch { setPaymentPreviewError("Nou pa kapab prepare enfòmasyon peman an. Eseye ankò."); }
     finally { setPaymentPreviewLoading(false); }
+  };
+
+  const loadPaymentHistory = async (packageId: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) { setHistoryError("Tanpri konekte ankò."); return; }
+    setHistoryLoading(true);
+    setHistoryError("");
+    setPaymentHistory([]);
+    try {
+      const response = await fetch(API + "/api/sol/packages/" + packageId + "/payment-attempts", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const result: unknown = await response.json();
+      if (!Array.isArray(result)) throw new Error("Invalid history");
+      setPaymentHistory(result as SolPaymentAttempt[]);
+    } catch { setHistoryError("Nou pa kapab chaje istwa peman yo."); }
+    finally { setHistoryLoading(false); }
   };
 
   const [userName] = useState(() => {
@@ -259,6 +283,20 @@ export default function SolPage() {
                     </article>
                   ))}
                 </div>
+                <h3>Istwa tantativ peman</h3>
+                <button className={styles.back} type="button" disabled={historyLoading} onClick={() => void loadPaymentHistory(selectedDraft.id)}>
+                  {historyLoading ? "Ap chaje..." : "Gade istwa peman yo"}
+                </button>
+                {historyError && <p role="alert" className={styles.notice}>{historyError}</p>}
+                {paymentHistory.length > 0 && <div className={styles.packageGrid}>
+                  {paymentHistory.map(attempt => <article className={styles.package} key={attempt.id}>
+                    <div className={styles.packageTop}><span>{attempt.method.toUpperCase()}</span><span className={styles.duration}>{attempt.status}</span></div>
+                    <strong>{money(attempt.amountCents / 100)}</strong>
+                    <small>{new Date(attempt.createdAt).toLocaleDateString("pt-BR")}</small>
+                    <small>{attempt.confirmedAt ? "Konfime" : "Pa konfime"}</small>
+                  </article>)}
+                </div>}
+                {!historyLoading && !historyError && paymentHistory.length === 0 && <p className={styles.hint}>Pa gen tantativ peman ki chaje.</p>}
                 <p className={styles.hint}>Pake bouyon yo pa aktive. Pa gen peman ki disponib pou kounye a.</p>
               </>
             )}
