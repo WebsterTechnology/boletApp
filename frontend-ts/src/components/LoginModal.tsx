@@ -75,7 +75,8 @@ export default function LoginModal({ onClose, openRegister }: LoginModalProps) {
       onClose?.();
       if (data.user?.isAdmin) navigate('/admin/dashboard', { replace: true });
       else if (!data.user?.profileComplete) navigate('/complete-profile', { replace: true });
-      else navigate('/game', { replace: true });
+      else navigate(sessionStorage.getItem('postAuthDestination') === '/sol' ? '/sol' : '/game', { replace: true });
+      sessionStorage.removeItem('postAuthDestination');
     } catch (err) {
       console.error('Login error:', err);
       alert('❌ Erè pandan login');
