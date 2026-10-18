@@ -6,7 +6,7 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 type Message = { id:number; userId:number; sender:"user"|"admin"; text:string; createdAt:string };
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } });
 
-export default function ChatWidget() {
+export default function ChatWidget({ openRequest = 0 }: { openRequest?: number }) {
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -24,6 +24,10 @@ export default function ChatWidget() {
     window.addEventListener("authChanged", sync);
     return () => { window.removeEventListener("storage",sync); window.removeEventListener("userLoggedIn",sync); window.removeEventListener("userLoggedOut",sync); window.removeEventListener("authChanged",sync); };
   }, []);
+
+  useEffect(() => {
+    if (openRequest > 0) setOpen(true);
+  }, [openRequest]);
 
   useEffect(() => {
     const openFromSupport = () => setOpen(true);
