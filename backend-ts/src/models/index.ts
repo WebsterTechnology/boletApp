@@ -1,5 +1,6 @@
 import { sequelize } from "../config/database";
 import { initUser, User } from "./User";
+import { initSol, SolPackage, SolContribution } from "./Sol";
 import { ChatMessage, initChatMessage } from "./ChatMessage";
 import { WithdrawalRequest, initWithdrawalRequest } from "./WithdrawalRequest";
 import { DeChif, initBets, Katchif, Maryaj, TwaChif, YonChif } from "./bets";
@@ -13,6 +14,7 @@ import {
 } from "./notifications";
 
 initUser(sequelize);
+initSol(sequelize);
 initBets(sequelize);
 initPayments(sequelize);
 initWinClaim(sequelize);
@@ -21,6 +23,8 @@ initChatMessage(sequelize);
 initWithdrawalRequest(sequelize);
 
 // ==================== ASSOCIATIONS ====================
+User.hasMany(SolPackage, { foreignKey: "userId", as: "solPackages" });
+SolPackage.belongsTo(User, { foreignKey: "userId" });
 User.hasMany(ChatMessage, { foreignKey: "userId", onDelete: "CASCADE" });
 User.hasMany(WithdrawalRequest, { foreignKey: "userId", onDelete: "CASCADE" });
 WithdrawalRequest.belongsTo(User, { foreignKey: "userId" });
@@ -75,4 +79,6 @@ export {
   NotificationTarget,
   ChatMessage,
   WithdrawalRequest,
+  SolPackage,
+  SolContribution,
 };
