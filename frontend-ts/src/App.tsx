@@ -55,6 +55,8 @@ function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNod
 function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [supportOpenRequest, setSupportOpenRequest] = useState(0);
+  const openSupportChat = () => setSupportOpenRequest(count => count + 1);
 
   const openLogin = () => {
     if (localStorage.getItem("token")) return;
@@ -111,7 +113,7 @@ function App() {
           }
         />
 
-        <Route path="/sol" element={<ProtectedRoute><SolPage /></ProtectedRoute>} />
+        <Route path="/sol" element={<ProtectedRoute><SolPage onOpenSupport={openSupportChat} /></ProtectedRoute>} />
         <Route path="/balans" element={<ProtectedRoute><Balans /></ProtectedRoute>} />
 
         <Route
@@ -204,7 +206,7 @@ function App() {
       {showRegister && !localStorage.getItem("token") && <RegisterModal onClose={() => setShowRegister(false)} />}
 
       <BroadcastNotificationModal />
-      <ChatWidget />
+      <ChatWidget openRequest={supportOpenRequest} />
       <div id="recaptcha-container" />
     </>
   );
