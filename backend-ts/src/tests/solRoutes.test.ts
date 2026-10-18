@@ -75,6 +75,16 @@ describe("Sòl draft package API", () => {
     expect(mocks.contributionsDestroy).not.toHaveBeenCalled();
     expect(destroy).not.toHaveBeenCalled();
   });
+  it("preserves draft and installments once a payment intent exists", async () => {
+    const destroy = vi.fn();
+    mocks.findOne.mockResolvedValue({ paidMonths: 0, destroy });
+    mocks.contributionsFindAll.mockResolvedValue(Array.from({ length: 12 }, () => ({ status: "pending", paidAt: null, paymentReference: null })));
+    mocks.paymentAttemptFindOne.mockResolvedValue({ id: 9, status: "created" });
+    const response = await request(app).delete("/api/sol/packages/42");
+    expect(response.status).toBe(404);
+    expect(mocks.contributionsDestroy).not.toHaveBeenCalled();
+    expect(destroy).not.toHaveBeenCalled();
+  });
   it("does not delete another customer's draft", async () => {
     mocks.findOne.mockResolvedValue(null);
     expect((await request(app).delete("/api/sol/packages/42")).status).toBe(404);
