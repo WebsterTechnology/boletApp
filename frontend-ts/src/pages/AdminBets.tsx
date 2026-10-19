@@ -208,7 +208,7 @@ function ReceiptCard({ receipt, busy, onChangeStatus, onDeleteReceipt, mixedLoca
 
               {bets.map((bet) => (
                 <div key={`${bet.type}-${bet.id}`} className="receiptRow">
-                  <span>{getNumbers(bet)}{false && <small style={{display:"block",fontSize:10}}>{getLocation(bet)}</small>}</span>
+                  <span>{getNumbers(bet)}</span>
                   <span>=</span>
                   <strong>{getPwen(bet)}</strong>
                 </div>
