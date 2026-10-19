@@ -116,10 +116,13 @@ const groupReceipts = (items: BetRow[]): Receipt[] => {
   items.forEach((bet) => {
     const receiptId = bet.receiptId || `old-${bet.id}`;
 
-    if (!receipts[receiptId]) {
-      receipts[receiptId] = {
+    // Split even historical cross-location receipt IDs into location-specific cards.
+    const location = getLocation(bet);
+    const key = JSON.stringify([receiptId, location]);
+    if (!receipts[key]) {
+      receipts[key] = {
         receiptId,
-        location: getLocation(bet),
+        location,
         createdAt: bet.createdAt,
         status: bet.status || "pending",
         customerName: getCustomerName(bet),
@@ -128,11 +131,7 @@ const groupReceipts = (items: BetRow[]): Receipt[] => {
       };
     }
 
-    receipts[receiptId].bets.push(bet);
-    const betLocation = getLocation(bet);
-    if (!receipts[receiptId].location.split(" / ").includes(betLocation)) {
-      receipts[receiptId].location += ` / ${betLocation}`;
-    }
+    receipts[key].bets.push(bet);
   });
 
   return Object.values(receipts).sort(
@@ -167,9 +166,10 @@ interface ReceiptCardProps {
   busy: boolean;
   onChangeStatus: (receipt: Receipt, status: string) => void;
   onDeleteReceipt: (receipt: Receipt) => void;
+  mixedLocationId: boolean;
 }
 
-function ReceiptCard({ receipt, busy, onChangeStatus, onDeleteReceipt }: ReceiptCardProps) {
+function ReceiptCard({ receipt, busy, onChangeStatus, onDeleteReceipt, mixedLocationId }: ReceiptCardProps) {
   const grouped: Record<string, BetRow[]> = {};
 
   receipt.bets.forEach((bet) => {
@@ -208,7 +208,7 @@ function ReceiptCard({ receipt, busy, onChangeStatus, onDeleteReceipt }: Receipt
 
               {bets.map((bet) => (
                 <div key={`${bet.type}-${bet.id}`} className="receiptRow">
-                  <span>{getNumbers(bet)}{receipt.location.includes(" / ") && <small style={{display:"block",fontSize:10}}>{getLocation(bet)}</small>}</span>
+                  <span>{getNumbers(bet)}{false && <small style={{display:"block",fontSize:10}}>{getLocation(bet)}</small>}</span>
                   <span>=</span>
                   <strong>{getPwen(bet)}</strong>
                 </div>
@@ -237,7 +237,7 @@ function ReceiptCard({ receipt, busy, onChangeStatus, onDeleteReceipt }: Receipt
         <button className="actionBtn lostBtn" disabled={busy} onClick={() => onChangeStatus(receipt, "lost")}>❌ LOST</button>
         <button className="actionBtn paidBtn" disabled={busy} onClick={() => onChangeStatus(receipt, "paid")}>💸 PAID</button>
         <button className="actionBtn pendingBtn" disabled={busy} onClick={() => onChangeStatus(receipt, "pending")}>🕓 PENDING</button>
-        <button className="actionBtn lostBtn" disabled={busy || receipt.receiptId.startsWith("old-") || receipt.bets.some(b => b.status !== "pending" && b.status !== "lost")} onClick={() => onDeleteReceipt(receipt)}>🗑 Delete fich</button>
+        <button className="actionBtn lostBtn" disabled={busy || receipt.receiptId.startsWith("old-") || mixedLocationId || receipt.bets.some(b => b.status !== "pending" && b.status !== "lost")} onClick={() => onDeleteReceipt(receipt)}>🗑 Delete fich</button>
       </div>
     </div>
   );
@@ -447,11 +447,12 @@ export default function AdminBets() {
               <div className="receiptGrid">
                 {day.receipts.map((receipt) => (
                   <ReceiptCard
-                    key={receipt.receiptId}
+                    key={`${receipt.receiptId}:${receipt.location}`}
                     receipt={receipt}
                     busy={busyReceipt === receipt.receiptId}
                     onChangeStatus={updateReceiptStatus}
                     onDeleteReceipt={deleteReceipt}
+                    mixedLocationId={items.some(b => b.receiptId === receipt.receiptId && getLocation(b) !== receipt.location)}
                   />
                 ))}
               </div>
