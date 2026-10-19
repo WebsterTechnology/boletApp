@@ -129,6 +129,10 @@ const groupReceipts = (items: BetRow[]): Receipt[] => {
     }
 
     receipts[receiptId].bets.push(bet);
+    const betLocation = getLocation(bet);
+    if (!receipts[receiptId].location.split(" / ").includes(betLocation)) {
+      receipts[receiptId].location += ` / ${betLocation}`;
+    }
   });
 
   return Object.values(receipts).sort(
@@ -204,7 +208,7 @@ function ReceiptCard({ receipt, busy, onChangeStatus, onDeleteReceipt }: Receipt
 
               {bets.map((bet) => (
                 <div key={`${bet.type}-${bet.id}`} className="receiptRow">
-                  <span>{getNumbers(bet)}</span>
+                  <span>{getNumbers(bet)}{receipt.location.includes(" / ") && <small style={{display:"block",fontSize:10}}>{getLocation(bet)}</small>}</span>
                   <span>=</span>
                   <strong>{getPwen(bet)}</strong>
                 </div>
