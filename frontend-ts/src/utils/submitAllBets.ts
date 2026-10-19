@@ -128,12 +128,10 @@ export default async function submitAllBets({
 }: SubmitAllBetsOptions): Promise<SubmitAllBetsResult> {
   const { points, withdrawablePoints } = getUserAndPoints();
 
-  // A checkout is ONE receipt, regardless of game type or selected location.
-  // Keep the location on each bet, but share a receipt ID across the submission.
-  const checkoutReceiptId = createReceiptId();
+  // One receipt per location for this checkout, shared across all game types.
   const receiptIdsByLocation: Record<string, string> = {};
   selectedLocations.forEach((location) => {
-    receiptIdsByLocation[location] = checkoutReceiptId;
+    receiptIdsByLocation[location] = createReceiptId();
   });
 
   const total = bets.reduce(

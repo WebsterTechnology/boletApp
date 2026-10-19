@@ -119,21 +119,20 @@ const groupReceipts = (items: BetRow[]): Receipt[] => {
     const receiptId =
       bet.receiptId || `old-${bet.id}`;
 
-    if (!receipts[receiptId]) {
-      receipts[receiptId] = {
+    // Split even historical cross-location receipt IDs into location-specific cards.
+    const location = getLocation(bet);
+    const key = JSON.stringify([receiptId, location]);
+    if (!receipts[key]) {
+      receipts[key] = {
         receiptId,
-        location: getLocation(bet),
+        location,
         createdAt: bet.createdAt,
         status: bet.status || "pending",
         bets: [],
       };
     }
 
-    receipts[receiptId].bets.push(bet);
-    const betLocation = getLocation(bet);
-    if (!receipts[receiptId].location.split(" / ").includes(betLocation)) {
-      receipts[receiptId].location += ` / ${betLocation}`;
-    }
+    receipts[key].bets.push(bet);
   });
 
   return Object.values(receipts).sort(
@@ -355,7 +354,7 @@ export default function Fich() {
 
             return (
               <div
-                key={receipt.receiptId}
+                key={`${receipt.receiptId}:${receipt.location}`}
                 style={{
                   width: "320px",
                   background: "#fff",
@@ -470,7 +469,7 @@ export default function Fich() {
                         >
                           <span>
                             {getNumbers(bet)}
-                            {receipt.location.includes(" / ") && <small style={{ display: "block", color: "#555", fontSize: 10 }}>{getLocation(bet)}</small>}
+                            
                           </span>
 
                           <span>=</span>
