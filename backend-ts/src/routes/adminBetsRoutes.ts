@@ -1,8 +1,8 @@
 import { Router } from "express";
-import type { WhereOptions } from "sequelize";
+import { QueryTypes, type WhereOptions } from "sequelize";
 import { adminOnly } from "../middleware/adminOnly";
 import { authenticate } from "../middleware/authenticate";
-import { DeChif, Katchif, Maryaj, TwaChif, User, YonChif } from "../models";
+import { DeChif, Katchif, Maryaj, TwaChif, User, YonChif, sequelize } from "../models";
 import { BET_STATUSES, type AnyBet, type BetStatus } from "../models/bets";
 import { queryString } from "../utils/http";
 
@@ -68,7 +68,11 @@ router.get("/", authenticate, adminOnly, async (req, res) => {
       })
     );
 
-    let items = results.flat();
+    const archived = await sequelize.query<{ receiptId: string }>(
+      'SELECT "receiptId" FROM "admin_archived_receipts"', { type: QueryTypes.SELECT },
+    );
+    const archivedIds = new Set(archived.map(row => row.receiptId));
+    let items = results.flat().filter(item => !item.receiptId || !archivedIds.has(item.receiptId));
 
     if (q) {
       items = items.filter((it) =>
@@ -84,6 +88,45 @@ router.get("/", authenticate, adminOnly, async (req, res) => {
   } catch (err) {
     console.error("admin GET /bets error:", err);
     return res.status(500).json({ message: "Failed to fetch bets" });
+  }
+});
+
+/* -------- DELETE /api/admin/bets/receipts/:receiptId --------
+ * Archive from the admin list; retain original bets, stakes and payout records.
+ * Paid/won receipts cannot be archived, preventing financial-history concealment.
+ */
+router.delete("/receipts/:receiptId", authenticate, adminOnly, async (req, res) => {
+  const receiptId = String(req.params.receiptId || "").trim();
+  if (!receiptId || receiptId.length > 255 || receiptId.startsWith("old-")) {
+    return res.status(400).json({ message: "Invalid receipt ID" });
+  }
+  try {
+    const result = await sequelize.transaction(async transaction => {
+      const archived = await sequelize.query<{ receiptId: string }>(
+        'SELECT "receiptId" FROM "admin_archived_receipts" WHERE "receiptId" = :receiptId',
+        { replacements: { receiptId }, type: QueryTypes.SELECT, transaction },
+      );
+      if (archived.length) return { status: 204 };
+      const groups = await Promise.all(
+        (Object.values(BET_MODELS) as (typeof YonChif)[]).map(model =>
+          model.findAll({ where: { receiptId }, transaction, lock: transaction.LOCK.UPDATE }),
+        ),
+      );
+      const bets = groups.flat();
+      if (!bets.length) return { status: 404, message: "Receipt not found" };
+      if (bets.some(bet => bet.status !== "pending" && bet.status !== "lost")) {
+        return { status: 409, message: "Only pending or lost receipts can be archived" };
+      }
+      await sequelize.query(
+        'INSERT INTO "admin_archived_receipts" ("receiptId", "archivedAt") VALUES (:receiptId, NOW()) ON CONFLICT ("receiptId") DO NOTHING',
+        { replacements: { receiptId }, transaction },
+      );
+      return { status: 204 };
+    });
+    return result.status === 204 ? res.status(204).send() : res.status(result.status).json({ message: result.message });
+  } catch (err) {
+    console.error("admin DELETE /bets/receipts/:receiptId error:", err);
+    return res.status(500).json({ message: "Unable to archive receipt" });
   }
 });
 
