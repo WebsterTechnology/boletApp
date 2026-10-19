@@ -18,7 +18,6 @@ import AdminBets from "./pages/AdminBets";
 import AdminClaims from "./pages/AdminClaims"; // ✅ NEW (admin claims manager)
 import Support from "./pages/Support";
 import InfinitePayment from "./pages/InfinitePayment";
-import BroadcastNotificationModal from "./components/BroadcastNotificationModal";
 import CompleteProfile from "./pages/CompleteProfile";
 import ChatWidget from "./components/ChatWidget";
 import Balans from "./pages/Balans";
@@ -203,7 +202,6 @@ function App() {
 
       {showRegister && !localStorage.getItem("token") && <RegisterModal onClose={() => setShowRegister(false)} />}
 
-      <BroadcastNotificationModal />
       <ChatWidget />
       <div id="recaptcha-container" />
     </>
