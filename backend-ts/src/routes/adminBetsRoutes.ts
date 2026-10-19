@@ -146,6 +146,11 @@ router.patch("/:type/:id/status", authenticate, adminOnly, async (req, res) => {
 
     const bet: AnyBet | null = await (BET_MODELS[type] as typeof YonChif).findByPk(id);
     if (!bet) return res.status(404).json({ message: "Bet not found" });
+    const archived = await sequelize.query<{ receiptId: string }>(
+      'SELECT "receiptId" FROM "admin_archived_receipts" WHERE "receiptId" = :receiptId',
+      { replacements: { receiptId: bet.receiptId }, type: QueryTypes.SELECT },
+    );
+    if (archived.length) return res.status(409).json({ message: "Archived receipts cannot be updated" });
 
     bet.status = status;
     await bet.save();
