@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [notification, setNotification] = useState<NotificationForm>({ title: "", message: "", priority: "info", imageUrl: "", linkUrl: "", recipientType: "all", recipientUserId: "" });
   const [notificationHistory, setNotificationHistory] = useState<NotificationHistoryItem[]>([]);
   const [sendingNotification, setSendingNotification] = useState(false);
+  const [deletingNotificationId, setDeletingNotificationId] = useState<number | null>(null);
 
   const [disabledNumbers, setDisabledNumbers] = useState<string[]>([]);
   const [disabledLocations, setDisabledLocations] = useState<string[]>([]);
@@ -80,6 +81,19 @@ export default function AdminDashboard() {
       alert((isAxiosError(err) && err.response?.data?.message) || "Failed to send notification");
     } finally {
       setSendingNotification(false);
+    }
+  };
+
+  const deleteNotification = async (id: number) => {
+    if (!window.confirm("Efase notifikasyon sa a pou tout itilizatè yo? Li pap parèt ankò.")) return;
+    setDeletingNotificationId(id);
+    try {
+      await axios.delete(`${API}/api/notifications/${id}`, auth);
+      await fetchNotificationHistory();
+    } catch (err) {
+      alert((isAxiosError(err) && err.response?.data?.message) || "Failed to delete notification");
+    } finally {
+      setDeletingNotificationId(null);
     }
   };
 
@@ -258,7 +272,7 @@ const filteredUsers = useMemo(() => {
         <input placeholder="Optional link URL" value={notification.linkUrl} onChange={(e)=>setNotification((n)=>({...n,linkUrl:e.target.value}))} style={{width:"100%",padding:10,marginTop:10}} />
         <button onClick={sendNotification} disabled={sendingNotification} style={{marginTop:12,padding:"10px 18px",background:"#111827",color:"#fff"}}>{sendingNotification?"Sending...":"Send Notification"}</button>
         <h4 style={{marginTop:22}}>History</h4>
-        <div style={{display:"grid",gap:8}}>{notificationHistory.map((n)=><div key={n.id} style={{padding:10,border:"1px solid #eee",borderRadius:8}}><strong>{n.title}</strong> — {n.priority}<div>{n.message}</div><div><b>Recipient:</b> {n.recipientType === "user" ? (n.recipient?.phone || `User #${n.recipientUserId}`) : "All Users"} · <b>Read count:</b> {Number(n.readCount || 0)}</div><small>{new Date(n.createdAt).toLocaleString()}</small></div>)}</div>
+        <div style={{display:"grid",gap:8}}>{notificationHistory.map((n)=><div key={n.id} style={{padding:10,border:"1px solid #eee",borderRadius:8}}><strong>{n.title}</strong> — {n.priority}<div>{n.message}</div><div><b>Recipient:</b> {n.recipientType === "user" ? (n.recipient?.phone || `User #${n.recipientUserId}`) : "All Users"} · <b>Read count:</b> {Number(n.readCount || 0)}</div><small>{new Date(n.createdAt).toLocaleString()}</small><button type="button" disabled={deletingNotificationId !== null} onClick={() => deleteNotification(n.id)} style={{marginLeft:12,padding:"6px 10px",background:"#b91c1c",color:"#fff",border:0,borderRadius:6,cursor:"pointer"}}>{deletingNotificationId === n.id ? "Deleting..." : "🗑 Delete for everyone"}</button></div>)}</div>
           </div>
         )}
       </section>
