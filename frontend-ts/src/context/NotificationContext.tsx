@@ -59,6 +59,10 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           : [...current, notification]
       );
     };
+    socket.on("notification-deleted", ({ id }: { id: number }) => {
+      setNotifications((current) => current.filter((item) => item.id !== id));
+      setQueue((current) => current.filter((item) => item.id !== id));
+    });
     socket.on("notification", receive);
     socket.on("broadcast-notification", receive);
     socket.on("connect_error", (err: Error) => console.error("Notification socket connection failed", err.message));
