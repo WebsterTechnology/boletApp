@@ -114,6 +114,11 @@ router.delete("/receipts/:receiptId", authenticate, adminOnly, async (req, res) 
       );
       const bets = groups.flat();
       if (!bets.length) return { status: 404, message: "Receipt not found" };
+      // Older checkouts could share a receipt ID across locations. Never archive
+      // all those separate customer fich through one location-specific action.
+      if (new Set(bets.map(bet => bet.location)).size > 1) {
+        return { status: 409, message: "Legacy multi-location receipt cannot be archived together" };
+      }
       if (bets.some(bet => bet.status !== "pending" && bet.status !== "lost")) {
         return { status: 409, message: "Only pending or lost receipts can be archived" };
       }
