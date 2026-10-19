@@ -162,9 +162,10 @@ interface ReceiptCardProps {
   receipt: Receipt;
   busy: boolean;
   onChangeStatus: (receipt: Receipt, status: string) => void;
+  onDeleteReceipt: (receipt: Receipt) => void;
 }
 
-function ReceiptCard({ receipt, busy, onChangeStatus }: ReceiptCardProps) {
+function ReceiptCard({ receipt, busy, onChangeStatus, onDeleteReceipt }: ReceiptCardProps) {
   const grouped: Record<string, BetRow[]> = {};
 
   receipt.bets.forEach((bet) => {
@@ -232,6 +233,7 @@ function ReceiptCard({ receipt, busy, onChangeStatus }: ReceiptCardProps) {
         <button className="actionBtn lostBtn" disabled={busy} onClick={() => onChangeStatus(receipt, "lost")}>❌ LOST</button>
         <button className="actionBtn paidBtn" disabled={busy} onClick={() => onChangeStatus(receipt, "paid")}>💸 PAID</button>
         <button className="actionBtn pendingBtn" disabled={busy} onClick={() => onChangeStatus(receipt, "pending")}>🕓 PENDING</button>
+        <button className="actionBtn lostBtn" disabled={busy || receipt.receiptId.startsWith("old-") || receipt.bets.some(b => b.status !== "pending" && b.status !== "lost")} onClick={() => onDeleteReceipt(receipt)}>🗑 Delete fich</button>
       </div>
     </div>
   );
@@ -304,6 +306,21 @@ export default function AdminBets() {
     } catch (err) {
       console.error(err);
       alert("Unable to update receipt");
+    } finally {
+      setBusyReceipt(null);
+    }
+  };
+
+  const deleteReceipt = async (receipt: Receipt) => {
+    if (busyReceipt) return;
+    if (!window.confirm("Retire fich sa a nan lis admin lan? Done finansye yo ap konsève pou verifikasyon. Kontinye?")) return;
+    setBusyReceipt(receipt.receiptId);
+    try {
+      await axios.delete(`${API}/api/admin/bets/receipts/${encodeURIComponent(receipt.receiptId)}`, auth);
+      await load();
+    } catch (err) {
+      console.error(err);
+      alert("Nou pa kapab retire fich sa a. Se sèlman fich PENDING oswa LOST ki ka retire.");
     } finally {
       setBusyReceipt(null);
     }
@@ -430,6 +447,7 @@ export default function AdminBets() {
                     receipt={receipt}
                     busy={busyReceipt === receipt.receiptId}
                     onChangeStatus={updateReceiptStatus}
+                    onDeleteReceipt={deleteReceipt}
                   />
                 ))}
               </div>
