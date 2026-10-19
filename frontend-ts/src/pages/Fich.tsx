@@ -469,7 +469,7 @@ export default function Fich() {
                         >
                           <span>
                             {getNumbers(bet)}
-                            {false && <small style={{ display: "block", color: "#555", fontSize: 10 }}>{getLocation(bet)}</small>}
+                            
                           </span>
 
                           <span>=</span>
