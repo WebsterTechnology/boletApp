@@ -130,6 +130,10 @@ const groupReceipts = (items: BetRow[]): Receipt[] => {
     }
 
     receipts[receiptId].bets.push(bet);
+    const betLocation = getLocation(bet);
+    if (!receipts[receiptId].location.split(" / ").includes(betLocation)) {
+      receipts[receiptId].location += ` / ${betLocation}`;
+    }
   });
 
   return Object.values(receipts).sort(
@@ -466,6 +470,7 @@ export default function Fich() {
                         >
                           <span>
                             {getNumbers(bet)}
+                            {receipt.location.includes(" / ") && <small style={{ display: "block", color: "#555", fontSize: 10 }}>{getLocation(bet)}</small>}
                           </span>
 
                           <span>=</span>
