@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
+import { QueryTypes } from "sequelize";
 import { currentUser } from "../middleware/authenticate";
-import { DeChif, Katchif, Maryaj, TwaChif, YonChif } from "../models";
+import { DeChif, Katchif, Maryaj, TwaChif, YonChif, sequelize } from "../models";
 
 type RawBet = Record<string, any>;
 
@@ -36,8 +37,19 @@ export async function getAllMyBets(req: Request, res: Response) {
       Katchif.findAll(opts),
     ])) as unknown as RawBet[][];
 
+    // An admin archive hides the whole receipt from every customer-facing bet view.
+    // Original bets stay in the database for reconciliation and financial audit.
+    const archived = await sequelize.query<{ receiptId: string }>(
+      'SELECT "receiptId" FROM "admin_archived_receipts"',
+      { type: QueryTypes.SELECT },
+    );
+    const archivedIds = new Set(archived.map(row => row.receiptId));
+    const visible = (rows: RawBet[]) => rows.filter(b => !b.receiptId || !archivedIds.has(b.receiptId));
+    const [visibleYonchif, visibleDechif, visibleTwachif, visibleMaryaj, visibleKatchif] =
+      [yonchif, dechif, twachif, maryaj, katchif].map(visible);
+
     const totalPwen =
-      sumPwen(yonchif) + sumPwen(dechif) + sumPwen(twachif) + sumPwen(maryaj) + sumPwen(katchif);
+      sumPwen(visibleYonchif) + sumPwen(visibleDechif) + sumPwen(visibleTwachif) + sumPwen(visibleMaryaj) + sumPwen(visibleKatchif);
 
     const base = (b: RawBet) => ({
       id: b.id,
@@ -48,25 +60,25 @@ export async function getAllMyBets(req: Request, res: Response) {
     });
 
     const items: BetItem[] = [
-      ...yonchif.map((b) => ({
+      ...visibleYonchif.map((b) => ({
         ...base(b),
         type: "yonchif" as const,
         numbers: b.nimewo || b.number || b.numbers || "-",
         draw: drawOf(b),
       })),
-      ...dechif.map((b) => ({
+      ...visibleDechif.map((b) => ({
         ...base(b),
         type: "dechif" as const,
         numbers: b.number || b.nimewo || "-",
         draw: drawOf(b),
       })),
-      ...twachif.map((b) => ({
+      ...visibleTwachif.map((b) => ({
         ...base(b),
         type: "twachif" as const,
         numbers: b.number || b.nimewo || "-",
         draw: drawOf(b),
       })),
-      ...maryaj.map((b) => ({
+      ...visibleMaryaj.map((b) => ({
         ...base(b),
         type: "maryaj" as const,
         part1: b.part1 || "-",
@@ -74,7 +86,7 @@ export async function getAllMyBets(req: Request, res: Response) {
         numbers: b.part1 && b.part2 ? `${b.part1}${b.part2}` : "-",
         draw: drawOf(b),
       })),
-      ...katchif.map((b) => ({
+      ...visibleKatchif.map((b) => ({
         ...base(b),
         type: "katchif" as const,
         numbers: b.number || b.numbers || "-",
