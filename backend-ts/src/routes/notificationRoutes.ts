@@ -3,7 +3,7 @@ import type { Server } from "socket.io";
 import { col, fn, Op, type WhereOptions } from "sequelize";
 import { adminOnly } from "../middleware/adminOnly";
 import { authenticate, currentUser } from "../middleware/authenticate";
-import { Notification, NotificationRead, NotificationTarget, User } from "../models";
+import { Notification, NotificationRead, NotificationTarget, User, sequelize } from "../models";
 import { NOTIFICATION_PRIORITIES, type NotificationPriority } from "../models/notifications";
 
 const router = Router();
@@ -91,6 +91,30 @@ router.post("/read-all", authenticate, async (req, res) => {
   } catch (err) {
     console.error("POST /api/notifications/read-all", err);
     return res.status(500).json({ message: "Failed to mark all notifications as read" });
+  }
+});
+
+/** Admin recall: delete from all user inboxes and unread queues, including read history. */
+router.delete("/:id", authenticate, adminOnly, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return res.status(400).json({ message: "Invalid notification ID" });
+  }
+  try {
+    const removed = await sequelize.transaction(async (transaction) => {
+      const notification = await Notification.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!notification) return false;
+      await NotificationRead.destroy({ where: { notificationId: id }, transaction });
+      await NotificationTarget.destroy({ where: { notificationId: id }, transaction });
+      await notification.destroy({ transaction });
+      return true;
+    });
+    if (!removed) return res.status(404).json({ message: "Notification not found" });
+    io(req)?.emit("notification-deleted", { id });
+    return res.status(204).send();
+  } catch (err) {
+    console.error("DELETE /api/notifications/:id", err);
+    return res.status(500).json({ message: "Failed to delete notification" });
   }
 });
 
