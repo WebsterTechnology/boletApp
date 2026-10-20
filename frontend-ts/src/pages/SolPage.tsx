@@ -155,7 +155,7 @@ export default function SolPage() {
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
       const data = (await response.json()) as WalletPreview;
-      if (data.packageId !== packageId || data.paymentEnabled !== false || !Number.isSafeInteger(data.amountCents)) throw new Error("Invalid preview");
+      if (data.packageId !== packageId || typeof data.paymentEnabled !== "boolean" || !Number.isSafeInteger(data.amountCents)) throw new Error("Invalid preview");
       setWalletPreview(data);
     } catch {
       setWalletPreviewError("Nou pa kapab verifye balans pou Sòl la kounye a.");
@@ -189,10 +189,10 @@ export default function SolPage() {
       if (!response.ok) throw new Error("Peman an pa konfime. Verifye istwa peman ou anvan ou eseye ankò.");
       const receipt = await response.json() as { status: string; paidMonths: number };
       if (receipt.status !== "confirmed") throw new Error("Peman an pa konfime. Verifye istwa peman ou.");
-      setWalletPaymentMessage("Peman konfime! Mwa Sòl ou anrejistre.");
       setWalletPreview(null);
       await showSavedDraft(packageId);
       await loadDrafts();
+      setWalletPaymentMessage("Peman konfime! Mwa Sòl ou anrejistre.");
     } catch (error) {
       setWalletPaymentError(error instanceof Error ? error.message : "Peman an pa konfime. Verifye istwa peman ou.");
     } finally {
