@@ -3,7 +3,7 @@ import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Isolate HTTP request validation from the database. These tests never debit a wallet.
-const transaction = vi.fn();
+const { transaction } = vi.hoisted(() => ({ transaction: vi.fn() }));
 vi.mock("../config/database", () => ({ sequelize: { transaction } }));
 vi.mock("../middleware/authenticate", () => ({
   authenticate: (req: { headers: { authorization?: string }; user?: { id: number } }, res: { status: (code: number) => { json: (body: object) => void } }, next: () => void) => {
