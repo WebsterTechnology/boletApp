@@ -11,6 +11,7 @@ import createSolFoundation from "./20261018000000-create-sol-foundation";
 import createSolPaymentAttempts from "./20261018010000-create-sol-payment-attempts";
 import solOpenIntentUniqueIndex from "./20261018020000-sol-open-intent-unique-index";
 import adminArchivedReceipts from "./20261019000000-admin-archived-receipts";
+import solWalletLedger from "./20261020000000-sol-wallet-ledger";
 
 // Names keep the ".js" suffix that sequelize-cli recorded in SequelizeMeta, so migrations
 // already applied by ../backend are recognised and not run twice.
@@ -25,6 +26,7 @@ const migrations = [
   { name: "20261018010000-create-sol-payment-attempts.js", ...createSolPaymentAttempts },
   { name: "20261018020000-sol-open-intent-unique-index.js", ...solOpenIntentUniqueIndex },
   { name: "20261019000000-admin-archived-receipts.js", ...adminArchivedReceipts },
+  { name: "20261020000000-sol-wallet-ledger.js", ...solWalletLedger },
 ];
 
 export const migrator = new Umzug<QueryInterface>({
