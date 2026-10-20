@@ -7,7 +7,7 @@ const suite = url ? describe : describe.skip;
 
 suite("Sòl wallet ledger PostgreSQL invariants", () => {
   const db = new Sequelize(url || "postgres://unused:unused@localhost/unused", {
-    logging: false, pool: { max: 1, min: 0, idle: 1000 },
+    logging: false, pool: { max: 3, min: 0, idle: 1000 },
   });
   const schema = "sol_ledger_ci";
   const row = (attemptId: number, contributionId: number) =>
@@ -67,6 +67,26 @@ suite("Sòl wallet ledger PostgreSQL invariants", () => {
       { type: QueryTypes.SELECT },
     );
     expect(count.total).toBe("1");
+  });
+  it("serializes simultaneous wallet debits with a row lock", async () => {
+    await db.query('CREATE TABLE concurrent_wallet_probe (id integer PRIMARY KEY, points integer NOT NULL)');
+    await db.query('INSERT INTO concurrent_wallet_probe VALUES (1, 100)');
+    const debit = () => db.transaction(async transaction => {
+      const [wallet] = await db.query<{ points: number }>(
+        'SELECT points FROM concurrent_wallet_probe WHERE id = 1 FOR UPDATE',
+        { transaction, type: QueryTypes.SELECT },
+      );
+      if (wallet.points < 100) return false;
+      await db.query('UPDATE concurrent_wallet_probe SET points = points - 100 WHERE id = 1', { transaction });
+      return true;
+    });
+    const outcomes = await Promise.all([debit(), debit()]);
+    expect(outcomes.filter(Boolean)).toHaveLength(1);
+    const [wallet] = await db.query<{ points: number }>(
+      'SELECT points FROM concurrent_wallet_probe WHERE id = 1',
+      { type: QueryTypes.SELECT },
+    );
+    expect(wallet.points).toBe(0);
   });
   it("rolls back a wallet change when ledger insert fails", async () => {
     await db.query('CREATE TABLE wallet_probe (id integer PRIMARY KEY, points integer NOT NULL, withdrawable integer NOT NULL)');
