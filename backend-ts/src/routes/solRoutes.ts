@@ -290,7 +290,33 @@ router.post("/packages/:id/wallet-payments", async (req, res) => {
         return { code: 404, message: "Matching wallet payment intent not found" };
       }
       if (attempt.status === "confirmed") {
-        return { code: 200, receipt: { attemptId: attempt.id, contributionId: attempt.contributionId, amountCents: attempt.amountCents, status: "confirmed", alreadyProcessed: true } };
+        // Never acknowledge a retry as paid if the immutable debit record is
+        // missing or does not reconcile with the confirmed contribution.
+        const ledger = await sequelize.query<{
+          pointsDebited: number; playDebited: number; withdrawDebited: number;
+          playBefore: number; withdrawBefore: number; playAfter: number; withdrawAfter: number;
+        }>(
+          'SELECT "pointsDebited", "playDebited", "withdrawDebited", "playBefore", "withdrawBefore", "playAfter", "withdrawAfter" FROM "sol_wallet_ledger" WHERE "attemptId" = :attemptId AND "userId" = :userId AND "packageId" = :packageId AND "contributionId" = :contributionId',
+          { transaction, type: QueryTypes.SELECT, replacements: {
+            attemptId: attempt.id, userId, packageId: item.id, contributionId: attempt.contributionId,
+          } },
+        );
+        const record = ledger[0];
+        const contribution = await SolContribution.findByPk(attempt.contributionId, { transaction });
+        if (!record || ledger.length !== 1 || !contribution ||
+            contribution.status !== "paid" || contribution.paymentReference !== attempt.providerReference ||
+            attempt.amountCents !== record.pointsDebited * 100 ||
+            record.pointsDebited !== record.playDebited + record.withdrawDebited ||
+            record.playBefore - record.playDebited !== record.playAfter ||
+            record.withdrawBefore - record.withdrawDebited !== record.withdrawAfter) {
+          return { code: 409, message: "Sòl payment record requires reconciliation" };
+        }
+        return { code: 200, receipt: {
+          attemptId: attempt.id, contributionId: attempt.contributionId, amountCents: attempt.amountCents,
+          pointsDebited: record.pointsDebited, playDebited: record.playDebited, withdrawDebited: record.withdrawDebited,
+          playBalance: record.playAfter, withdrawBalance: record.withdrawAfter,
+          status: "confirmed", alreadyProcessed: true,
+        } };
       }
       if (attempt.status !== "created") return { code: 409, message: "Payment intent cannot be processed" };
       if (item.status !== "draft" && item.status !== "active") return { code: 409, message: "Package not eligible" };
