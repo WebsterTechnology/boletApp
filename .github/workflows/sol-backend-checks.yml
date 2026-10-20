@@ -19,6 +19,25 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sol_ci
+          POSTGRES_PASSWORD: sol_ci_password
+          POSTGRES_DB: sol_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sol_ci -d sol_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      SOL_PG_TEST_URL: postgres://sol_ci:sol_ci_password@localhost:5432/sol_ci
+      DATABASE_URL: postgres://sol_ci:sol_ci_password@localhost:5432/sol_ci
+      JWT_SECRET: ci-test-only-secret
+      DB_SSL: "false"
     defaults:
       run:
         working-directory: backend-ts
