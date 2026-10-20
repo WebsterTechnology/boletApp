@@ -145,6 +145,41 @@ router.get("/packages/:id/wallet-preview", async (req, res) => {
   }
 });
 
+/**
+ * Read-only Sòl wallet receipts. Scoped to the authenticated package owner.
+ * Exposes settled balance snapshots for audit without touching Loto payments.
+ */
+router.get("/packages/:id/wallet-receipts", async (req, res) => {
+  const rawId = req.params.id as string;
+  if (!/^[0-9]+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
+    return res.status(400).json({ message: "Invalid package ID" });
+  }
+  try {
+    const userId = currentUser(req).id;
+    const item = await SolPackage.findOne({ where: { id: Number(rawId), userId } });
+    if (!item) return res.status(404).json({ message: "Package not found" });
+    const receipts = await sequelize.query<{
+      attemptId: number; contributionId: number; installmentNumber: number;
+      amountCents: number; pointsDebited: number; playDebited: number;
+      withdrawDebited: number; playBefore: number; withdrawBefore: number;
+      playAfter: number; withdrawAfter: number; createdAt: Date;
+    }>(
+      'SELECT l."attemptId", l."contributionId", c."installmentNumber", c."amountCents", l."pointsDebited", l."playDebited", l."withdrawDebited", l."playBefore", l."withdrawBefore", l."playAfter", l."withdrawAfter", l."createdAt" FROM "sol_wallet_ledger" l JOIN "sol_contributions" c ON c.id = l."contributionId" JOIN "sol_payment_attempts" a ON a.id = l."attemptId" WHERE l."packageId" = :packageId AND l."userId" = :userId AND a."userId" = :userId AND a.status = \'confirmed\' ORDER BY l."createdAt" DESC, l.id DESC LIMIT 100',
+      { type: QueryTypes.SELECT, replacements: { packageId: item.id, userId } },
+    );
+    return res.json(receipts.map(receipt => ({
+      ...receipt,
+      balancesReconcile: receipt.pointsDebited === receipt.playDebited + receipt.withdrawDebited &&
+        receipt.playBefore - receipt.playDebited === receipt.playAfter &&
+        receipt.withdrawBefore - receipt.withdrawDebited === receipt.withdrawAfter &&
+        receipt.amountCents === receipt.pointsDebited * 100,
+    })));
+  } catch (error) {
+    console.error("Sòl wallet receipt lookup failed", error);
+    return res.status(500).json({ message: "Unable to load Sòl wallet receipts" });
+  }
+});
+
 router.get("/packages/:id/payment-attempts", async (req, res) => {
   const rawId = req.params.id as string;
   if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
