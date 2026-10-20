@@ -6,6 +6,7 @@ type View = "home" | "packages" | "details" | "saved" | "transactions" | "menu";
 type PaymentMethod = "wallet" | "pix";
 type SolContribution = { id: number; installmentNumber: number; amountCents: number; status: string; paidAt: string | null };
 type SolPaymentAttempt = { id: number; contributionId: number; amountCents: number; currency: string; method: string; status: string; confirmedAt: string | null; createdAt: string };
+type WalletPreview = { packageId: number; installmentNumber: number; amountCents: number; playPoints: number; withdrawablePoints: number; proposedPoints: number; proposedFromPlay: number; proposedFromWithdrawable: number; sufficientUnderProposal: boolean; proposedConversion: string; paymentEnabled: boolean };
 type PaymentPreview = { packageId: number; installmentNumber: number; amountCents: number; currency: string; methods: string[]; paymentEnabled: boolean };
 type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; contributions?: SolContribution[] };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -24,6 +25,9 @@ export default function SolPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [paymentPreview, setPaymentPreview] = useState<PaymentPreview | null>(null);
+  const [walletPreview, setWalletPreview] = useState<WalletPreview | null>(null);
+  const [walletPreviewLoading, setWalletPreviewLoading] = useState(false);
+  const [walletPreviewError, setWalletPreviewError] = useState("");
   const [paymentPreviewError, setPaymentPreviewError] = useState("");
   const [paymentPreviewLoading, setPaymentPreviewLoading] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState<SolPaymentAttempt[]>([]);
@@ -97,6 +101,8 @@ export default function SolPage() {
     setSelectedDraft(null);
     setPaymentPreview(null);
     setPaymentPreviewError("");
+    setWalletPreview(null);
+    setWalletPreviewError("");
     setPaymentHistory([]);
     setHistoryLoaded(false);
     setHistoryError("");
@@ -130,6 +136,27 @@ export default function SolPage() {
       setPaymentPreview(result);
     } catch { setPaymentPreviewError("Nou pa kapab prepare enfòmasyon peman an. Eseye ankò."); }
     finally { setPaymentPreviewLoading(false); }
+  };
+
+  const loadWalletPreview = async (packageId: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) { setWalletPreviewError("Tanpri konekte ankò."); return; }
+    setWalletPreviewLoading(true);
+    setWalletPreview(null);
+    setWalletPreviewError("");
+    try {
+      const response = await fetch(API + "/api/sol/packages/" + packageId + "/wallet-preview", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = (await response.json()) as WalletPreview;
+      if (data.packageId !== packageId || data.paymentEnabled !== false || !Number.isSafeInteger(data.amountCents)) throw new Error("Invalid preview");
+      setWalletPreview(data);
+    } catch {
+      setWalletPreviewError("Nou pa kapab verifye balans pou Sòl la kounye a.");
+    } finally {
+      setWalletPreviewLoading(false);
+    }
   };
 
   const loadPaymentHistory = async (packageId: number) => {
@@ -276,6 +303,20 @@ export default function SolPage() {
                   <div><span>Montan fiks</span><strong>{money(paymentPreview.amountCents / 100)}</strong></div>
                   <div><span>Fason peman prevwa</span><strong>{paymentPreview.methods.join(" / ").toUpperCase()}</strong></div>
                   <p className={styles.hint}>🔒 Sa se yon aperçu sèlman. Peman yo poko aktive. Pa gen lajan ki retire.</p>
+                </div>}
+                <h3>Similasyon peman ak balans Loto</h3>
+                <button className={styles.back} type="button" disabled={walletPreviewLoading} onClick={() => void loadWalletPreview(selectedDraft.id)}>
+                  {walletPreviewLoading ? "Ap verifye..." : "Verifye balans mwen (san peman)"}
+                </button>
+                {walletPreviewError && <p role="alert" className={styles.notice}>{walletPreviewError}</p>}
+                {walletPreview && <div className={styles.summary}>
+                  <div><span>Kontribisyon</span><strong>{money(walletPreview.amountCents / 100)}</strong></div>
+                  <div><span>Disponib pou jwe</span><strong>{walletPreview.playPoints} p</strong></div>
+                  <div><span>Disponib pou retire</span><strong>{walletPreview.withdrawablePoints} p</strong></div>
+                  <div><span>Similasyon: nan balans jwe</span><strong>{walletPreview.proposedFromPlay} p</strong></div>
+                  <div><span>Similasyon: nan balans retire</span><strong>{walletPreview.proposedFromWithdrawable} p</strong></div>
+                  <p className={styles.hint}>{walletPreview.sufficientUnderProposal ? "Balans ta sifi selon pwopozisyon an." : "Balans pa ta sifi selon pwopozisyon an."}</p>
+                  <p className={styles.hint}>Konvèsyon pwopoze: {walletPreview.proposedConversion}. Sa se yon tès sèlman. Pa gen pwen retire, pa gen peman fèt.</p>
                 </div>}
                 <h3>12 kontribisyon yo</h3>
                 <div className={styles.packageGrid}>
