@@ -18,6 +18,7 @@ vi.mock("../middleware/authenticate", () => ({
 }));
 
 import solRoutes from "./solRoutes";
+import { SolPackage, SolPaymentAttempt } from "../models";
 
 const app = express();
 app.use(express.json());
@@ -31,6 +32,45 @@ describe("Sòl wallet payment HTTP guards", () => {
   afterEach(() => {
     if (previousFlag === undefined) delete process.env.SOL_WALLET_PAYMENTS_ENABLED;
     else process.env.SOL_WALLET_PAYMENTS_ENABLED = previousFlag;
+  });
+
+  it("does not reveal or debit another user's package", async () => {
+    process.env.SOL_WALLET_PAYMENTS_ENABLED = "true";
+    transaction.mockImplementation(async (callback: (t: { LOCK: { UPDATE: string } }) => Promise<unknown>) =>
+      callback({ LOCK: { UPDATE: "UPDATE" } }));
+    const packageLookup = vi.spyOn(SolPackage, "findOne").mockResolvedValueOnce(null);
+    const attemptLookup = vi.spyOn(SolPaymentAttempt, "findOne");
+    try {
+      const res = await request(app).post(url)
+        .set("Authorization", "Bearer sol-test-token").set("Idempotency-Key", key);
+      expect(res.status).toBe(404);
+      expect(packageLookup).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 1, userId: 1 },
+      }));
+      expect(attemptLookup).not.toHaveBeenCalled();
+    } finally {
+      packageLookup.mockRestore();
+      attemptLookup.mockRestore();
+    }
+  });
+
+  it("rejects a missing wallet intent without any debit", async () => {
+    process.env.SOL_WALLET_PAYMENTS_ENABLED = "true";
+    transaction.mockImplementation(async (callback: (t: { LOCK: { UPDATE: string } }) => Promise<unknown>) =>
+      callback({ LOCK: { UPDATE: "UPDATE" } }));
+    const packageLookup = vi.spyOn(SolPackage, "findOne").mockResolvedValueOnce({ id: 1 } as SolPackage);
+    const attemptLookup = vi.spyOn(SolPaymentAttempt, "findOne").mockResolvedValueOnce(null);
+    try {
+      const res = await request(app).post(url)
+        .set("Authorization", "Bearer sol-test-token").set("Idempotency-Key", key);
+      expect(res.status).toBe(404);
+      expect(attemptLookup).toHaveBeenCalledWith(expect.objectContaining({
+        where: { userId: 1, idempotencyKey: key },
+      }));
+    } finally {
+      packageLookup.mockRestore();
+      attemptLookup.mockRestore();
+    }
   });
 
   it("refuses payments by default and never opens a database transaction", async () => {
