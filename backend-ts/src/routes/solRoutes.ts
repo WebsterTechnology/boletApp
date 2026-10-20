@@ -5,6 +5,7 @@ import { sequelize } from "../config/database";
 import { SolContribution, SolPackage, SOL_MONTHLY_AMOUNTS_CENTS } from "../models/Sol";
 import { SolPaymentAttempt } from "../models/SolPaymentAttempt";
 import { User } from "../models/User";
+import { calculateSolWalletDebit } from "../services/solWalletDebit";
 
 const router = Router();
 router.use(authenticate);
@@ -276,12 +277,9 @@ router.post("/packages/:id/wallet-payments", async (req, res) => {
       if (![playBefore, withdrawBefore].every(n => Number.isSafeInteger(n) && n >= 0)) {
         return { code: 409, message: "Wallet requires reconciliation" };
       }
-      const requiredPoints = next.amountCents / 100;
-      if (playBefore + withdrawBefore < requiredPoints) return { code: 409, message: "Insufficient balance" };
-      const fromPlay = Math.min(playBefore, requiredPoints);
-      const fromWithdraw = requiredPoints - fromPlay;
-      const playAfter = playBefore - fromPlay;
-      const withdrawAfter = withdrawBefore - fromWithdraw;
+      const debit = calculateSolWalletDebit(playBefore, withdrawBefore, next.amountCents);
+      if (!debit) return { code: 409, message: "Insufficient balance" };
+      const { pointsDebited: requiredPoints, playDebited: fromPlay, withdrawDebited: fromWithdraw, playAfter, withdrawAfter } = debit;
       // User row lock serializes debits; all changes and ledger commit atomically.
       wallet.points = playAfter;
       wallet.withdrawablePoints = withdrawAfter;
