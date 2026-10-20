@@ -28,6 +28,9 @@ export default function SolPage() {
   const [walletPreview, setWalletPreview] = useState<WalletPreview | null>(null);
   const [walletPreviewLoading, setWalletPreviewLoading] = useState(false);
   const [walletPreviewError, setWalletPreviewError] = useState("");
+  const [payingWallet, setPayingWallet] = useState(false);
+  const [walletPaymentMessage, setWalletPaymentMessage] = useState("");
+  const [walletPaymentError, setWalletPaymentError] = useState("");
   const [paymentPreviewError, setPaymentPreviewError] = useState("");
   const [paymentPreviewLoading, setPaymentPreviewLoading] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState<SolPaymentAttempt[]>([]);
@@ -103,6 +106,8 @@ export default function SolPage() {
     setPaymentPreviewError("");
     setWalletPreview(null);
     setWalletPreviewError("");
+    setWalletPaymentMessage("");
+    setWalletPaymentError("");
     setPaymentHistory([]);
     setHistoryLoaded(false);
     setHistoryError("");
@@ -150,12 +155,48 @@ export default function SolPage() {
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
       const data = (await response.json()) as WalletPreview;
-      if (data.packageId !== packageId || data.paymentEnabled !== false || !Number.isSafeInteger(data.amountCents)) throw new Error("Invalid preview");
+      if (data.packageId !== packageId || typeof data.paymentEnabled !== "boolean" || !Number.isSafeInteger(data.amountCents)) throw new Error("Invalid preview");
       setWalletPreview(data);
     } catch {
       setWalletPreviewError("Nou pa kapab verifye balans pou Sòl la kounye a.");
     } finally {
       setWalletPreviewLoading(false);
+    }
+  };
+
+  const payWithWallet = async (packageId: number) => {
+    if (payingWallet || !walletPreview || walletPreview.packageId !== packageId || !walletPreview.sufficientUnderProposal || !walletPreview.paymentEnabled) return;
+    if (!window.confirm("Konfime peman reyèl " + money(walletPreview.amountCents / 100) + " ak balans Loto ou? Yo pral retire pwen yo.")) return;
+    const token = localStorage.getItem("token");
+    if (!token) { setWalletPaymentError("Tanpri konekte ankò."); return; }
+    setPayingWallet(true);
+    setWalletPaymentError("");
+    setWalletPaymentMessage("");
+    const key = "solwallet_" + crypto.randomUUID().replace(/-/g, "");
+    try {
+      const intentResponse = await fetch(API + "/api/sol/packages/" + packageId + "/payment-intents", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token, "Content-Type": "application/json", "Idempotency-Key": key },
+        body: JSON.stringify({ method: "wallet" }),
+      });
+      if (!intentResponse.ok) throw new Error("Nou pa kapab prepare peman an.");
+      const intent = await intentResponse.json() as { amountCents: number; method: string };
+      if (intent.amountCents !== walletPreview.amountCents || intent.method !== "wallet") throw new Error("Montan peman an pa koresponn.");
+      const response = await fetch(API + "/api/sol/packages/" + packageId + "/wallet-payments", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + token, "Idempotency-Key": key },
+      });
+      if (!response.ok) throw new Error("Peman an pa konfime. Verifye istwa peman ou anvan ou eseye ankò.");
+      const receipt = await response.json() as { status: string; paidMonths: number };
+      if (receipt.status !== "confirmed") throw new Error("Peman an pa konfime. Verifye istwa peman ou.");
+      setWalletPreview(null);
+      await showSavedDraft(packageId);
+      await loadDrafts();
+      setWalletPaymentMessage("Peman konfime! Mwa Sòl ou anrejistre.");
+    } catch (error) {
+      setWalletPaymentError(error instanceof Error ? error.message : "Peman an pa konfime. Verifye istwa peman ou.");
+    } finally {
+      setPayingWallet(false);
     }
   };
 
@@ -316,8 +357,11 @@ export default function SolPage() {
                   <div><span>Similasyon: nan balans jwe</span><strong>{walletPreview.proposedFromPlay} p</strong></div>
                   <div><span>Similasyon: nan balans retire</span><strong>{walletPreview.proposedFromWithdrawable} p</strong></div>
                   <p className={styles.hint}>{walletPreview.sufficientUnderProposal ? "Balans ta sifi selon pwopozisyon an." : "Balans pa ta sifi selon pwopozisyon an."}</p>
-                  <p className={styles.hint}>Konvèsyon pwopoze: {walletPreview.proposedConversion}. Sa se yon tès sèlman. Pa gen pwen retire, pa gen peman fèt.</p>
+                  <p className={styles.hint}>Konvèsyon: {walletPreview.proposedConversion}.</p>
+                  {walletPreview.paymentEnabled ? <button type="button" className={styles.primary} disabled={payingWallet || !walletPreview.sufficientUnderProposal} onClick={() => void payWithWallet(selectedDraft.id)}>{payingWallet ? "Ap trete peman..." : "Peye ak balans Loto"}</button> : <p className={styles.hint}>Peman reyèl poko aktive. Okenn pwen pa retire.</p>}
                 </div>}
+                {walletPaymentMessage && <p role="status" className={styles.notice}>{walletPaymentMessage}</p>}
+                {walletPaymentError && <p role="alert" className={styles.notice}>{walletPaymentError}</p>}
                 <h3>12 kontribisyon yo</h3>
                 <div className={styles.packageGrid}>
                   {[...(selectedDraft.contributions || [])].sort((a, b) => a.installmentNumber - b.installmentNumber).map(item => (
