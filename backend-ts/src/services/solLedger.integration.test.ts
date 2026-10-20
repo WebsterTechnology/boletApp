@@ -69,15 +69,30 @@ suite("Sòl wallet ledger PostgreSQL invariants", () => {
     expect(count.total).toBe("1");
   });
   it("rolls back a wallet change when ledger insert fails", async () => {
-    await db.query('CREATE TABLE wallet_probe (id integer PRIMARY KEY, points integer NOT NULL)');
-    await db.query('INSERT INTO wallet_probe VALUES (1, 50)');
+    await db.query('CREATE TABLE wallet_probe (id integer PRIMARY KEY, points integer NOT NULL, withdrawable integer NOT NULL)');
+    await db.query('CREATE TABLE installment_probe (id integer PRIMARY KEY, status text NOT NULL)');
+    await db.query('CREATE TABLE attempt_probe (id integer PRIMARY KEY, status text NOT NULL)');
+    await db.query('INSERT INTO wallet_probe VALUES (1, 50, 735)');
+    await db.query("INSERT INTO installment_probe VALUES (1, 'pending')");
+    await db.query("INSERT INTO attempt_probe VALUES (1, 'created')");
     await expect(db.transaction(async t => {
-      await db.query('UPDATE wallet_probe SET points = 0 WHERE id = 1', { transaction: t });
+      await db.query('UPDATE wallet_probe SET points = 0, withdrawable = 685 WHERE id = 1', { transaction: t });
+      await db.query("UPDATE installment_probe SET status = 'paid' WHERE id = 1", { transaction: t });
+      await db.query("UPDATE attempt_probe SET status = 'confirmed' WHERE id = 1", { transaction: t });
+      // Duplicate contributionId=1 violates the unique index, aborting the transaction.
       await db.query(`INSERT INTO sol_wallet_ledger VALUES ${row(4, 1)}`, { transaction: t });
     })).rejects.toThrow();
-    const [wallet] = await db.query<{ points: number }>(
-      'SELECT points FROM wallet_probe WHERE id = 1', { type: QueryTypes.SELECT },
+    const [wallet] = await db.query<{ points: number; withdrawable: number }>(
+      'SELECT points, withdrawable FROM wallet_probe WHERE id = 1', { type: QueryTypes.SELECT },
     );
-    expect(wallet.points).toBe(50);
+    const [installment] = await db.query<{ status: string }>(
+      'SELECT status FROM installment_probe WHERE id = 1', { type: QueryTypes.SELECT },
+    );
+    const [attempt] = await db.query<{ status: string }>(
+      'SELECT status FROM attempt_probe WHERE id = 1', { type: QueryTypes.SELECT },
+    );
+    expect(wallet).toEqual({ points: 50, withdrawable: 735 });
+    expect(installment.status).toBe("pending");
+    expect(attempt.status).toBe("created");
   });
 });
