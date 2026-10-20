@@ -172,7 +172,14 @@ export default function SolPage() {
     setPayingWallet(true);
     setWalletPaymentError("");
     setWalletPaymentMessage("");
-    const key = "solwallet_" + crypto.randomUUID().replace(/-/g, "");
+    // Keep the same key after timeouts or refreshes: retry must never create
+    // a second charge while the outcome of the first request is uncertain.
+    const storageKey = "sol-wallet-intent-" + packageId;
+    let key = sessionStorage.getItem(storageKey);
+    if (!key) {
+      key = "solwallet_" + crypto.randomUUID().replace(/-/g, "");
+      sessionStorage.setItem(storageKey, key);
+    }
     try {
       const intentResponse = await fetch(API + "/api/sol/packages/" + packageId + "/payment-intents", {
         method: "POST",
@@ -189,6 +196,7 @@ export default function SolPage() {
       if (!response.ok) throw new Error("Peman an pa konfime. Verifye istwa peman ou anvan ou eseye ankò.");
       const receipt = await response.json() as { status: string; paidMonths: number };
       if (receipt.status !== "confirmed") throw new Error("Peman an pa konfime. Verifye istwa peman ou.");
+      sessionStorage.removeItem(storageKey);
       setWalletPreview(null);
       await showSavedDraft(packageId);
       await loadDrafts();
