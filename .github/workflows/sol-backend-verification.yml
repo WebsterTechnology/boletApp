@@ -1,0 +1,36 @@
+name: Sòl backend verification
+
+on:
+  pull_request:
+    paths:
+      - "backend-ts/**"
+      - ".github/workflows/sol-backend-verification.yml"
+  push:
+    branches:
+      - migration/backend-typescript
+    paths:
+      - "backend-ts/**"
+      - ".github/workflows/sol-backend-verification.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend-ts
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: backend-ts/package-lock.json
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck and build
+        run: npm run build
+      - name: Unit tests
+        run: npm test
