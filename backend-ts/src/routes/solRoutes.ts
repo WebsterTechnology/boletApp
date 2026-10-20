@@ -4,6 +4,7 @@ import { authenticate, currentUser } from "../middleware/authenticate";
 import { sequelize } from "../config/database";
 import { SolContribution, SolPackage, SOL_MONTHLY_AMOUNTS_CENTS } from "../models/Sol";
 import { SolPaymentAttempt } from "../models/SolPaymentAttempt";
+import { User } from "../models/User";
 
 const router = Router();
 router.use(authenticate);
@@ -104,6 +105,45 @@ router.get("/packages/:id/payment-preview", async (req, res) => {
  * Read-only transaction history. Payment attempts are never created or marked
  * successful by this route; the response excludes provider secrets and keys.
  */
+
+/** Read-only wallet preview; no balance updates or payment confirmations. */
+router.get("/packages/:id/wallet-preview", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id < 1) return res.status(400).json({ message: "Invalid package ID" });
+  try {
+    const userId = currentUser(req).id;
+    const item = await SolPackage.findOne({ where: { id, userId } });
+    if (!item) return res.status(404).json({ message: "Package not found" });
+    if (!["draft", "active"].includes(item.status)) return res.status(409).json({ message: "Package is not eligible" });
+    const contributions = await SolContribution.findAll({ where: { packageId: id }, order: [["installmentNumber", "ASC"]] });
+    const next = contributions.find(i => i.status === "pending" && !i.paidAt && !i.paymentReference);
+    if (!next || next.amountCents !== item.monthlyAmountCents) return res.status(409).json({ message: "No eligible installment" });
+    const wallet = await User.findByPk(userId);
+    if (!wallet) return res.status(404).json({ message: "Wallet not found" });
+    const playPoints = Number(wallet.points);
+    const withdrawablePoints = Number(wallet.withdrawablePoints);
+    if (![playPoints, withdrawablePoints].every(n => Number.isSafeInteger(n) && n >= 0)) {
+      return res.status(409).json({ message: "Wallet balance needs review" });
+    }
+    const proposedPoints = next.amountCents / 100;
+    const fromPlay = Math.min(playPoints, proposedPoints);
+    const fromWithdrawable = Math.min(withdrawablePoints, proposedPoints - fromPlay);
+    return res.json({
+      packageId: id, installmentNumber: next.installmentNumber,
+      amountCents: next.amountCents, currency: "BRL",
+      playPoints, withdrawablePoints, proposedPoints,
+      proposedFromPlay: fromPlay, proposedFromWithdrawable: fromWithdrawable,
+      sufficientUnderProposal: fromPlay + fromWithdrawable === proposedPoints,
+      proposedConversion: "1 point = 1 BRL (pending approval)",
+      paymentEnabled: false,
+      message: "Simulation only; no payment processed",
+    });
+  } catch (err) {
+    console.error("Wallet preview failed", err);
+    return res.status(500).json({ message: "Unable to preview wallet" });
+  }
+});
+
 router.get("/packages/:id/payment-attempts", async (req, res) => {
   const rawId = req.params.id as string;
   if (!/^\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
