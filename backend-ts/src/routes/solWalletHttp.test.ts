@@ -36,8 +36,8 @@ describe("Sòl wallet payment HTTP guards", () => {
 
   it("does not reveal or debit another user's package", async () => {
     process.env.SOL_WALLET_PAYMENTS_ENABLED = "true";
-    transaction.mockImplementation(async (callback: (t: { LOCK: { UPDATE: string } }) => Promise<unknown>) =>
-      callback({ LOCK: { UPDATE: "UPDATE" } }));
+    transaction.mockImplementation((async (callback: (t: { LOCK: { UPDATE: string } }) => Promise<unknown>) =>
+      callback({ LOCK: { UPDATE: "UPDATE" } })) as typeof sequelize.transaction);
     const packageLookup = vi.spyOn(SolPackage, "findOne").mockResolvedValueOnce(null);
     const attemptLookup = vi.spyOn(SolPaymentAttempt, "findOne");
     try {
@@ -56,8 +56,8 @@ describe("Sòl wallet payment HTTP guards", () => {
 
   it("rejects a missing wallet intent without any debit", async () => {
     process.env.SOL_WALLET_PAYMENTS_ENABLED = "true";
-    transaction.mockImplementation(async (callback: (t: { LOCK: { UPDATE: string } }) => Promise<unknown>) =>
-      callback({ LOCK: { UPDATE: "UPDATE" } }));
+    transaction.mockImplementation((async (callback: (t: { LOCK: { UPDATE: string } }) => Promise<unknown>) =>
+      callback({ LOCK: { UPDATE: "UPDATE" } })) as typeof sequelize.transaction);
     const packageLookup = vi.spyOn(SolPackage, "findOne").mockResolvedValueOnce({ id: 1 } as SolPackage);
     const attemptLookup = vi.spyOn(SolPaymentAttempt, "findOne").mockResolvedValueOnce(null);
     try {
