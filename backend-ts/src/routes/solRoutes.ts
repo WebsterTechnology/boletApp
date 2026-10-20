@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { UniqueConstraintError } from "sequelize";
+import { UniqueConstraintError, QueryTypes } from "sequelize";
 import { authenticate, currentUser } from "../middleware/authenticate";
 import { sequelize } from "../config/database";
 import { SolContribution, SolPackage, SOL_MONTHLY_AMOUNTS_CENTS } from "../models/Sol";
 import { SolPaymentAttempt } from "../models/SolPaymentAttempt";
+import { User } from "../models/User";
 import { User } from "../models/User";
 
 const router = Router();
@@ -218,6 +219,107 @@ router.post("/packages/:id/payment-intents", async (req, res) => {
   } catch (error) {
     if (error instanceof UniqueConstraintError) return res.status(409).json({ message: "Duplicate payment request; retry using the original key" });
     return res.status(500).json({ message: "Unable to create payment intent" });
+  }
+});
+
+
+/**
+ * Real wallet settlement is feature-flagged OFF by default.
+ * Requires migration for sol_wallet_ledger and independently verified tests.
+ * Request must reference an existing idempotent wallet intent; never trust
+ * client-provided amounts, balance values, installment numbers or user IDs.
+ */
+router.post("/packages/:id/wallet-payments", async (req, res) => {
+  if (process.env.SOL_WALLET_PAYMENTS_ENABLED !== "true") {
+    return res.status(503).json({ message: "Sòl wallet payments are not enabled" });
+  }
+  const rawId = req.params.id as string;
+  const key = req.get("Idempotency-Key");
+  if (!/^\\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
+    return res.status(400).json({ message: "Invalid package ID" });
+  }
+  if (!key || !/^[A-Za-z0-9_-]{16,128}$/.test(key)) {
+    return res.status(400).json({ message: "Invalid Idempotency-Key" });
+  }
+  const userId = currentUser(req).id;
+  try {
+    const result = await sequelize.transaction(async transaction => {
+      const item = await SolPackage.findOne({
+        where: { id: Number(rawId), userId }, transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (!item) return { code: 404, message: "Package not found" };
+      const attempt = await SolPaymentAttempt.findOne({
+        where: { userId, idempotencyKey: key }, transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (!attempt || attempt.packageId !== item.id || attempt.method !== "wallet") {
+        return { code: 404, message: "Matching wallet payment intent not found" };
+      }
+      if (attempt.status === "confirmed") {
+        return { code: 200, receipt: { attemptId: attempt.id, contributionId: attempt.contributionId, amountCents: attempt.amountCents, status: "confirmed", alreadyProcessed: true } };
+      }
+      if (attempt.status !== "created") return { code: 409, message: "Payment intent cannot be processed" };
+      if (item.status !== "draft" && item.status !== "active") return { code: 409, message: "Package not eligible" };
+      const installments = await SolContribution.findAll({
+        where: { packageId: item.id }, order: [["installmentNumber", "ASC"]],
+        transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (installments.length !== 12) return { code: 409, message: "Invalid installment schedule" };
+      const next = installments.find(i => i.status === "pending" && !i.paidAt && !i.paymentReference);
+      if (!next || next.id !== attempt.contributionId || next.amountCents !== item.monthlyAmountCents ||
+          attempt.amountCents !== next.amountCents || attempt.currency !== "BRL" ||
+          !Number.isSafeInteger(next.amountCents) || next.amountCents % 100 !== 0) {
+        return { code: 409, message: "Payment intent does not match the next installment" };
+      }
+      const wallet = await User.findByPk(userId, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!wallet) return { code: 404, message: "Wallet not found" };
+      const playBefore = Number(wallet.points);
+      const withdrawBefore = Number(wallet.withdrawablePoints);
+      if (![playBefore, withdrawBefore].every(n => Number.isSafeInteger(n) && n >= 0)) {
+        return { code: 409, message: "Wallet requires reconciliation" };
+      }
+      const requiredPoints = next.amountCents / 100;
+      if (playBefore + withdrawBefore < requiredPoints) return { code: 409, message: "Insufficient balance" };
+      const fromPlay = Math.min(playBefore, requiredPoints);
+      const fromWithdraw = requiredPoints - fromPlay;
+      const playAfter = playBefore - fromPlay;
+      const withdrawAfter = withdrawBefore - fromWithdraw;
+      // User row lock serializes debits; all changes and ledger commit atomically.
+      wallet.points = playAfter;
+      wallet.withdrawablePoints = withdrawAfter;
+      await wallet.save({ transaction });
+      const reference = "sol-wallet-" + attempt.id;
+      next.status = "paid";
+      next.paidAt = new Date();
+      next.paymentReference = reference;
+      await next.save({ transaction });
+      const paidMonths = installments.filter(i => i.status === "paid").length;
+      item.paidMonths = paidMonths;
+      item.status = paidMonths === 12 ? "completed" : "active";
+      await item.save({ transaction });
+      attempt.status = "confirmed";
+      attempt.providerReference = reference;
+      attempt.confirmedAt = next.paidAt;
+      await attempt.save({ transaction });
+      await sequelize.query(
+        'INSERT INTO sol_wallet_ledger ("userId", "packageId", "contributionId", "attemptId", "pointsDebited", "playDebited", "withdrawDebited", "playBefore", "withdrawBefore", "playAfter", "withdrawAfter", "createdAt") VALUES (:userId, :packageId, :contributionId, :attemptId, :pointsDebited, :playDebited, :withdrawDebited, :playBefore, :withdrawBefore, :playAfter, :withdrawAfter, NOW())',
+        { transaction, type: QueryTypes.INSERT, replacements: {
+          userId, packageId: item.id, contributionId: next.id, attemptId: attempt.id,
+          pointsDebited: requiredPoints, playDebited: fromPlay, withdrawDebited: fromWithdraw,
+          playBefore, withdrawBefore, playAfter, withdrawAfter,
+        } },
+      );
+      return { code: 200, receipt: {
+        attemptId: attempt.id, contributionId: next.id, amountCents: next.amountCents,
+        pointsDebited: requiredPoints, playDebited: fromPlay, withdrawDebited: fromWithdraw,
+        playBalance: playAfter, withdrawBalance: withdrawAfter, paidMonths, status: "confirmed",
+        alreadyProcessed: false,
+      } };
+    });
+    if (!result.receipt) return res.status(result.code).json({ message: result.message });
+    return res.status(result.code).json(result.receipt);
+  } catch (error) {
+    console.error("Sòl wallet settlement failed", error);
+    return res.status(500).json({ message: "Wallet payment could not be completed" });
   }
 });
 
