@@ -135,7 +135,7 @@ router.get("/packages/:id/wallet-preview", async (req, res) => {
       proposedFromPlay: fromPlay, proposedFromWithdrawable: fromWithdrawable,
       sufficientUnderProposal: fromPlay + fromWithdrawable === proposedPoints,
       proposedConversion: "1 point = 1 BRL",
-      paymentEnabled: false,
+      paymentEnabled: process.env.SOL_WALLET_PAYMENTS_ENABLED === "true",
       message: "Simulation only; no payment processed",
     });
   } catch (err) {
