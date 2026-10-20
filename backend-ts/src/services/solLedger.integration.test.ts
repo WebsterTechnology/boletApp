@@ -48,6 +48,26 @@ suite("Sòl wallet ledger PostgreSQL invariants", () => {
       'INSERT INTO sol_wallet_ledger VALUES (3, 3, 100, 50, 50, 50, 735, 0, 700)',
     )).rejects.toThrow();
   });
+  it("rejects negative ending balances even when arithmetic reconciles", async () => {
+    await expect(db.query(
+      'INSERT INTO sol_wallet_ledger VALUES (5, 5, 100, 100, 0, 50, 735, -50, 735)',
+    )).rejects.toThrow();
+  });
+  it("rejects a mismatch between total debit and split debit", async () => {
+    await expect(db.query(
+      'INSERT INTO sol_wallet_ledger VALUES (6, 6, 100, 50, 40, 50, 735, 0, 695)',
+    )).rejects.toThrow();
+  });
+  it("does not allow a second ledger record for a confirmed installment", async () => {
+    await expect(db.query(
+      'INSERT INTO sol_wallet_ledger VALUES (7, 1, 100, 50, 50, 50, 735, 0, 685)',
+    )).rejects.toThrow();
+    const [count] = await db.query<{ total: string }>(
+      'SELECT COUNT(*)::text AS total FROM sol_wallet_ledger WHERE "contributionId" = 1',
+      { type: QueryTypes.SELECT },
+    );
+    expect(count.total).toBe("1");
+  });
   it("rolls back a wallet change when ledger insert fails", async () => {
     await db.query('CREATE TABLE wallet_probe (id integer PRIMARY KEY, points integer NOT NULL)');
     await db.query('INSERT INTO wallet_probe VALUES (1, 50)');
