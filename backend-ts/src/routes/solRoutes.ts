@@ -5,7 +5,6 @@ import { sequelize } from "../config/database";
 import { SolContribution, SolPackage, SOL_MONTHLY_AMOUNTS_CENTS } from "../models/Sol";
 import { SolPaymentAttempt } from "../models/SolPaymentAttempt";
 import { User } from "../models/User";
-import { User } from "../models/User";
 
 const router = Router();
 router.use(authenticate);
@@ -135,7 +134,7 @@ router.get("/packages/:id/wallet-preview", async (req, res) => {
       playPoints, withdrawablePoints, proposedPoints,
       proposedFromPlay: fromPlay, proposedFromWithdrawable: fromWithdrawable,
       sufficientUnderProposal: fromPlay + fromWithdrawable === proposedPoints,
-      proposedConversion: "1 point = 1 BRL (pending approval)",
+      proposedConversion: "1 point = 1 BRL",
       paymentEnabled: false,
       message: "Simulation only; no payment processed",
     });
@@ -235,7 +234,7 @@ router.post("/packages/:id/wallet-payments", async (req, res) => {
   }
   const rawId = req.params.id as string;
   const key = req.get("Idempotency-Key");
-  if (!/^\\d+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
+  if (!/^[0-9]+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
     return res.status(400).json({ message: "Invalid package ID" });
   }
   if (!key || !/^[A-Za-z0-9_-]{16,128}$/.test(key)) {
