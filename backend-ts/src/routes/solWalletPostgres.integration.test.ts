@@ -113,4 +113,36 @@ suite("Sòl wallet payment HTTP + real PostgreSQL settlement", () => {
       'SELECT COUNT(*)::text AS total FROM sol_wallet_ledger', { type: QueryTypes.SELECT });
     expect(count.total).toBe("1");
   });
+  it("serializes two simultaneous HTTP requests for the same installment and charges once", async () => {
+    // The previous test left installment 2 pending with a created intent.
+    await sequelize.query('UPDATE users SET "withdrawablePoints" = 225 WHERE id = 1');
+    const send = () => request(app).post(payUrl)
+      .set("Authorization", "Bearer sol-pg-test-token")
+      .set("Idempotency-Key", "solpostgrespayment00002");
+    const [first, second] = await Promise.all([send(), send()]);
+    expect([first.status, second.status]).toEqual([200, 200]);
+    expect([first.body.alreadyProcessed, second.body.alreadyProcessed].sort())
+      .toEqual([false, true]);
+    const [wallet] = await sequelize.query<{ points: number; withdrawablePoints: number }>(
+      'SELECT points, "withdrawablePoints" FROM users WHERE id = 1', { type: QueryTypes.SELECT });
+    expect(wallet).toEqual({ points: 0, withdrawablePoints: 125 });
+    const [pkg] = await sequelize.query<{ paidMonths: number }>(
+      'SELECT "paidMonths" FROM sol_packages WHERE id = 1', { type: QueryTypes.SELECT });
+    expect(pkg.paidMonths).toBe(2);
+    const [ledger] = await sequelize.query<{ total: string }>(
+      'SELECT COUNT(*)::text AS total FROM sol_wallet_ledger WHERE "contributionId" = 2',
+      { type: QueryTypes.SELECT });
+    expect(ledger.total).toBe("1");
+  });
+
+  it("returns two reconciled owner-scoped wallet receipts after concurrent settlement", async () => {
+    const res = await request(app).get("/api/sol/packages/1/wallet-receipts")
+      .set("Authorization", "Bearer sol-pg-test-token");
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(2);
+    expect(res.body.every((receipt: { balancesReconcile: boolean }) => receipt.balancesReconcile)).toBe(true);
+    expect(res.body.map((receipt: { installmentNumber: number }) => receipt.installmentNumber).sort())
+      .toEqual([1, 2]);
+  });
+
 });
