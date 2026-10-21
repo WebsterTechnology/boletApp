@@ -40,7 +40,7 @@ suite("Sòl wallet payment HTTP + real PostgreSQL settlement", () => {
     await SolPackage.sync({ force: true });
     await SolContribution.sync({ force: true });
     await SolPaymentAttempt.sync({ force: true });
-    const context = { context: sequelize.getQueryInterface() };
+    const context = { name: "sol-ci-ledger", context: sequelize.getQueryInterface() };
     await solLedger.up(context);
     await solConstraints.up(context);
     await sequelize.query(`INSERT INTO users (id, phone, password, points, "withdrawablePoints", "profileOnboardingDone", "isAdmin")
