@@ -98,8 +98,8 @@ suite("Sòl wallet payment HTTP + real PostgreSQL settlement", () => {
   });
 
   it("rejects a second installment with insufficient funds without modifying the wallet or ledger", async () => {
-    await sequelize.query(`INSERT INTO sol_payment_attempts ("userId", "packageId", "contributionId", "amountCents", currency, method, status, "idempotencyKey", "createdAt", "updatedAt")
-      VALUES (1, 1, 2, 10000, 'BRL', 'wallet', 'created', 'solpostgrespayment00002', NOW(), NOW())`);
+    await sequelize.query(`INSERT INTO sol_payment_attempts (id, "userId", "packageId", "contributionId", "amountCents", currency, method, status, "idempotencyKey", "createdAt", "updatedAt")
+      VALUES (2, 1, 1, 2, 10000, 'BRL', 'wallet', 'created', 'solpostgrespayment00002', NOW(), NOW())`);
     await sequelize.query('UPDATE users SET "withdrawablePoints" = 25 WHERE id = 1');
     const res = await request(app).post(payUrl)
       .set("Authorization", "Bearer sol-pg-test-token")
