@@ -32,6 +32,19 @@ suite("Sòl wallet ledger PostgreSQL invariants", () => {
     await db.close();
   });
 
+  it("safely retries the ledger constraint migration without weakening checks", async () => {
+    const context = { name: "sol-ledger-constraints-retry", context: db.getQueryInterface() };
+    await expect(ledgerConstraints.up(context)).resolves.toBeUndefined();
+    await expect(ledgerConstraints.up(context)).resolves.toBeUndefined();
+    const [result] = await db.query<{ total: string }>(
+      `SELECT COUNT(*)::text AS total FROM pg_constraint
+       WHERE conname = 'sol_wallet_ledger_balances_valid'
+         AND conrelid = 'sol_wallet_ledger'::regclass`,
+      { type: QueryTypes.SELECT },
+    );
+    expect(result.total).toBe("1");
+  });
+
   it("accepts valid 50 + 735 -> 0 + 685 split", async () => {
     await db.query(`INSERT INTO sol_wallet_ledger VALUES ${row(1, 1)}`);
     const [record] = await db.query<{ playAfter: number; withdrawAfter: number }>(
