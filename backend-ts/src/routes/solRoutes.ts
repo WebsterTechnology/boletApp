@@ -15,7 +15,13 @@ router.get("/packages", async (req, res) => {
   try {
     const packages = await SolPackage.findAll({ where: { userId: currentUser(req).id }, order: [["createdAt", "DESC"]] });
     res.json(packages);
-  } catch { res.status(500).json({ message: "Unable to load Sòl packages" }); }
+  } catch (error) {
+    // Log a bounded, non-sensitive diagnostic; never log SQL, credentials, or user data.
+    console.error("Sòl package list query failed", {
+      errorType: error instanceof Error ? error.name : "UnknownError",
+    });
+    return res.status(500).json({ message: "Unable to load Sòl packages" });
+  }
 });
 router.get("/packages/:id", async (req, res) => {
   try {
