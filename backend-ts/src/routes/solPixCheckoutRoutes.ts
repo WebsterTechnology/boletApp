@@ -76,16 +76,17 @@ router.post("/packages/:id/pix-checkout", async (req, res) => {
       await attempt.save({ transaction });
       return { code: 200, payload } as const;
     });
-    if (!("payload" in reserved)) return res.status(reserved.code).json({ message: reserved.message });
+    if (!reserved.payload) return res.status(reserved.code).json({ message: reserved.message });
+    const payload = reserved.payload;
     // Never hold database locks across an external network call.
-    const { data } = await axios.post("https://api.checkout.infinitepay.io/links", reserved.payload, {
+    const { data } = await axios.post("https://api.checkout.infinitepay.io/links", payload, {
       timeout: 10000,
       headers: { "Content-Type": "application/json" },
     });
     const checkoutUrl = parseSolPixCheckoutUrl(
       data?.url || data?.checkout_url || data?.checkoutUrl || data?.link || data?.payment_url,
     );
-    return res.json({ checkoutUrl, orderNsu: reserved.payload.order_nsu, status: "pending" });
+    return res.json({ checkoutUrl, orderNsu: payload.order_nsu, status: "pending" });
   } catch (error) {
     console.error("Sòl PIX checkout initiation failed", {
       errorType: error instanceof Error ? error.name : "UnknownError",
