@@ -218,6 +218,11 @@ router.post("/packages/:id/payment-intents", async (req, res) => {
     return res.status(400).json({ message: "Invalid package ID" });
   }
   if (method !== "wallet" && method !== "pix") return res.status(400).json({ message: "Invalid payment method" });
+  // Do not create an unpayable PIX intent that would block wallet payment
+  // for this installment while checkout or settlement is disabled.
+  if (method === "pix" && (process.env.SOL_PIX_CHECKOUT_ENABLED !== "true" || process.env.SOL_PIX_WEBHOOK_ENABLED !== "true")) {
+    return res.status(503).json({ message: "Sòl PIX payments are not enabled" });
+  }
   if (!key || !/^[A-Za-z0-9_-]{16,128}$/.test(key)) return res.status(400).json({ message: "Invalid Idempotency-Key" });
   const userId = currentUser(req).id;
   try {
