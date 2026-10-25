@@ -18,9 +18,9 @@ router.post("/webhook", async (req, res) => {
     return res.status(503).json({ success: false, message: "Sòl PIX settlement disabled" });
   }
   const { order_nsu: orderNsu, transaction_nsu: transactionNsu, invoice_slug: invoiceSlug } = req.body ?? {};
-  if (typeof orderNsu !== "string" || !/^sol-pix-[1-9][0-9]*$/.test(orderNsu) ||
-      typeof transactionNsu !== "string" || !transactionNsu ||
-      typeof invoiceSlug !== "string" || !invoiceSlug) {
+  if (typeof orderNsu !== "string" || orderNsu.length > 40 || !/^sol-pix-[1-9][0-9]*$/.test(orderNsu) ||
+      typeof transactionNsu !== "string" || !transactionNsu || transactionNsu.length > 255 ||
+      typeof invoiceSlug !== "string" || !invoiceSlug || invoiceSlug.length > 255) {
     return res.status(400).json({ success: false, message: "Invalid Sòl payment callback" });
   }
   const attemptId = Number(orderNsu.slice("sol-pix-".length));
