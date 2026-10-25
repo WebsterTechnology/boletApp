@@ -31,6 +31,8 @@ app.use(express.json());
 app.use("/api/sol", solRoutes);
 beforeEach(() => {
   vi.clearAllMocks();
+  process.env.SOL_PIX_CHECKOUT_ENABLED = "true";
+  process.env.SOL_PIX_WEBHOOK_ENABLED = "true";
   mocks.transaction.mockImplementation(async (callback: (t: object) => Promise<unknown>) => callback({ LOCK: { UPDATE: "UPDATE" } }));
 });
 describe("Sòl draft package API", () => {
@@ -124,6 +126,19 @@ describe("Sòl draft package API", () => {
   });
   it("rejects malformed payment history IDs", async () => {
     expect((await request(app).get("/api/sol/packages/nope/payment-attempts")).status).toBe(400);
+  });
+  it("rejects PIX intents when settlement or checkout is disabled, without reserving an installment", async () => {
+    process.env.SOL_PIX_CHECKOUT_ENABLED = "false";
+    const response = await request(app).post("/api/sol/packages/42/payment-intents")
+      .set("Idempotency-Key", "unique_request_1234").send({ method: "pix" });
+    expect(response.status).toBe(503);
+    expect(mocks.paymentAttemptCreate).not.toHaveBeenCalled();
+    process.env.SOL_PIX_CHECKOUT_ENABLED = "true";
+    process.env.SOL_PIX_WEBHOOK_ENABLED = "false";
+    const webhookOff = await request(app).post("/api/sol/packages/42/payment-intents")
+      .set("Idempotency-Key", "unique_request_1234").send({ method: "pix" });
+    expect(webhookOff.status).toBe(503);
+    expect(mocks.paymentAttemptCreate).not.toHaveBeenCalled();
   });
   it("creates a payment intent using locked server-side installment price without charging", async () => {
     mocks.findOne.mockResolvedValue({ id: 42, monthlyAmountCents: 10000, status: "draft" });
