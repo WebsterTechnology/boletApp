@@ -53,7 +53,7 @@ export default function SolPage() {
       if (!Array.isArray(items)) throw new Error("Invalid response");
       setDrafts(items as SolDraft[]);
       setDraftError("");
-    } catch { setDraftError("Nou pa kapab chaje pake Sòl yo kounye a."); }
+    } catch (error) { setDraftError("Nou pa kapab chaje pake Sòl yo kounye a." + (error instanceof Error && error.message.startsWith("HTTP ") ? " (" + error.message + ")" : " Verifye koneksyon an.")); }
     finally { setDraftLoading(false); }
   }, []);
   useEffect(() => { void loadDrafts(); }, [loadDrafts]);
@@ -71,9 +71,12 @@ export default function SolPage() {
         body: JSON.stringify({ monthlyAmountCents: amount * 100, dueDay }),
       });
       if (!response.ok) throw new Error("HTTP " + response.status);
-      setDraftSuccess("Pake ou anrejistre kòm bouyon. Okenn peman pa fèt.");
+      const created = (await response.json()) as { id?: number };
+      if (!Number.isSafeInteger(created.id) || !created.id || created.id < 1) throw new Error("Invalid package response");
+      setDraftSuccess("Pake anrejistre. Verifye balans ou pou peye premye mwa a.");
       await loadDrafts();
-    } catch { setDraftError("Nou pa kapab anrejistre pake a. Okenn peman pa fèt."); }
+      await showSavedDraft(created.id);
+    } catch (error) { setDraftError("Nou pa kapab fini operasyon an. Verifye lis pake ou yo anvan ou eseye ankò." + (error instanceof Error && error.message.startsWith("HTTP ") ? " (" + error.message + ")" : "")); }
     finally { setSavingDraft(false); }
   };
 
@@ -244,7 +247,7 @@ export default function SolPage() {
         <header className={styles.hero}>
           <div className={styles.heroTop}>
             <div className={styles.brand}><span className={styles.brandMark}>S</span><span>Sòl <small>HTNovaTech</small></span></div>
-            <span className={styles.preview}>PREVIEW • Peman dezaktive</span>
+            <span className={styles.preview}>Sòl • Peman ak balans Loto</span>
           </div>
           <p className={styles.greeting}>Bonjou, {userName} 👋</p>
           <h1>Byenveni nan Sòl ou</h1>
@@ -317,18 +320,18 @@ export default function SolPage() {
             <h3>Fason peman</h3>
             <div className={styles.methods}>
               <button aria-pressed={method === "wallet"} className={method === "wallet" ? styles.selectedMethod : ""} onClick={() => setMethod("wallet")}>💼 Saldo Loto <small>Disponib pou jwe + Disponib pou retire</small></button>
-              <button aria-pressed={method === "pix"} className={method === "pix" ? styles.selectedMethod : ""} onClick={() => setMethod("pix")}>▦ PIX <small>Montan pake a fiks</small></button>
+              <button type="button" disabled aria-disabled="true" aria-pressed={false}>▦ PIX <small>Ap vini pita</small></button>
             </div>
             {method === "pix" ? (
               <div className={styles.fixedAmount}><span>Montan PIX pou peye</span><strong>{money(amount)}</strong><small>🔒 Montan sa a pa kapab modifye. QR code ap disponib apre entegrasyon backend la.</small></div>
             ) : (
               <div className={styles.fixedAmount}><span>Montan pou retire nan balans Loto yo</span><strong>{money(amount)}</strong><small>Sistèm nan pral itilize balans pou jwe an premye, epi balans pou retire. Si total la pa sifi, ou dwe rechaje kont ou anvan.</small></div>
             )}
-            <button className={styles.primary} disabled={savingDraft} onClick={() => void saveDraft()}>{savingDraft ? "Ap anrejistre..." : "Anrejistre pake kòm bouyon"}</button>
+            <button className={styles.primary} disabled={savingDraft} onClick={() => void saveDraft()}>{savingDraft ? "Ap anrejistre..." : "Anrejistre pake epi kontinye"}</button>
             {draftSuccess && <p role="status" className={styles.notice}>{draftSuccess}</p>}
             {draftError && <p role="alert" className={styles.notice}>{draftError}</p>}
             <button className={styles.back} onClick={() => setShowPaymentNotice(true)}>Kijan peman ap mache?</button>
-            {showPaymentNotice && <p role="status" className={styles.notice}>Sa a se yon aperçu. Nou poko aktive dediksyon balans oswa peman PIX. Okenn lajan pa retire.</p>}
+            {showPaymentNotice && <p role="status" className={styles.notice}>Anrejistre pake a an premye, epi verifye balans ou. Lè ou konfime peman ak balans Loto, y ap retire pwen reyèl. PIX poko disponib.</p>}
           </section>
         )}
 
@@ -344,7 +347,7 @@ export default function SolPage() {
                   <div><span>Estati</span><strong>{selectedDraft.status === "draft" ? "Bouyon — pa aktive" : selectedDraft.status}</strong></div>
                   <div><span>Mwa peye</span><strong>{selectedDraft.paidMonths}/12</strong></div>
                 </div>
-                <h3>Pwochen peman (aperçu sèlman)</h3>
+                <h3>Pwochen peman</h3>
                 <button className={styles.back} type="button" disabled={paymentPreviewLoading} onClick={() => void loadPaymentPreview(selectedDraft.id)}>{paymentPreviewLoading ? "Ap chaje..." : "Gade pwochen peman an"}</button>
                 {paymentPreviewError && <p role="alert" className={styles.notice}>{paymentPreviewError}</p>}
                 {paymentPreview && <div className={styles.summary}>
@@ -353,7 +356,7 @@ export default function SolPage() {
                   <div><span>Fason peman prevwa</span><strong>{paymentPreview.methods.join(" / ").toUpperCase()}</strong></div>
                   <p className={styles.hint}>🔒 Sa se yon aperçu sèlman. Peman yo poko aktive. Pa gen lajan ki retire.</p>
                 </div>}
-                <h3>Similasyon peman ak balans Loto</h3>
+                <h3>Peye ak balans Loto</h3>
                 <button className={styles.back} type="button" disabled={walletPreviewLoading} onClick={() => void loadWalletPreview(selectedDraft.id)}>
                   {walletPreviewLoading ? "Ap verifye..." : "Verifye balans mwen (san peman)"}
                 </button>
@@ -394,7 +397,7 @@ export default function SolPage() {
                   </article>)}
                 </div>}
                 {historyLoaded && !historyLoading && !historyError && paymentHistory.length === 0 && <p className={styles.hint}>Pa gen tantativ peman ki chaje.</p>}
-                <p className={styles.hint}>Pake bouyon yo pa aktive. Pa gen peman ki disponib pou kounye a.</p>
+                <p className={styles.hint}>Pake bouyon an ap vin aktif sèlman apre premye peman an konfime. PIX poko disponib.</p>
               </>
             )}
           </section>
