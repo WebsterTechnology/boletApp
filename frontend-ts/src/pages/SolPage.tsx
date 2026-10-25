@@ -254,6 +254,15 @@ export default function SolPage() {
       const checkoutResponse = await fetch(API + "/api/sol/packages/" + packageId + "/pix-checkout", {
         method: "POST", headers,
       });
+      if (checkoutResponse.status === 409) {
+        // Checkout may have been settled by a verified webhook, or
+        // the reserved provider order may require manual reconciliation.
+        // Never redirect based on a conflict or rotate the idempotency key.
+        await showSavedDraft(packageId);
+        await loadDrafts();
+        setPixMessage("Nou rafrechi estati pake a. Si mwa a poko peye, pa kreye yon lòt peman PIX; kontakte sipò pou verifye lòd la.");
+        return;
+      }
       if (!checkoutResponse.ok) throw new Error("Nou pa kapab ouvri PIX. Pa eseye yon lòt peman anvan ou verifye estati a.");
       const checkout = await checkoutResponse.json() as { checkoutUrl?: string };
       if (!checkout.checkoutUrl) throw new Error("Lyen PIX la pa disponib.");
