@@ -130,4 +130,38 @@ describe("Sòl PIX checkout recovery", () => {
     expect(mocks.providerPost).not.toHaveBeenCalled();
   });
 
+  it("does not issue a second order after an InfinitePay network timeout", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const attempt = {
+      id: 12, userId: 7, packageId: 4, contributionId: 31,
+      amountCents: 20000, currency: "BRL", method: "pix", status: "created",
+      providerReference: null as string | null, checkoutUrl: null, save,
+    };
+    mocks.attemptFindOne.mockResolvedValue(attempt);
+    mocks.providerPost.mockRejectedValue(new Error("provider timeout"));
+    const first = await request(app).post(path).set("Idempotency-Key", key);
+    expect(first.status).toBe(502);
+    expect(attempt.providerReference).toBe("sol-pix-12");
+    expect(save).toHaveBeenCalledTimes(1);
+    const retry = await request(app).post(path).set("Idempotency-Key", key);
+    expect(retry.status).toBe(409);
+    expect(mocks.providerPost).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+  it("rejects an untrusted checkout URL without clearing the reserved order", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const attempt = {
+      id: 12, userId: 7, packageId: 4, contributionId: 31,
+      amountCents: 20000, currency: "BRL", method: "pix", status: "created",
+      providerReference: null as string | null, checkoutUrl: null, save,
+    };
+    mocks.attemptFindOne.mockResolvedValue(attempt);
+    mocks.providerPost.mockResolvedValue({ data: { url: "https://checkout.infinitepay.io.evil.example/pay" } });
+    const response = await request(app).post(path).set("Idempotency-Key", key);
+    expect(response.status).toBe(502);
+    expect(attempt.providerReference).toBe("sol-pix-12");
+    expect(attempt.checkoutUrl).toBeNull();
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
 });
