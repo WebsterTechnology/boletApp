@@ -373,7 +373,7 @@ export default function SolPage() {
                   <div><span>Fason peman prevwa</span><strong>{paymentPreview.methods.join(" / ").toUpperCase()}</strong></div>
                   <p className={styles.hint}>Sa se enfòmasyon sou pwochen peman an. Pa gen lajan ki retire lè ou gade li.</p>
                 </div>}
-                <h3>Peye premye mwa a ak balans Loto</h3>
+                <h3 id="sol-wallet-payment">Peye pwochen mwa a ak balans Loto</h3>
                 <p className={styles.hint}>Nou verifye balans ou otomatikman. Okenn lajan pa retire san konfimasyon ou.</p>
                 <button className={styles.back} type="button" disabled={walletPreviewLoading} onClick={() => void loadWalletPreview(selectedDraft.id)}>
                   {walletPreviewLoading ? "Ap verifye balans ou..." : "Rafrechi balans mwen"}
@@ -393,13 +393,21 @@ export default function SolPage() {
                 {walletPaymentError && <p role="alert" className={styles.notice}>{walletPaymentError}</p>}
                 <h3>12 kontribisyon yo</h3>
                 <div className={styles.packageGrid}>
-                  {[...(selectedDraft.contributions || [])].sort((a, b) => a.installmentNumber - b.installmentNumber).map(item => (
-                    <article className={styles.package} key={item.id}>
-                      <div className={styles.packageTop}><span>Mwa {item.installmentNumber}</span><span className={styles.duration}>{item.status === "pending" ? "Annatant" : item.status}</span></div>
+                  {[...(selectedDraft.contributions || [])].sort((a, b) => a.installmentNumber - b.installmentNumber).map(item => {
+                    const paid = item.status === "paid" || Boolean(item.paidAt);
+                    const nextUnpaid = selectedDraft.contributions?.filter(contribution => contribution.status !== "paid" && !contribution.paidAt).reduce((first, contribution) => Math.min(first, contribution.installmentNumber), Infinity);
+                    const canPay = !paid && item.installmentNumber === nextUnpaid && selectedDraft.status !== "cancelled";
+                    return <article className={styles.package} key={item.id}>
+                      <div className={styles.packageTop}><span>Mwa {item.installmentNumber}</span><span className={styles.duration}>{paid ? "Peye" : "Annatant"}</span></div>
                       <strong>{money(item.amountCents / 100)}</strong>
                       <small>{item.paidAt ? "Peye: " + new Date(item.paidAt).toLocaleDateString("pt-BR") : "Peman poko fèt"}</small>
-                    </article>
-                  ))}
+                      {canPay && <button type="button" className={styles.installmentPayButton} onClick={() => {
+                        void loadWalletPreview(selectedDraft.id);
+                        document.getElementById("sol-wallet-payment")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}>Peye mwa {item.installmentNumber} →</button>}
+                      {!paid && !canPay && selectedDraft.status !== "cancelled" && <small className={styles.installmentHint}>Peye mwa anvan yo an premye.</small>}
+                    </article>;
+                  })}
                 </div>
                 <h3>Istwa tantativ peman</h3>
                 <button className={styles.back} type="button" disabled={historyLoading} onClick={() => void loadPaymentHistory(selectedDraft.id)}>

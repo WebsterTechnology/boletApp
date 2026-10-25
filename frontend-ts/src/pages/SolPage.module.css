@@ -3,3 +3,9 @@
 .buyPackageButton,.buyPackageButton:enabled{background-color:#087a3e!important;color:#ffffff!important;border:2px solid #075d32!important;box-shadow:0 5px 14px rgba(7,93,50,.22)!important;min-height:60px;font-size:18px;font-weight:800;justify-content:center;text-align:center;opacity:1!important;}
 .buyPackageButton:hover,.buyPackageButton:focus-visible{background-color:#075d32!important;color:#ffffff!important;}
 .buyPackageButton:focus-visible{outline:3px solid #f4bf32;outline-offset:3px;}
+
+/* Sòl installment actions: clearly visible and never trigger payment directly. */
+.installmentPayButton{display:block;width:100%;margin-top:16px;padding:13px 16px;border:0;border-radius:11px;background:#087a3e;color:#fff;font-size:15px;font-weight:800;text-align:center;cursor:pointer;}
+.installmentPayButton:focus-visible{outline:3px solid #f4bf32;outline-offset:3px;}
+.installmentHint{display:block;margin-top:12px;color:#607769;font-size:12px;line-height:1.4;}
+#sol-wallet-payment{scroll-margin-top:110px;}
