@@ -128,6 +128,14 @@ export default function SolPage() {
       const item = (await response.json()) as SolDraft;
       if (!item || item.id !== id || !Array.isArray(item.contributions)) throw new Error("Invalid response");
       setSelectedDraft(item);
+      // A confirmed PIX installment must not reuse its intent key next month.
+      // Only the backend-confirmed contribution state can release that key.
+      const pixKey = "sol-pix-intent-" + id;
+      const previousPaidMonths = Number(sessionStorage.getItem("sol-pix-paid-months-" + id));
+      if (Number.isSafeInteger(previousPaidMonths) && item.paidMonths > previousPaidMonths) {
+        sessionStorage.removeItem(pixKey);
+      }
+      sessionStorage.setItem("sol-pix-paid-months-" + id, String(item.paidMonths));
       if (item.paidMonths < 12 && item.status !== "cancelled") void loadWalletPreview(id);
     } catch { setDetailError("Nou pa kapab chaje detay pake a. Eseye ankò."); }
     finally { setDetailLoading(false); }
