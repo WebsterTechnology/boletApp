@@ -37,6 +37,9 @@ export default function SolPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const [historyError, setHistoryError] = useState("");
+  const [transactionPackages, setTransactionPackages] = useState<SolDraft[]>([]);
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [transactionError, setTransactionError] = useState("");
   const [draftLoading, setDraftLoading] = useState(true);
   const [draftError, setDraftError] = useState("");
   const [savingDraft, setSavingDraft] = useState(false);
@@ -231,6 +234,28 @@ export default function SolPage() {
     finally { setHistoryLoading(false); }
   };
 
+  const loadTransactions = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) { setTransactionError("Tanpri konekte ankò."); return; }
+    setTransactionLoading(true);
+    setTransactionError("");
+    try {
+      const listResponse = await fetch(API + "/api/sol/packages", { headers: { Authorization: "Bearer " + token } });
+      if (!listResponse.ok) throw new Error("HTTP " + listResponse.status);
+      const packages = await listResponse.json() as SolDraft[];
+      if (!Array.isArray(packages)) throw new Error("Invalid package list");
+      const details = await Promise.all(packages.map(async (pkg) => {
+        const response = await fetch(API + "/api/sol/packages/" + pkg.id, { headers: { Authorization: "Bearer " + token } });
+        if (!response.ok) throw new Error("HTTP " + response.status);
+        return response.json() as Promise<SolDraft>;
+      }));
+      setTransactionPackages(details);
+    } catch (error) {
+      setTransactionError("Nou pa kapab chaje tranzaksyon yo." + (error instanceof Error && error.message.startsWith("HTTP ") ? " (" + error.message + ")" : ""));
+    } finally { setTransactionLoading(false); }
+  };
+  useEffect(() => { if (view === "transactions") void loadTransactions(); }, [view]);
+
   const [userName] = useState(() => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -406,7 +431,17 @@ export default function SolPage() {
         {view === "transactions" && (
           <section className={styles.content}>
             <h2>Istwa tranzaksyon</h2>
-            <div className={styles.empty}><span>📋</span><strong>Pa gen tranzaksyon ankò</strong><p>Lè peman Sòl yo aktive, w ap jwenn tout istwa ou isit la.</p></div>
+            <button type="button" onClick={() => void loadTransactions()} disabled={transactionLoading}>{transactionLoading ? "Ap chaje..." : "Rafrechi tranzaksyon yo"}</button>
+            {transactionError && <p role="alert" className={styles.hint}>{transactionError}</p>}
+            {!transactionError && !transactionLoading && transactionPackages.flatMap((pkg) => (pkg.contributions ?? []).filter((contribution) => contribution.status === "paid" || Boolean(contribution.paidAt)).map((contribution) => ({ pkg, contribution }))).sort((a, b) => new Date(b.contribution.paidAt ?? 0).getTime() - new Date(a.contribution.paidAt ?? 0).getTime()).map(({ pkg, contribution }) => (
+              <article className={styles.package} key={pkg.id + "-" + contribution.id}>
+                <div className={styles.packageTop}><strong>Peman Sòl konfime</strong><span className={styles.duration}>Mwa {contribution.installmentNumber}/12</span></div>
+                <strong>{money(contribution.amountCents / 100)}</strong>
+                <small>{contribution.paidAt ? new Date(contribution.paidAt).toLocaleDateString("pt-BR") : "Konfime"}</small>
+                <button type="button" onClick={() => void showSavedDraft(pkg.id)}>Gade detay pake a</button>
+              </article>
+            ))}
+            {!transactionError && !transactionLoading && !transactionPackages.some((pkg) => (pkg.contributions ?? []).some((contribution) => contribution.status === "paid" || Boolean(contribution.paidAt))) && <div className={styles.empty}><span>📋</span><strong>Pa gen peman konfime ankò</strong><p>Lè ou peye yon mwa Sòl, l ap parèt isit la.</p></div>}
           </section>
         )}
 
