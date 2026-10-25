@@ -5,12 +5,15 @@ import request from "supertest";
 const mocks = vi.hoisted(() => ({
   paymentCheck: vi.fn(),
   transaction: vi.fn(),
+  attemptFindByPk: vi.fn(),
+  packageFindOne: vi.fn(),
+  contributionsFindAll: vi.fn(),
 }));
 vi.mock("axios", () => ({ default: { post: mocks.paymentCheck } }));
 vi.mock("../config/database", () => ({ sequelize: { transaction: mocks.transaction } }));
 vi.mock("../config/env", () => ({ env: { infinitepayHandle: "test-merchant" } }));
-vi.mock("../models/Sol", () => ({ SolPackage: {}, SolContribution: {} }));
-vi.mock("../models/SolPaymentAttempt", () => ({ SolPaymentAttempt: {} }));
+vi.mock("../models/Sol", () => ({ SolPackage: { findOne: mocks.packageFindOne }, SolContribution: { findAll: mocks.contributionsFindAll } }));
+vi.mock("../models/SolPaymentAttempt", () => ({ SolPaymentAttempt: { findByPk: mocks.attemptFindByPk } }));
 import solPixWebhookRoutes from "../routes/solPixWebhookRoutes";
 
 const app = express();
@@ -55,4 +58,63 @@ describe("Sòl PIX webhook request boundary", () => {
     );
     expect(mocks.transaction).not.toHaveBeenCalled();
   });
+  it("settles exactly one verified installment and safely acknowledges a duplicate callback", async () => {
+    process.env.SOL_PIX_WEBHOOK_ENABLED = "true";
+    const savePackage = vi.fn().mockResolvedValue(undefined);
+    const saveAttempt = vi.fn().mockResolvedValue(undefined);
+    const saveContribution = vi.fn().mockResolvedValue(undefined);
+    const pkg = { id: 4, userId: 7, status: "active", paidMonths: 1, save: savePackage };
+    const attempt = { id: 12, userId: 7, packageId: 4, contributionId: 31,
+      amountCents: 20000, currency: "BRL", method: "pix", status: "created",
+      providerReference: "sol-pix-12", confirmedAt: null, save: saveAttempt };
+    const contributions = Array.from({ length: 12 }, (_, i) => ({
+      id: 30 + i, installmentNumber: i + 1, amountCents: 20000,
+      status: i === 0 ? "paid" : "pending",
+      paidAt: i === 0 ? new Date() : null,
+      paymentReference: i === 0 ? "sol-wallet-9" : null,
+      save: saveContribution,
+    }));
+    mocks.paymentCheck.mockResolvedValue({ data: { success: true, paid: true, amount: 20000 } });
+    mocks.transaction.mockImplementation(async (cb: (t: object) => Promise<unknown>) =>
+      cb({ LOCK: { UPDATE: "UPDATE" } }));
+    mocks.attemptFindByPk.mockImplementation(async () => attempt);
+    mocks.packageFindOne.mockImplementation(async () => pkg);
+    mocks.contributionsFindAll.mockImplementation(async () => contributions);
+    const first = await request(app).post("/api/sol-pix/webhook").send(callback);
+    expect(first.status).toBe(200);
+    expect(first.body).toMatchObject({ success: true, alreadyProcessed: false });
+    expect(contributions[1].status).toBe("paid");
+    expect(contributions[1].paymentReference).toBe("sol-pix-12");
+    expect(pkg.paidMonths).toBe(2);
+    expect(attempt.status).toBe("confirmed");
+    expect(saveContribution).toHaveBeenCalledTimes(1);
+    expect(savePackage).toHaveBeenCalledTimes(1);
+    expect(saveAttempt).toHaveBeenCalledTimes(1);
+    const second = await request(app).post("/api/sol-pix/webhook").send(callback);
+    expect(second.status).toBe(200);
+    expect(second.body).toMatchObject({ success: true, alreadyProcessed: true });
+    expect(saveContribution).toHaveBeenCalledTimes(1);
+    expect(savePackage).toHaveBeenCalledTimes(1);
+    expect(saveAttempt).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not settle when provider confirms the wrong installment amount", async () => {
+    process.env.SOL_PIX_WEBHOOK_ENABLED = "true";
+    mocks.paymentCheck.mockResolvedValue({ data: { success: true, paid: true, amount: 19999 } });
+    mocks.transaction.mockImplementation(async (cb: (t: object) => Promise<unknown>) =>
+      cb({ LOCK: { UPDATE: "UPDATE" } }));
+    const save = vi.fn();
+    mocks.attemptFindByPk.mockResolvedValue({ id: 12, userId: 7, packageId: 4, contributionId: 31,
+      amountCents: 20000, currency: "BRL", method: "pix", status: "created",
+      providerReference: "sol-pix-12", save });
+    mocks.packageFindOne.mockResolvedValue({ id: 4, userId: 7, status: "draft", paidMonths: 0, save });
+    mocks.contributionsFindAll.mockResolvedValue(Array.from({ length: 12 }, (_, i) => ({
+      id: 31 + i, installmentNumber: i + 1, amountCents: 20000,
+      status: "pending", paidAt: null, paymentReference: null, save,
+    })));
+    const response = await request(app).post("/api/sol-pix/webhook").send(callback);
+    expect(response.status).toBe(409);
+    expect(save).not.toHaveBeenCalled();
+  });
+
 });
