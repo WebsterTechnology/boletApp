@@ -15,6 +15,7 @@
     "migrate": "node dist/scripts/migrate.js up",
     "migrate:down": "node dist/scripts/migrate.js down",
     "migrate:dev": "tsx src/scripts/migrate.ts up",
+    "sol:check-migration": "node dist/scripts/checkSolPixMigration.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
