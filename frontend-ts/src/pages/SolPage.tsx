@@ -282,7 +282,7 @@ export default function SolPage() {
 
         {view === "home" && (
           <section className={styles.content}>
-            <button className={styles.primary} onClick={() => go("packages")}>➕ Achte yon pake Sòl →</button>
+            <button type="button" className={`${styles.primary} ${styles.buyPackageButton}`} onClick={() => go("packages")}>➕ Achte yon pake Sòl <span aria-hidden="true">→</span></button>
             <h2>Pake mwen yo</h2>
             {draftLoading ? <p role="status">Ap chaje pake ou yo...</p> : draftError ? <p role="alert" className={styles.notice}>{draftError} <button type="button" onClick={() => void loadDrafts()}>Eseye ankò</button></p> : drafts.length ? (
               <div className={styles.packageGrid}>
