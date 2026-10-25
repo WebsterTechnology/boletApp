@@ -164,4 +164,22 @@ describe("Sòl PIX checkout recovery", () => {
     expect(save).toHaveBeenCalledTimes(1);
   });
 
+  it("does not redirect to a payable link after a concurrent webhook settles the installment", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const attempt = {
+      id: 12, userId: 7, packageId: 4, contributionId: 31,
+      amountCents: 20000, currency: "BRL", method: "pix", status: "created",
+      providerReference: null as string | null, checkoutUrl: null as string | null, save,
+    };
+    mocks.attemptFindOne
+      .mockResolvedValueOnce(attempt)
+      .mockResolvedValueOnce(null);
+    mocks.providerPost.mockResolvedValue({ data: { url: checkoutUrl } });
+    const response = await request(app).post(path).set("Idempotency-Key", key);
+    expect(response.status).toBe(409);
+    expect(response.body.checkoutUrl).toBeUndefined();
+    expect(mocks.providerPost).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledTimes(1);
+  });
+
 });
