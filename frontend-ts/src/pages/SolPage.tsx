@@ -387,7 +387,7 @@ export default function SolPage() {
                   <div><span>Pral retire nan balans retire</span><strong>{walletPreview.proposedFromWithdrawable} p</strong></div>
                   <p className={styles.hint}>{walletPreview.sufficientUnderProposal ? "Balans ou sifi pou peman sa a." : "Balans ou pa sifi. Tanpri rechaje kont ou."}</p>
                   <p className={styles.hint}>Nou pran nan Disponib pou jwe an premye, apre sa nan Disponib pou retire.</p>
-                  {walletPreview.paymentEnabled ? <button type="button" className={styles.primary} disabled={payingWallet || !walletPreview.sufficientUnderProposal} onClick={() => void payWithWallet(selectedDraft.id)}>{payingWallet ? "Ap trete peman..." : "Konfime peman " + money(walletPreview.amountCents / 100)}</button> : <p className={styles.hint}>Peman ak balans poko disponib.</p>}
+                  {walletPreview.paymentEnabled ? <button type="button" className={styles.primary} disabled={payingWallet || !walletPreview.sufficientUnderProposal} onClick={() => void payWithWallet(selectedDraft.id)}>{payingWallet ? "Ap trete peman..." : selectedDraft.paidMonths === 0 ? "Konfime premye peman " + money(walletPreview.amountCents / 100) : "Peye pwochen mwa (Mwa " + walletPreview.installmentNumber + ") — " + money(walletPreview.amountCents / 100)}</button> : <p className={styles.hint}>Peman ak balans poko disponib.</p>}
                 </div>}
                 {walletPaymentMessage && <p role="status" className={styles.notice}>{walletPaymentMessage}</p>}
                 {walletPaymentError && <p role="alert" className={styles.notice}>{walletPaymentError}</p>}
