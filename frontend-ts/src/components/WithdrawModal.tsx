@@ -17,7 +17,7 @@ const WithdrawModal = ({ onClose }: { onClose: () => void }) => {
     email: "",
     phone: "",
     amount: "",
-    message: "",
+    pixKey: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -35,6 +35,11 @@ const WithdrawModal = ({ onClose }: { onClose: () => void }) => {
     // 🧱 Basic form validation
     if (!form.name || !form.phone || !amount) {
       alert("❌ Tanpri ranpli tout chan obligatwa yo");
+      return;
+    }
+
+    if (!form.pixKey.trim()) {
+      alert("❌ Tanpri antre Chave PIX ou.");
       return;
     }
 
@@ -93,7 +98,7 @@ const WithdrawModal = ({ onClose }: { onClose: () => void }) => {
           email: form.email || "N/A",
           phone: form.phone,
           amount,
-          message: form.message || "Aucun message",
+          message: `Chave PIX: ${form.pixKey.trim()}`,
         },
         PUBLIC_KEY
       );
@@ -119,7 +124,7 @@ const WithdrawModal = ({ onClose }: { onClose: () => void }) => {
           <input name="email" type="email" placeholder="Email (optionnel)" value={form.email} onChange={handleChange} />
           <input name="phone" placeholder="Téléphone" value={form.phone} onChange={handleChange} required />
           <input name="amount" type="number" placeholder="Montant à retirer (min 30)" value={form.amount} onChange={handleChange} required />
-          <textarea name="message" placeholder="Message (optionnel)" value={form.message} onChange={handleChange} />
+          <input name="pixKey" type="text" placeholder="Chave PIX *" aria-label="Chave PIX" value={form.pixKey} onChange={handleChange} autoComplete="off" required />
 
           <button type="submit" disabled={loading}>
             {loading ? "Vérification..." : "Envoyer"}
