@@ -406,7 +406,17 @@ export default function SolPage() {
         {view === "transactions" && (
           <section className={styles.content}>
             <h2>Istwa tranzaksyon</h2>
-            <div className={styles.empty}><span>📋</span><strong>Pa gen tranzaksyon ankò</strong><p>Lè peman Sòl yo aktive, w ap jwenn tout istwa ou isit la.</p></div>
+            <button type="button" onClick={() => void loadDrafts()} disabled={draftLoading}>{draftLoading ? "Ap chaje..." : "Rafrechi tranzaksyon yo"}</button>
+            {draftError && <p role="alert" className={styles.hint}>{draftError}</p>}
+            {!draftError && !draftLoading && drafts.flatMap((pkg) => (pkg.contributions ?? []).filter((contribution) => contribution.status === "paid" || Boolean(contribution.paidAt)).map((contribution) => ({ pkg, contribution }))).sort((a, b) => new Date(b.contribution.paidAt ?? 0).getTime() - new Date(a.contribution.paidAt ?? 0).getTime()).map(({ pkg, contribution }) => (
+              <article className={styles.package} key={pkg.id + "-" + contribution.id}>
+                <div className={styles.packageTop}><strong>Peman Sòl konfime</strong><span className={styles.duration}>Mwa {contribution.installmentNumber}/12</span></div>
+                <strong>{money(contribution.amountCents / 100)}</strong>
+                <small>{contribution.paidAt ? new Date(contribution.paidAt).toLocaleDateString("pt-BR") : "Konfime"}</small>
+                <button type="button" onClick={() => void showSavedDraft(pkg.id)}>Gade detay pake a</button>
+              </article>
+            ))}
+            {!draftError && !draftLoading && !drafts.some((pkg) => (pkg.contributions ?? []).some((contribution) => contribution.status === "paid" || Boolean(contribution.paidAt))) && <div className={styles.empty}><span>📋</span><strong>Pa gen peman konfime ankò</strong><p>Lè ou peye yon mwa Sòl, l ap parèt isit la.</p></div>}
           </section>
         )}
 
