@@ -65,7 +65,10 @@ router.post("/packages/:id/pix-checkout", async (req, res) => {
       // Avoid creating duplicate checkout links on repeated calls. The caller
       // must not initiate a second payment while this order remains open.
       if (attempt.providerReference) {
-        return { code: 409, message: "PIX checkout already requested; contact support if the link was lost" } as const;
+        if (attempt.providerReference === orderNsu && attempt.checkoutUrl) {
+          return { code: 200, existingUrl: parseSolPixCheckoutUrl(attempt.checkoutUrl), orderNsu } as const;
+        }
+        return { code: 409, message: "PIX checkout is pending; contact support to reconcile an unavailable link" } as const;
       }
       const payload = buildSolPixCheckoutPayload(attempt, {
         handle: env.infinitepayHandle,
@@ -76,6 +79,9 @@ router.post("/packages/:id/pix-checkout", async (req, res) => {
       await attempt.save({ transaction });
       return { code: 200, payload } as const;
     });
+    if ("existingUrl" in reserved && reserved.existingUrl) {
+      return res.json({ checkoutUrl: reserved.existingUrl, orderNsu: reserved.orderNsu, status: "pending" });
+    }
     if (!reserved.payload) return res.status(reserved.code).json({ message: reserved.message });
     const payload = reserved.payload;
     // Never hold database locks across an external network call.
@@ -86,6 +92,15 @@ router.post("/packages/:id/pix-checkout", async (req, res) => {
     const checkoutUrl = parseSolPixCheckoutUrl(
       data?.url || data?.checkout_url || data?.checkoutUrl || data?.link || data?.payment_url,
     );
+    // Store the validated URL only if the same unpaid PIX attempt remains open.
+    // A concurrent webhook may have already confirmed this installment.
+    await sequelize.transaction(async transaction => {
+      const attempt = await SolPaymentAttempt.findOne({
+        where: { providerReference: payload.order_nsu, userId, packageId: Number(rawId), status: "created", method: "pix" },
+        transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (attempt) { attempt.checkoutUrl = checkoutUrl; await attempt.save({ transaction }); }
+    });
     return res.json({ checkoutUrl, orderNsu: payload.order_nsu, status: "pending" });
   } catch (error) {
     console.error("Sòl PIX checkout initiation failed", {
