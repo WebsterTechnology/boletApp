@@ -430,8 +430,10 @@ export default function SolPage() {
               <article className={styles.package} key={pkg.id + "-" + contribution.id}>
                 <div className={styles.packageTop}><strong>Peman Sòl konfime</strong><span className={styles.duration}>Mwa {contribution.installmentNumber}/12</span></div>
                 <strong>{money(contribution.amountCents / 100)}</strong>
-                <small>{contribution.paidAt ? new Date(contribution.paidAt).toLocaleDateString("pt-BR") : "Konfime"}</small>
-                <button type="button" onClick={() => void showSavedDraft(pkg.id)}>Gade detay pake a</button>
+                <div className={styles.transactionActions}>
+                  <small>{contribution.paidAt ? new Date(contribution.paidAt).toLocaleDateString("pt-BR") : "Konfime"}</small>
+                  <button type="button" onClick={() => void showSavedDraft(pkg.id)}>Gade detay pake a</button>
+                </div>
               </article>
             ))}
             {!transactionError && !transactionLoading && !transactionPackages.some((pkg) => (pkg.contributions ?? []).some((contribution) => contribution.status === "paid" || Boolean(contribution.paidAt))) && <div className={styles.empty}><span>📋</span><strong>Pa gen peman konfime ankò</strong><p>Lè ou peye yon mwa Sòl, l ap parèt isit la.</p></div>}
