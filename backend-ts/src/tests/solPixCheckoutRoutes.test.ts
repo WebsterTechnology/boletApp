@@ -83,4 +83,51 @@ describe("Sòl PIX checkout recovery", () => {
     expect(mocks.transaction).not.toHaveBeenCalled();
     expect(mocks.providerPost).not.toHaveBeenCalled();
   });
+  it("creates one server-priced checkout, persists its URL, and reuses it on retry", async () => {
+    const save = vi.fn().mockResolvedValue(undefined);
+    const attempt = {
+      id: 12, userId: 7, packageId: 4, contributionId: 31,
+      amountCents: 20000, currency: "BRL", method: "pix", status: "created",
+      providerReference: null as string | null, checkoutUrl: null as string | null, save,
+    };
+    mocks.attemptFindOne.mockImplementation(async () => attempt);
+    mocks.providerPost.mockResolvedValue({ data: { url: checkoutUrl } });
+    const first = await request(app).post(path).set("Idempotency-Key", key)
+      .send({ amountCents: 1 });
+    expect(first.status).toBe(200);
+    expect(first.body).toMatchObject({ checkoutUrl, orderNsu: "sol-pix-12", status: "pending" });
+    expect(mocks.providerPost).toHaveBeenCalledTimes(1);
+    expect(mocks.providerPost).toHaveBeenCalledWith(
+      "https://api.checkout.infinitepay.io/links",
+      expect.objectContaining({
+        order_nsu: "sol-pix-12",
+        webhook_url: "https://api.example.com/api/sol-pix/webhook",
+        items: [{ quantity: 1, price: 20000, description: "Sol package 4 installment 31" }],
+      }),
+      expect.objectContaining({ timeout: 10000 }),
+    );
+    expect(attempt.providerReference).toBe("sol-pix-12");
+    expect(attempt.checkoutUrl).toBe(checkoutUrl);
+    expect(save).toHaveBeenCalledTimes(2);
+    const replay = await request(app).post(path).set("Idempotency-Key", key);
+    expect(replay.status).toBe(200);
+    expect(replay.body.checkoutUrl).toBe(checkoutUrl);
+    expect(mocks.providerPost).toHaveBeenCalledTimes(1);
+    expect(save).toHaveBeenCalledTimes(2);
+  });
+  it("rejects a misconfigured Loto webhook before reserving a provider order", async () => {
+    process.env.SOL_PIX_WEBHOOK_URL = "https://api.example.com/api/infinitepay/webhook";
+    const save = vi.fn();
+    const attempt = {
+      id: 12, userId: 7, packageId: 4, contributionId: 31,
+      amountCents: 20000, currency: "BRL", method: "pix", status: "created",
+      providerReference: null, checkoutUrl: null, save,
+    };
+    mocks.attemptFindOne.mockResolvedValue(attempt);
+    const response = await request(app).post(path).set("Idempotency-Key", key);
+    expect(response.status).toBe(502);
+    expect(save).not.toHaveBeenCalled();
+    expect(mocks.providerPost).not.toHaveBeenCalled();
+  });
+
 });
