@@ -76,7 +76,7 @@ export default function SolPage() {
       if (!response.ok) throw new Error("HTTP " + response.status);
       const created = (await response.json()) as { id?: number };
       if (!Number.isSafeInteger(created.id) || !created.id || created.id < 1) throw new Error("Invalid package response");
-      setDraftSuccess("Pake anrejistre. Verifye balans ou pou peye premye mwa a.");
+      setDraftSuccess("Pake ou pare. Verifye balans ou epi konfime premye peman an.");
       await loadDrafts();
       await showSavedDraft(created.id);
     } catch (error) { setDraftError("Nou pa kapab fini operasyon an. Verifye lis pake ou yo anvan ou eseye ankò." + (error instanceof Error && error.message.startsWith("HTTP ") ? " (" + error.message + ")" : "")); }
@@ -281,11 +281,7 @@ export default function SolPage() {
 
         {view === "home" && (
           <section className={styles.content}>
-            <div className={styles.balanceCard}>
-              <span>Balans Sòl mwen</span>
-              <strong>{money(0)}</strong>
-              <small>Pa gen kontribisyon ki anrejistre pou kounye a.</small>
-            </div>
+            <button className={styles.primary} onClick={() => go("packages")}>➕ Achte yon pake Sòl →</button>
             <h2>Pake mwen yo</h2>
             {draftLoading ? <p role="status">Ap chaje pake ou yo...</p> : draftError ? <p role="alert" className={styles.notice}>{draftError} <button type="button" onClick={() => void loadDrafts()}>Eseye ankò</button></p> : drafts.length ? (
               <div className={styles.packageGrid}>
@@ -298,21 +294,19 @@ export default function SolPage() {
                 </article>)}
               </div>
             ) : <p>Ou poko gen okenn pake Sòl ki anrejistre.</p>}
-            <h2>Ki sa ou vle fè?</h2>
+            <h2>Swiv peman ou yo</h2>
             <div className={styles.quickGrid}>
-              <button onClick={() => go("packages")}><span>📦</span>Pake mwen yo<small>Chwazi yon pake</small></button>
-              <button onClick={() => go("packages")}><span>💳</span>Peman mwen yo<small>Plan peman</small></button>
-              <button onClick={() => go("transactions")}><span>📋</span>Tranzaksyon<small>Istwa peman</small></button>
-              <button onClick={() => window.dispatchEvent(new Event("htnovatech:open-support-chat"))}><span>💬</span>Sipò<small>Chat avèk nou</small></button>
+              <button onClick={() => go("transactions")}><span>📋</span>Tranzaksyon<small>Gade peman ki fèt yo</small></button>
+              <button onClick={() => window.dispatchEvent(new Event("htnovatech:open-support-chat"))}><span>💬</span>Bezwen èd?<small>Pale avèk nou</small></button>
             </div>
             <div className={styles.promo}><span>🌱</span><div><strong>Peye 12, resevwa 13</strong><p>Kontribye pandan 12 mwa. Dekouvri kat pake Sòl yo.</p></div></div>
-            <button className={styles.primary} onClick={() => go("packages")}>Chwazi pake mwen <span>→</span></button>
+            
           </section>
         )}
 
         {view === "packages" && (
           <section className={styles.content}>
-            <div className={styles.sectionHead}><h2>Chwazi pake ou</h2><p>Ou ka gen plizyè pake aktif an menm tan. Chak pake gen pwòp peman li.</p></div>
+            <div className={styles.sectionHead}><h2>1. Chwazi pake ou</h2><p>Chwazi konbyen ou vle mete chak mwa pandan 12 mwa.</p></div>
             <div className={styles.packageGrid}>
               {PACKAGES.map((item) => (
                 <article className={styles.package} key={item}>
@@ -329,7 +323,7 @@ export default function SolPage() {
         {view === "details" && (
           <section className={styles.content}>
             <button className={styles.back} onClick={() => go("packages")}>← Retounen nan pake yo</button>
-            <div className={styles.sectionHead}><h2>Detay peman</h2><p>Verifye pake ou ak dat ou vle peye chak mwa.</p></div>
+            <div className={styles.sectionHead}><h2>2. Konfime pake ou</h2><p>Chwazi jou peman an. Premye peman an ap fèt sèlman lè ou konfime li nan pwochen etap la.</p></div>
             <div className={styles.summary}>
               <div><span>Pake ou</span><strong>Pake {amount}</strong></div>
               <div><span>Peman chak mwa</span><strong>{money(amount)}</strong></div>
@@ -342,17 +336,14 @@ export default function SolPage() {
               {Array.from({ length: 28 }, (_, index) => index + 1).map(day => <option key={day} value={day}>Chak {day} nan mwa a</option>)}
             </select>
             <p className={styles.hint}>Ou peye manyèlman chak mwa. Pa gen penalite pou reta.</p>
-            <h3>Fason peman</h3>
-            <div className={styles.methods}>
-              <button aria-pressed={method === "wallet"} className={method === "wallet" ? styles.selectedMethod : ""} onClick={() => setMethod("wallet")}>💼 Saldo Loto <small>Disponib pou jwe + Disponib pou retire</small></button>
-              <button type="button" disabled aria-disabled="true" aria-pressed={false}>▦ PIX <small>Ap vini pita</small></button>
-            </div>
+            <h3>💼 Peye ak balans Loto</h3>
+            <p className={styles.hint}>Disponib pou jwe + Disponib pou retire. PIX poko disponib.</p>
             {method === "pix" ? (
               <div className={styles.fixedAmount}><span>Montan PIX pou peye</span><strong>{money(amount)}</strong><small>🔒 Montan sa a pa kapab modifye. QR code ap disponib apre entegrasyon backend la.</small></div>
             ) : (
               <div className={styles.fixedAmount}><span>Montan pou retire nan balans Loto yo</span><strong>{money(amount)}</strong><small>Sistèm nan pral itilize balans pou jwe an premye, epi balans pou retire. Si total la pa sifi, ou dwe rechaje kont ou anvan.</small></div>
             )}
-            <button className={styles.primary} disabled={savingDraft} onClick={() => void saveDraft()}>{savingDraft ? "Ap anrejistre..." : "Anrejistre pake epi kontinye"}</button>
+            <button className={styles.primary} disabled={savingDraft} onClick={() => void saveDraft()}>{savingDraft ? "Ap anrejistre..." : "Kontinye pou verifye peman →"}</button>
             {draftSuccess && <p role="status" className={styles.notice}>{draftSuccess}</p>}
             {draftError && <p role="alert" className={styles.notice}>{draftError}</p>}
             <button className={styles.back} onClick={() => setShowPaymentNotice(true)}>Kijan peman ap mache?</button>
