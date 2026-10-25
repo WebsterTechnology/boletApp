@@ -101,13 +101,21 @@ router.post("/packages/:id/pix-checkout", async (req, res) => {
     );
     // Store the validated URL only if the same unpaid PIX attempt remains open.
     // A concurrent webhook may have already confirmed this installment.
-    await sequelize.transaction(async transaction => {
+    const stillPending = await sequelize.transaction(async transaction => {
       const attempt = await SolPaymentAttempt.findOne({
         where: { providerReference: payload.order_nsu, userId, packageId: Number(rawId), status: "created", method: "pix" },
         transaction, lock: transaction.LOCK.UPDATE,
       });
-      if (attempt) { attempt.checkoutUrl = checkoutUrl; await attempt.save({ transaction }); }
+      if (!attempt) return false;
+      attempt.checkoutUrl = checkoutUrl;
+      await attempt.save({ transaction });
+      return true;
     });
+    // A fast verified webhook may have already settled the installment while
+    // InfinitePay was creating the link. Never invite another payment then.
+    if (!stillPending) {
+      return res.status(409).json({ message: "Sòl PIX order changed during checkout; refresh payment status" });
+    }
     return res.json({ checkoutUrl, orderNsu: payload.order_nsu, status: "pending" });
   } catch (error) {
     console.error("Sòl PIX checkout initiation failed", {
