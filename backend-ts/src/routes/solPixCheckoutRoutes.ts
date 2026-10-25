@@ -19,7 +19,8 @@ router.use(authenticate);
  * webhook settlement is deployed and end-to-end tested.
  */
 router.post("/packages/:id/pix-checkout", async (req, res) => {
-  if (process.env.SOL_PIX_CHECKOUT_ENABLED !== "true") {
+  // Never issue a payable link unless the settlement receiver is enabled too.
+  if (process.env.SOL_PIX_CHECKOUT_ENABLED !== "true" || process.env.SOL_PIX_WEBHOOK_ENABLED !== "true") {
     return res.status(503).json({ message: "Sòl PIX checkout is not enabled" });
   }
   const rawId = req.params.id as string;
@@ -70,10 +71,16 @@ router.post("/packages/:id/pix-checkout", async (req, res) => {
         }
         return { code: 409, message: "PIX checkout is pending; contact support to reconcile an unavailable link" } as const;
       }
+      const webhookUrl = process.env.SOL_PIX_WEBHOOK_URL || "";
+      // A misconfigured callback would collect money without settling Sòl.
+      const callback = new URL(webhookUrl);
+      if (callback.pathname !== "/api/sol-pix/webhook" || callback.search || callback.hash) {
+        throw new Error("Sòl PIX webhook must target /api/sol-pix/webhook");
+      }
       const payload = buildSolPixCheckoutPayload(attempt, {
         handle: env.infinitepayHandle,
         redirectUrl: process.env.SOL_PIX_REDIRECT_URL || "",
-        webhookUrl: process.env.SOL_PIX_WEBHOOK_URL || "",
+        webhookUrl,
       });
       attempt.providerReference = orderNsu;
       await attempt.save({ transaction });
