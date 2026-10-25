@@ -12,6 +12,7 @@ import claimRoutes from "./routes/claimRoutes";
 import chatRoutes from "./routes/chatRoutes";
 import solRoutes from "./routes/solRoutes";
 import solPixCheckoutRoutes from "./routes/solPixCheckoutRoutes";
+import solPixWebhookRoutes from "./routes/solPixWebhookRoutes";
 import withdrawRoutes from "./routes/withdrawRoutes";
 import deChifRoutes from "./routes/deChifRoutes";
 import infinitepayRoutes from "./routes/infinitepayRoutes";
@@ -66,6 +67,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/sol", solRoutes);
 app.use("/api/sol", solPixCheckoutRoutes);
+app.use("/api/sol-pix", solPixWebhookRoutes);
 app.use("/api/withdraw", withdrawRoutes);
 
 export default app;
