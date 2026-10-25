@@ -117,4 +117,38 @@ describe("Sòl PIX webhook request boundary", () => {
     expect(save).not.toHaveBeenCalled();
   });
 
+  it("never settles an unrecognized provider order even when payment_check says paid", async () => {
+    process.env.SOL_PIX_WEBHOOK_ENABLED = "true";
+    mocks.paymentCheck.mockResolvedValue({ data: { success: true, paid: true, amount: 20000 } });
+    mocks.transaction.mockImplementation(async (cb: (t: object) => Promise<unknown>) =>
+      cb({ LOCK: { UPDATE: "UPDATE" } }));
+    mocks.attemptFindByPk.mockResolvedValue(null);
+    const response = await request(app).post("/api/sol-pix/webhook").send(callback);
+    expect(response.status).toBe(404);
+    expect(mocks.packageFindOne).not.toHaveBeenCalled();
+    expect(mocks.contributionsFindAll).not.toHaveBeenCalled();
+  });
+  it("never settles when order reference differs from the stored reserved provider order", async () => {
+    process.env.SOL_PIX_WEBHOOK_ENABLED = "true";
+    mocks.paymentCheck.mockResolvedValue({ data: { success: true, paid: true, amount: 20000 } });
+    mocks.transaction.mockImplementation(async (cb: (t: object) => Promise<unknown>) =>
+      cb({ LOCK: { UPDATE: "UPDATE" } }));
+    mocks.attemptFindByPk.mockResolvedValue({
+      id: 12, userId: 7, packageId: 4, contributionId: 31,
+      method: "pix", providerReference: "sol-pix-99",
+    });
+    const response = await request(app).post("/api/sol-pix/webhook").send(callback);
+    expect(response.status).toBe(404);
+    expect(mocks.packageFindOne).not.toHaveBeenCalled();
+    expect(mocks.contributionsFindAll).not.toHaveBeenCalled();
+  });
+  it("returns a retryable response without touching the database when provider verification fails", async () => {
+    process.env.SOL_PIX_WEBHOOK_ENABLED = "true";
+    mocks.paymentCheck.mockRejectedValue(new Error("InfinitePay timeout"));
+    const response = await request(app).post("/api/sol-pix/webhook").send(callback);
+    expect(response.status).toBe(500);
+    expect(response.body).toMatchObject({ success: false });
+    expect(mocks.transaction).not.toHaveBeenCalled();
+  });
+
 });
