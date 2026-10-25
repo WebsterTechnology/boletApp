@@ -11,6 +11,8 @@ type PaymentPreview = { packageId: number; installmentNumber: number; amountCent
 type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; contributions?: SolContribution[] };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PACKAGES = [100, 200, 500, 1000] as const;
+// Remains off until backend checkout and verified webhook are tested together.
+const SOL_PIX_ENABLED = import.meta.env.VITE_SOL_PIX_ENABLED === "true";
 type PackageAmount = (typeof PACKAGES)[number];
 const money = (amount: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(amount);
 
@@ -29,6 +31,8 @@ export default function SolPage() {
   const [walletPreviewLoading, setWalletPreviewLoading] = useState(false);
   const [walletPreviewError, setWalletPreviewError] = useState("");
   const [payingWallet, setPayingWallet] = useState(false);
+  const [payingPix, setPayingPix] = useState(false);
+  const [pixMessage, setPixMessage] = useState("");
   const [walletPaymentMessage, setWalletPaymentMessage] = useState("");
   const [walletPaymentError, setWalletPaymentError] = useState("");
   const [paymentPreviewError, setPaymentPreviewError] = useState("");
@@ -124,6 +128,14 @@ export default function SolPage() {
       const item = (await response.json()) as SolDraft;
       if (!item || item.id !== id || !Array.isArray(item.contributions)) throw new Error("Invalid response");
       setSelectedDraft(item);
+      // A confirmed PIX installment must not reuse its intent key next month.
+      // Only the backend-confirmed contribution state can release that key.
+      const pixKey = "sol-pix-intent-" + id;
+      const previousPaidMonths = Number(sessionStorage.getItem("sol-pix-paid-months-" + id));
+      if (Number.isSafeInteger(previousPaidMonths) && item.paidMonths > previousPaidMonths) {
+        sessionStorage.removeItem(pixKey);
+      }
+      sessionStorage.setItem("sol-pix-paid-months-" + id, String(item.paidMonths));
       if (item.paidMonths < 12 && item.status !== "cancelled") void loadWalletPreview(id);
     } catch { setDetailError("Nou pa kapab chaje detay pake a. Eseye ankò."); }
     finally { setDetailLoading(false); }
@@ -212,6 +224,49 @@ export default function SolPage() {
       setWalletPaymentError(error instanceof Error ? error.message : "Peman an pa konfime. Verifye istwa peman ou.");
     } finally {
       setPayingWallet(false);
+    }
+  };
+
+  const payWithPix = async (packageId: number) => {
+    if (!SOL_PIX_ENABLED || payingPix || !selectedDraft || selectedDraft.id !== packageId ||
+        selectedDraft.paidMonths >= 12) return;
+    const token = localStorage.getItem("token");
+    if (!token) { setPixMessage("Tanpri konekte ankò."); return; }
+    const amountCents = selectedDraft.monthlyAmountCents;
+    if (!window.confirm("Ou pral ale sou InfinitePay pou peye " + money(amountCents / 100) + " ak PIX. Peman an ap konfime sèlman apre verifikasyon.")) return;
+    setPayingPix(true);
+    setPixMessage("");
+    const storageKey = "sol-pix-intent-" + packageId;
+    let key = sessionStorage.getItem(storageKey);
+    if (!key) {
+      key = "solpix_" + crypto.randomUUID().replace(/-/g, "");
+      sessionStorage.setItem(storageKey, key);
+    }
+    try {
+      const headers = { Authorization: "Bearer " + token, "Idempotency-Key": key };
+      const intentResponse = await fetch(API + "/api/sol/packages/" + packageId + "/payment-intents", {
+        method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ method: "pix" }),
+      });
+      if (!intentResponse.ok) throw new Error("Nou pa kapab prepare peman PIX la. Verifye istwa peman ou.");
+      const intent = await intentResponse.json() as { amountCents: number; method: string };
+      if (intent.method !== "pix" || intent.amountCents !== amountCents) throw new Error("Montan PIX la pa koresponn.");
+      const checkoutResponse = await fetch(API + "/api/sol/packages/" + packageId + "/pix-checkout", {
+        method: "POST", headers,
+      });
+      if (!checkoutResponse.ok) throw new Error("Nou pa kapab ouvri PIX. Pa eseye yon lòt peman anvan ou verifye estati a.");
+      const checkout = await checkoutResponse.json() as { checkoutUrl?: string };
+      if (!checkout.checkoutUrl) throw new Error("Lyen PIX la pa disponib.");
+      const url = new URL(checkout.checkoutUrl);
+      if (url.protocol !== "https:" || !(url.hostname === "infinitepay.io" || url.hostname.endsWith(".infinitepay.io"))) {
+        throw new Error("Lyen peman an pa valide.");
+      }
+      // A redirect is not proof of payment; the backend webhook confirms it.
+      window.location.assign(url.toString());
+    } catch (error) {
+      setPixMessage(error instanceof Error ? error.message : "Nou pa kapab prepare PIX la.");
+    } finally {
+      setPayingPix(false);
     }
   };
 
@@ -391,6 +446,11 @@ export default function SolPage() {
                 </div>}
                 {walletPaymentMessage && <p role="status" className={styles.notice}>{walletPaymentMessage}</p>}
                 {walletPaymentError && <p role="alert" className={styles.notice}>{walletPaymentError}</p>}
+                <h3>Peye pwochen mwa a ak PIX</h3>
+                <p className={styles.hint}>PIX itilize InfinitePay. Montan an fiks; sèlman verifikasyon bankè a kapab konfime peman an.</p>
+                {SOL_PIX_ENABLED && selectedDraft.paidMonths < 12 && selectedDraft.status !== "cancelled" ? <button type="button" className={styles.primary} disabled={payingPix} onClick={() => void payWithPix(selectedDraft.id)}>{payingPix ? "Ap prepare PIX..." : "Peye ak PIX — " + money(selectedDraft.monthlyAmountCents / 100)}</button> : <p className={styles.hint}>PIX poko disponib.</p>}
+                {pixMessage && <p role="alert" className={styles.notice}>{pixMessage}</p>}
+                <button type="button" className={styles.back} onClick={() => void showSavedDraft(selectedDraft.id)}>Rafrechi estati peman mwen</button>
                 <h3>12 kontribisyon yo</h3>
                 <div className={styles.packageGrid}>
                   {[...(selectedDraft.contributions || [])].sort((a, b) => a.installmentNumber - b.installmentNumber).map(item => {
