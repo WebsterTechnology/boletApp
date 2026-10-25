@@ -13,6 +13,7 @@ export class SolPaymentAttempt extends Model<InferAttributes<SolPaymentAttempt>,
   declare status: CreationOptional<string>;
   declare idempotencyKey: string;
   declare providerReference: CreationOptional<string | null>;
+  declare checkoutUrl: CreationOptional<string | null>;
   declare confirmedAt: CreationOptional<Date | null>;
   declare createdAt: CreationOptional<Date>;
   declare updatedAt: CreationOptional<Date>;
@@ -29,6 +30,7 @@ export function initSolPaymentAttempt(sequelize: Sequelize) {
     status: { type: DataTypes.STRING(24), allowNull: false, defaultValue: "created" },
     idempotencyKey: { type: DataTypes.STRING(128), allowNull: false },
     providerReference: { type: DataTypes.STRING(255), allowNull: true },
+    checkoutUrl: { type: DataTypes.TEXT, allowNull: true },
     confirmedAt: { type: DataTypes.DATE, allowNull: true },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
