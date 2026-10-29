@@ -11,8 +11,7 @@ type PaymentPreview = { packageId: number; installmentNumber: number; amountCent
 type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; contributions?: SolContribution[] };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PACKAGES = [100, 200, 500, 1000] as const;
-// Remains off until backend checkout and verified webhook are tested together.
-const SOL_PIX_ENABLED = import.meta.env.VITE_SOL_PIX_ENABLED === "true";
+// PIX availability is controlled by the backend checkout/webhook safety gates.
 type PackageAmount = (typeof PACKAGES)[number];
 const money = (amount: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(amount);
 
@@ -33,6 +32,20 @@ export default function SolPage() {
   const [payingWallet, setPayingWallet] = useState(false);
   const [payingPix, setPayingPix] = useState(false);
   const [pixMessage, setPixMessage] = useState("");
+  const [pixEnabled, setPixEnabled] = useState(false);
+  const refreshPixAvailability = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) { setPixEnabled(false); return; }
+    try {
+      const response = await fetch(API + "/api/sol/pix-availability", {
+        headers: { Authorization: "Bearer " + token }, cache: "no-store",
+      });
+      if (!response.ok) { setPixEnabled(false); return; }
+      const result = await response.json() as { enabled?: boolean };
+      setPixEnabled(result.enabled === true);
+    } catch { setPixEnabled(false); }
+  }, []);
+  useEffect(() => { void refreshPixAvailability(); }, [refreshPixAvailability]);
   const [walletPaymentMessage, setWalletPaymentMessage] = useState("");
   const [walletPaymentError, setWalletPaymentError] = useState("");
   const [paymentPreviewError, setPaymentPreviewError] = useState("");
@@ -122,6 +135,7 @@ export default function SolPage() {
     setHistoryLoaded(false);
     setHistoryError("");
     setView("saved");
+    void refreshPixAvailability();
     try {
       const response = await fetch(API + "/api/sol/packages/" + id, { headers: { Authorization: "Bearer " + token } });
       if (!response.ok) throw new Error("HTTP " + response.status);
@@ -228,7 +242,7 @@ export default function SolPage() {
   };
 
   const payWithPix = async (packageId: number) => {
-    if (!SOL_PIX_ENABLED || payingPix || !selectedDraft || selectedDraft.id !== packageId ||
+    if (!pixEnabled || payingPix || !selectedDraft || selectedDraft.id !== packageId ||
         selectedDraft.paidMonths >= 12) return;
     const token = localStorage.getItem("token");
     if (!token) { setPixMessage("Tanpri konekte ankò."); return; }
@@ -402,9 +416,9 @@ export default function SolPage() {
             </select>
             <p className={styles.hint}>Ou peye manyèlman chak mwa. Pa gen penalite pou reta.</p>
             <h3>💼 Peye ak balans Loto</h3>
-            <p className={styles.hint}>Disponib pou jwe + Disponib pou retire. PIX poko disponib.</p>
+            <p className={styles.hint}>Disponib pou jwe + Disponib pou retire. Ou kapab chwazi PIX apre ou anrejistre pake a, lè sèvis la disponib.</p>
             {method === "pix" ? (
-              <div className={styles.fixedAmount}><span>Montan PIX pou peye</span><strong>{money(amount)}</strong><small>🔒 Montan sa a pa kapab modifye. QR code ap disponib apre entegrasyon backend la.</small></div>
+              <div className={styles.fixedAmount}><span>Montan PIX pou peye</span><strong>{money(amount)}</strong><small>🔒 Montan sa a pa kapab modifye. Peman PIX ap fèt sou InfinitePay si sèvis la disponib.</small></div>
             ) : (
               <div className={styles.fixedAmount}><span>Montan pou retire nan balans Loto yo</span><strong>{money(amount)}</strong><small>Sistèm nan pral itilize balans pou jwe an premye, epi balans pou retire. Si total la pa sifi, ou dwe rechaje kont ou anvan.</small></div>
             )}
@@ -412,7 +426,7 @@ export default function SolPage() {
             {draftSuccess && <p role="status" className={styles.notice}>{draftSuccess}</p>}
             {draftError && <p role="alert" className={styles.notice}>{draftError}</p>}
             <button className={styles.back} onClick={() => setShowPaymentNotice(true)}>Kijan peman ap mache?</button>
-            {showPaymentNotice && <p role="status" className={styles.notice}>Anrejistre pake a an premye, epi verifye balans ou. Lè ou konfime peman ak balans Loto, y ap retire pwen reyèl. PIX poko disponib.</p>}
+            {showPaymentNotice && <p role="status" className={styles.notice}>Anrejistre pake a an premye, epi verifye balans ou. Lè ou konfime peman ak balans Loto, y ap retire pwen reyèl. Peman PIX ap disponib lè sistèm nan aktive.</p>}
           </section>
         )}
 
@@ -457,7 +471,7 @@ export default function SolPage() {
                 {walletPaymentError && <p role="alert" className={styles.notice}>{walletPaymentError}</p>}
                 <h3>Peye pwochen mwa a ak PIX</h3>
                 <p className={styles.hint}>PIX itilize InfinitePay. Montan an fiks; sèlman verifikasyon bankè a kapab konfime peman an.</p>
-                {SOL_PIX_ENABLED && selectedDraft.paidMonths < 12 && selectedDraft.status !== "cancelled" ? <button type="button" className={styles.primary} disabled={payingPix} onClick={() => void payWithPix(selectedDraft.id)}>{payingPix ? "Ap prepare PIX..." : "Peye ak PIX — " + money(selectedDraft.monthlyAmountCents / 100)}</button> : <p className={styles.hint}>PIX poko disponib.</p>}
+                {pixEnabled && selectedDraft.paidMonths < 12 && selectedDraft.status !== "cancelled" ? <button type="button" className={styles.primary} disabled={payingPix} onClick={() => void payWithPix(selectedDraft.id)}>{payingPix ? "Ap prepare PIX..." : "Peye ak PIX — " + money(selectedDraft.monthlyAmountCents / 100)}</button> : <p className={styles.hint}>PIX poko disponib.</p>}
                 {pixMessage && <p role="alert" className={styles.notice}>{pixMessage}</p>}
                 <button type="button" className={styles.back} onClick={() => void showSavedDraft(selectedDraft.id)}>Rafrechi estati peman mwen</button>
                 <h3>12 kontribisyon yo</h3>
@@ -492,7 +506,7 @@ export default function SolPage() {
                   </article>)}
                 </div>}
                 {historyLoaded && !historyLoading && !historyError && paymentHistory.length === 0 && <p className={styles.hint}>Pa gen tantativ peman ki chaje.</p>}
-                <p className={styles.hint}>Pake bouyon an ap vin aktif sèlman apre premye peman an konfime. PIX poko disponib.</p>
+                <p className={styles.hint}>Pake bouyon an ap vin aktif sèlman apre premye peman an konfime, kit se ak balans Loto oswa PIX.</p>
               </>
             )}
           </section>
