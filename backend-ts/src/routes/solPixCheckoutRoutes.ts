@@ -11,6 +11,33 @@ const router = Router();
 router.use(authenticate);
 
 /**
+ * Safe read-only availability for the Sòl checkout button.
+ * This is an operational UI signal, NOT proof of database readiness;
+ * the checkout and verified webhook retain their independent safeguards.
+ */
+router.get("/pix-availability", (_req, res) => {
+  let configured = false;
+  try {
+    const webhookUrl = new URL(process.env.SOL_PIX_WEBHOOK_URL || "");
+    const redirectUrl = new URL(process.env.SOL_PIX_REDIRECT_URL || "");
+    configured = webhookUrl.protocol === "https:" &&
+      webhookUrl.pathname === "/api/sol-pix/webhook" &&
+      !webhookUrl.search && !webhookUrl.hash &&
+      !webhookUrl.username && !webhookUrl.password &&
+      redirectUrl.protocol === "https:" &&
+      !redirectUrl.username && !redirectUrl.password &&
+      Boolean(env.infinitepayHandle?.trim());
+  } catch {
+    configured = false;
+  }
+  res.setHeader("Cache-Control", "no-store");
+  return res.json({
+    enabled: process.env.SOL_PIX_CHECKOUT_ENABLED === "true" &&
+      process.env.SOL_PIX_WEBHOOK_ENABLED === "true" && configured,
+  });
+});
+
+/**
  * Sòl-specific PIX checkout initiation. OFF by default.
  * Requires an existing Sòl PIX intent, never accepts client-supplied prices,
  * and never uses the Loto credit endpoint.

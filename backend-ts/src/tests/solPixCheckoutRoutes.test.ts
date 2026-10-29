@@ -49,6 +49,22 @@ describe("Sòl PIX checkout recovery", () => {
       paymentReference: i === 0 ? "sol-wallet-9" : null,
     })));
   });
+  it("reports PIX available only when verified checkout configuration is enabled", async () => {
+    const available = await request(app).get("/api/sol/pix-availability");
+    expect(available.status).toBe(200);
+    expect(available.body).toEqual({ enabled: true });
+    expect(available.headers["cache-control"]).toContain("no-store");
+    expect(mocks.providerPost).not.toHaveBeenCalled();
+
+    process.env.SOL_PIX_WEBHOOK_ENABLED = "false";
+    const disabled = await request(app).get("/api/sol/pix-availability");
+    expect(disabled.body).toEqual({ enabled: false });
+
+    process.env.SOL_PIX_WEBHOOK_ENABLED = "true";
+    process.env.SOL_PIX_WEBHOOK_URL = "https://api.example.com/api/infinitepay/webhook";
+    const wrongWebhook = await request(app).get("/api/sol/pix-availability");
+    expect(wrongWebhook.body).toEqual({ enabled: false });
+  });
   it("recovers the original checkout URL without a second provider call", async () => {
     mocks.attemptFindOne.mockResolvedValue({
       id: 12, userId: 7, packageId: 4, contributionId: 31,
