@@ -9,3 +9,6 @@
 .installmentPayButton:focus-visible{outline:3px solid #f4bf32;outline-offset:3px;}
 .installmentHint{display:block;margin-top:12px;color:#607769;font-size:12px;line-height:1.4;}
 #sol-wallet-payment{scroll-margin-top:110px;}
+
+.solWithdrawButton{display:block;width:100%;max-width:100%;white-space:normal;overflow-wrap:anywhere;padding:14px 16px;line-height:1.35;text-align:center;border-radius:12px;margin-top:12px}
+.solWithdrawHelp{display:block;margin-top:12px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
