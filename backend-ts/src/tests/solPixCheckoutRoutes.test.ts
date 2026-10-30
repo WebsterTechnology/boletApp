@@ -4,6 +4,7 @@ import request from "supertest";
 
 const mocks = vi.hoisted(() => ({
   providerPost: vi.fn(),
+  admin: { value: true },
   transaction: vi.fn(),
   query: vi.fn(),
   packageFindOne: vi.fn(),
@@ -13,7 +14,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("axios", () => ({ default: { post: mocks.providerPost } }));
 vi.mock("../middleware/authenticate", () => ({
   authenticate: (_req: unknown, _res: unknown, next: () => void) => next(),
-  currentUser: () => ({ id: 7, isAdmin: true }),
+  currentUser: () => ({ id: 7, isAdmin: mocks.admin.value }),
 }));
 vi.mock("../config/database", () => ({ sequelize: { transaction: mocks.transaction, query: mocks.query } }));
 vi.mock("../config/env", () => ({ env: { infinitepayHandle: "test-merchant" } }));
@@ -36,6 +37,8 @@ const checkoutUrl = "https://checkout.infinitepay.io/pay/123";
 describe("Sòl PIX checkout recovery", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.admin.value = true;
+    delete process.env.SOL_PIX_CUSTOMER_ACCESS_ENABLED;
     mocks.query.mockResolvedValue([{ ready: true, exists: true }]);
     process.env.SOL_PIX_CHECKOUT_ENABLED = "true";
     process.env.SOL_PIX_WEBHOOK_ENABLED = "true";
@@ -69,6 +72,15 @@ describe("Sòl PIX checkout recovery", () => {
       databaseReady: false, columnExists: false, migrationRecorded: true,
       urlsConfigured: true, checkoutEnabled: true, webhookEnabled: true,
     });
+    expect(mocks.providerPost).not.toHaveBeenCalled();
+  });
+  it("prevents customers from creating Sòl PIX checkout during admin testing", async () => {
+    mocks.admin.value = false;
+    const preview = await request(app).get("/api/sol/pix-availability");
+    expect(preview.body).toEqual({ enabled: false });
+    const checkout = await request(app).post(path).set("Idempotency-Key", key);
+    expect(checkout.status).toBe(403);
+    expect(mocks.transaction).not.toHaveBeenCalled();
     expect(mocks.providerPost).not.toHaveBeenCalled();
   });
   it("reports PIX available only when verified checkout configuration is enabled", async () => {
