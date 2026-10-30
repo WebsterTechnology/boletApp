@@ -16,3 +16,11 @@
 /* Keep Bolet navigation prominent in the Sòl menu. */
 .menuList .boletShortcut,.menuList .boletShortcut:visited{background:#facc15;color:#17212b;border:2px solid #eab308;font-weight:800;box-shadow:0 4px 12px #eab30822;}
 .menuList .boletShortcut:hover,.menuList .boletShortcut:focus-visible{background:#fde047;color:#17212b;border-color:#ca8a04;}
+
+.solForecast{border:1px solid #bde5ce;border-radius:18px;background:#effaf3;padding:18px;margin:16px 0 20px;color:#163b2c;display:grid;gap:12px}
+.solForecast h3{font-size:20px;margin:0 0 4px}
+.solForecast>div{display:flex;justify-content:space-between;align-items:baseline;gap:14px;border-bottom:1px solid #d1ebdb;padding-bottom:9px}
+.solForecast>div span{font-size:14px;line-height:1.4;max-width:65%}
+.solForecast>div strong{font-size:18px;text-align:right;color:#087a46}
+.solForecast small{font-size:12px;line-height:1.6;color:#446358}
+@media(max-width:420px){.solForecast{padding:14px}.solForecast>div{align-items:flex-start}.solForecast>div strong{font-size:16px}}
