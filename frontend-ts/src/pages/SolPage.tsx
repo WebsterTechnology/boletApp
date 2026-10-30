@@ -24,6 +24,9 @@ export default function SolPage() {
   const [drafts, setDrafts] = useState<SolDraft[]>([]);
   const [selectedDraft, setSelectedDraft] = useState<SolDraft | null>(null);
   const [solWithdrawals,setSolWithdrawals] = useState<{id:number;packageId:number;netCents:number;status:string;createdAt:string}[]>([]);
+  const [solWithdrawModal,setSolWithdrawModal] = useState(false);
+  const [solRecipientName,setSolRecipientName] = useState("");
+  const [solPixKey,setSolPixKey] = useState("");
   const [withdrawingSol, setWithdrawingSol] = useState(false);
   const [solWithdrawalResult, setSolWithdrawalResult] = useState("");
   const [solWithdrawalError, setSolWithdrawalError] = useState("");
@@ -127,6 +130,7 @@ export default function SolPage() {
   };
 
   const withdrawSolToBolet = async (pkg: SolDraft) => {
+    if (!solRecipientName.trim() || !solPixKey.trim()) { setSolWithdrawalError("Antre non moun k ap resevwa lajan an ak kle PIX li."); return; }
     if (withdrawingSol || !["active", "completed"].includes(pkg.status) || pkg.paidMonths < 1) return;
     const total = pkg.paidMonths * pkg.monthlyAmountCents / 100;
     const payout = pkg.paidMonths === 12 ? total + pkg.monthlyAmountCents / 100 : total * 0.9;
@@ -141,12 +145,15 @@ export default function SolPage() {
     setSolWithdrawalResult("");
     try {
       const response = await fetch(API + "/api/sol/packages/" + pkg.id + "/request-withdrawal", {
-        method: "POST", headers: { Authorization: "Bearer " + token },
+        method: "POST", headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
+        body: JSON.stringify({recipientName:solRecipientName.trim(),pixKey:solPixKey.trim()}),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(typeof result.message === "string" ? result.message : "Retrè Sòl pa disponib.");
       setSolWithdrawalResult("Demann retrè Sòl anrejistre: " + money(result.netCents / 100) + " annatant admin lan voye lajan an ak PIX.");
       window.dispatchEvent(new Event("pointsUpdated"));
+      setSolWithdrawModal(false);
+      setSolPixKey("");
       await showSavedDraft(pkg.id);
       setSolWithdrawalResult("Demann retrè Sòl anrejistre: " + money(result.netCents / 100) + " annatant admin lan voye lajan an ak PIX.");
     } catch (error) {
@@ -506,9 +513,21 @@ export default function SolPage() {
                       ? "12 mwa fini. Resevwa 13 mwa kontribisyon sou balans Disponib pou retire."
                       : "Retrè bonè: 10% penalite sou kontribisyon ou peye yo. Pake a ap fèmen nèt."}</p>
                     <button type="button" className={styles.solWithdrawButton} disabled={withdrawingSol || payingWallet || payingPix}
-                      onClick={() => void withdrawSolToBolet(selectedDraft)}>
+                      onClick={() => setSolWithdrawModal(true)}>
                       {withdrawingSol ? "Ap prepare retrè..." : "Mande retrè Sòl"}
                     </button>
+                    {solWithdrawModal && <div role="dialog" aria-modal="true" aria-label="Demann retrè Sòl" style={{display:"grid",gap:12,marginTop:16,padding:16,border:"1px solid #bfd9c8",borderRadius:12,background:"#f1faf4"}}>
+                      <strong>Ki moun ki pral resevwa PIX la?</strong>
+                      <label>Non moun k ap resevwa lajan an
+                        <input type="text" maxLength={160} autoComplete="name" required value={solRecipientName} onChange={e=>setSolRecipientName(e.target.value)} style={{display:"block",width:"100%",padding:12,marginTop:6,boxSizing:"border-box"}}/>
+                      </label>
+                      <label>Kle PIX moun nan
+                        <input type="text" maxLength={255} required value={solPixKey} onChange={e=>setSolPixKey(e.target.value)} style={{display:"block",width:"100%",padding:12,marginTop:6,boxSizing:"border-box"}}/>
+                      </label>
+                      <small>Admin lan pral sèvi ak enfòmasyon sa yo pou voye lajan an. Pa voye done sa yo pa EmailJS.</small>
+                      <button type="button" disabled={withdrawingSol||!solRecipientName.trim()||!solPixKey.trim()} onClick={()=>void withdrawSolToBolet(selectedDraft)}>Konfime demann retrè</button>
+                      <button type="button" disabled={withdrawingSol} onClick={()=>setSolWithdrawModal(false)}>Anile</button>
+                    </div>}
                     <small className={styles.solWithdrawHelp}>Demann ou ap parèt nan retrè Sòl yo kòm Annatant. Admin lan ap voye lajan an epi make li kòm Peye.</small>
                   </div>
                 )}
