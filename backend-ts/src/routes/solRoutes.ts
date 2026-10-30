@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { UniqueConstraintError, QueryTypes } from "sequelize";
+import { UniqueConstraintError, QueryTypes, Op } from "sequelize";
 import { authenticate, currentUser } from "../middleware/authenticate";
 import { sequelize } from "../config/database";
 import { SolContribution, SolPackage, SOL_MONTHLY_AMOUNTS_CENTS } from "../models/Sol";
@@ -416,8 +416,10 @@ router.post("/packages/:id/request-withdrawal", async (req,res) => {
    if(contributions.length!==12||contributions.some(c=>c.amountCents!==pkg.monthlyAmountCents))return {code:409,message:"Installments need review"};
    const paid=contributions.filter(c=>c.status==="paid"&&Boolean(c.paidAt));
    if(!paid.length||paid.length!==pkg.paidMonths||(pkg.status==="completed")!==(paid.length===12))return {code:409,message:"Payments need review"};
-   const unsettled=await SolPaymentAttempt.findOne({where:{packageId:id,method:"pix",status:["created","pending","processing"]},transaction});
+   const unsettled=await SolPaymentAttempt.findOne({where:{packageId:id,method:"pix",status:["created","pending","processing"],providerReference:{[Op.ne]:null}},transaction});
    if(unsettled)return {code:409,message:"PIX payments pending reconciliation"};
+   // A draft intent without a provider order is not a payable checkout;
+   // initiating a provider order also locks this package, preventing a race.
    const previous=await sequelize.query<{id:number}>('SELECT id FROM sol_withdrawal_requests WHERE "packageId"=:id LIMIT 1',{replacements:{id},type:QueryTypes.SELECT,transaction});
    if(previous.length)return {code:409,message:"Withdrawal already requested"};
    const {grossCents,penaltyCents,netCents}=calculateSolPayout(pkg.monthlyAmountCents,paid.length);
