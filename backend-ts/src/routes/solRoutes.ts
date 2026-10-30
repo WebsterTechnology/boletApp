@@ -218,6 +218,9 @@ router.post("/packages/:id/payment-intents", async (req, res) => {
     return res.status(400).json({ message: "Invalid package ID" });
   }
   if (method !== "wallet" && method !== "pix") return res.status(400).json({ message: "Invalid payment method" });
+  if (method === "pix" && process.env.SOL_PIX_CUSTOMER_ACCESS_ENABLED !== "true" && currentUser(req).isAdmin !== true) {
+    return res.status(403).json({ message: "Sòl PIX is restricted to controlled testing" });
+  }
   // Do not create an unpayable PIX intent that would block wallet payment
   // for this installment while checkout or settlement is disabled.
   if (method === "pix" && (process.env.SOL_PIX_CHECKOUT_ENABLED !== "true" || process.env.SOL_PIX_WEBHOOK_ENABLED !== "true")) {
