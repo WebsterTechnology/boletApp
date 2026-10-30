@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   authenticate: (_req: unknown, _res: unknown, next: () => void) => next(),
-  currentUser: () => ({ id: 7 }),
+  currentUser: () => ({ id: 7, isAdmin: true }),
   findAll: vi.fn(),
   findOne: vi.fn(),
   create: vi.fn(),
