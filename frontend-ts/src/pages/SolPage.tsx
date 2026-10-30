@@ -514,10 +514,11 @@ export default function SolPage() {
                 <div className={styles.summary}>
                   <div><span>Kontribisyon chak mwa</span><strong>{money(selectedDraft.monthlyAmountCents / 100)}</strong></div>
                   <div><span>Jou peman</span><strong>{selectedDraft.dueDay}</strong></div>
-                  <div><span>Estati</span><strong>{selectedDraft.status === "draft" ? "Bouyon — pa aktive" : selectedDraft.status}</strong></div>
+                  <div><span>Estati</span><strong>{selectedDraft.status === "paid_out" ? "Yo remèt ou kòb ou deja." : selectedDraft.status === "draft" ? "Bouyon — pa aktive" : selectedDraft.status}</strong></div>
                   <div><span>Mwa peye</span><strong>{selectedDraft.paidMonths}/12</strong></div>
                   <div className={styles.finalAmount}><span>Total ou deja peye</span><strong>{money(confirmedSolTotalCents(selectedDraft)/100)}</strong></div>
                 </div>
+                {selectedDraft.status !== "paid_out" && <>
                 <div className={styles.solForecast} aria-label="Rezime kontribisyon ak retrè Sòl">
                   <h3>Rezime lajan Sòl ou</h3>
                   <div><span>Total ou deja kontribye</span><strong>{money(confirmedSolTotalCents(selectedDraft)/100)}</strong></div>
@@ -562,6 +563,8 @@ export default function SolPage() {
                     <p>{money(w.netCents/100)} · {w.status==="pending"?"🟠 Annatant peman PIX":w.status==="paid"?"✅ Peye":w.status}</p>
                   </div>
                 ))}
+                </>}
+                {selectedDraft.status !== "paid_out" && <>
                 <h3>12 kontribisyon yo</h3>
                 <div className={styles.packageGrid}>
                   {[...(selectedDraft.contributions || [])].sort((a, b) => a.installmentNumber - b.installmentNumber).map(item => {
@@ -626,6 +629,7 @@ export default function SolPage() {
                 </div>}
                 {historyLoaded && !historyLoading && !historyError && paymentHistory.length === 0 && <p className={styles.hint}>Pa gen tantativ peman ki chaje.</p>}
                 <p className={styles.hint}>Pake bouyon an ap vin aktif sèlman apre premye peman an konfime, kit se ak balans Loto oswa PIX.</p>
+                </>}
               </>
             )}
           </section>
