@@ -493,11 +493,11 @@ export default function SolPage() {
                     <p>{selectedDraft.paidMonths === 12
                       ? "12 mwa fini. Resevwa 13 mwa kontribisyon sou balans Disponib pou retire."
                       : "Retrè bonè: 10% penalite sou kontribisyon ou peye yo. Pake a ap fèmen nèt."}</p>
-                    <button type="button" disabled={withdrawingSol || payingWallet || payingPix}
+                    <button type="button" className={styles.solWithdrawButton} disabled={withdrawingSol || payingWallet || payingPix}
                       onClick={() => void withdrawSolToBolet(selectedDraft)}>
                       {withdrawingSol ? "Ap prepare retrè..." : "Retire Sòl nan balans Bolet"}
                     </button>
-                    <small>Apre transfè a, ouvri Bolet → Balans → Retire Pwen epi antre Chave PIX ou.</small>
+                    <small className={styles.solWithdrawHelp}>Apre transfè a, ouvri Bolet → Balans → Retire Pwen epi antre Chave PIX ou.</small>
                   </div>
                 )}
                 <h3>12 kontribisyon yo</h3>
