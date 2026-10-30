@@ -173,3 +173,10 @@
 .imageWrap { flex: 0 0 auto; }
 .content { flex: 1; display: flex; flex-direction: column; }
 .playBtn { margin-top: auto; }
+
+/* Moderately smaller landing Loto card to pair with Sòl. */
+.card{max-width:330px;}
+.content{padding:15px 18px 17px;}
+.desc{margin-bottom:12px;}
+.playBtn{padding:11px 18px;}
+@media(min-width:769px){.card{max-width:350px;}}
