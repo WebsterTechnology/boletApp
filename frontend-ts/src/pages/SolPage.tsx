@@ -31,6 +31,8 @@ export default function SolPage() {
   const [walletPreviewError, setWalletPreviewError] = useState("");
   const [payingWallet, setPayingWallet] = useState(false);
   const [payingPix, setPayingPix] = useState(false);
+  const [paymentChoiceOpen, setPaymentChoiceOpen] = useState(false);
+  const [chosenPayment, setChosenPayment] = useState<PaymentMethod | null>(null);
   const [pixMessage, setPixMessage] = useState("");
   const [pixEnabled, setPixEnabled] = useState(false);
   const refreshPixAvailability = useCallback(async () => {
@@ -451,28 +453,47 @@ export default function SolPage() {
                   <div><span>Fason peman prevwa</span><strong>{paymentPreview.methods.join(" / ").toUpperCase()}</strong></div>
                   <p className={styles.hint}>Sa se enfòmasyon sou pwochen peman an. Pa gen lajan ki retire lè ou gade li.</p>
                 </div>}
-                <h3 id="sol-wallet-payment">Peye pwochen mwa a ak balans Loto</h3>
-                <p className={styles.hint}>Nou verifye balans ou otomatikman. Okenn lajan pa retire san konfimasyon ou.</p>
-                <button className={styles.back} type="button" disabled={walletPreviewLoading} onClick={() => void loadWalletPreview(selectedDraft.id)}>
-                  {walletPreviewLoading ? "Ap verifye balans ou..." : "Rafrechi balans mwen"}
-                </button>
-                {walletPreviewError && <p role="alert" className={styles.notice}>{walletPreviewError}</p>}
-                {walletPreview && <div className={styles.summary}>
-                  <div><span>Kontribisyon</span><strong>{money(walletPreview.amountCents / 100)}</strong></div>
-                  <div><span>Disponib pou jwe</span><strong>{walletPreview.playPoints} p</strong></div>
-                  <div><span>Disponib pou retire</span><strong>{walletPreview.withdrawablePoints} p</strong></div>
-                  <div><span>Pral retire nan balans jwe</span><strong>{walletPreview.proposedFromPlay} p</strong></div>
-                  <div><span>Pral retire nan balans retire</span><strong>{walletPreview.proposedFromWithdrawable} p</strong></div>
-                  <p className={styles.hint}>{walletPreview.sufficientUnderProposal ? "Balans ou sifi pou peman sa a." : "Balans ou pa sifi. Tanpri rechaje kont ou."}</p>
-                  <p className={styles.hint}>Nou pran nan Disponib pou jwe an premye, apre sa nan Disponib pou retire.</p>
-                  {walletPreview.paymentEnabled ? <button type="button" className={styles.primary} disabled={payingWallet || !walletPreview.sufficientUnderProposal} onClick={() => void payWithWallet(selectedDraft.id)}>{payingWallet ? "Ap trete peman..." : selectedDraft.paidMonths === 0 ? "Konfime premye peman " + money(walletPreview.amountCents / 100) : "Peye pwochen mwa (Mwa " + walletPreview.installmentNumber + ") — " + money(walletPreview.amountCents / 100)}</button> : <p className={styles.hint}>Peman ak balans poko disponib.</p>}
-                </div>}
-                {walletPaymentMessage && <p role="status" className={styles.notice}>{walletPaymentMessage}</p>}
-                {walletPaymentError && <p role="alert" className={styles.notice}>{walletPaymentError}</p>}
-                <h3>Peye pwochen mwa a ak PIX</h3>
-                <p className={styles.hint}>PIX itilize InfinitePay. Montan an fiks; sèlman verifikasyon bankè a kapab konfime peman an.</p>
-                {pixEnabled && selectedDraft.paidMonths < 12 && selectedDraft.status !== "cancelled" ? <button type="button" className={styles.primary} disabled={payingPix} onClick={() => void payWithPix(selectedDraft.id)}>{payingPix ? "Ap prepare PIX..." : "Peye ak PIX — " + money(selectedDraft.monthlyAmountCents / 100)}</button> : <p className={styles.hint}>PIX poko disponib.</p>}
-                {pixMessage && <p role="alert" className={styles.notice}>{pixMessage}</p>}
+                <div id="sol-payment-options">
+                  {selectedDraft.status !== "cancelled" && selectedDraft.status !== "completed" && selectedDraft.paidMonths < 12 && <>
+                    <button type="button" className={styles.primary} disabled={payingPix || payingWallet}
+                      onClick={() => { setPaymentChoiceOpen(open => !open); setChosenPayment(null); void refreshPixAvailability(); }}>
+                      {paymentChoiceOpen ? "Fèmen opsyon peman ▲" : "Peye mwa " + (selectedDraft.paidMonths + 1) + " — " + money(selectedDraft.monthlyAmountCents / 100) + " ▼"}
+                    </button>
+                    {paymentChoiceOpen && <div className={styles.summary} style={{ marginTop: 16, display: "grid", gap: 12 }}>
+                      <h3>Chwazi fason ou vle peye</h3>
+                      <p className={styles.hint}>Montan pou peye: <strong>{money(selectedDraft.monthlyAmountCents / 100)}</strong></p>
+                      <button type="button" className={styles.primary} disabled={!pixEnabled || payingPix || payingWallet}
+                        onClick={() => { setChosenPayment("pix"); void payWithPix(selectedDraft.id); }}>
+                        {payingPix ? "Ap prepare PIX..." : "1 — Peye ak PIX (InfinitePay)"}
+                      </button>
+                      {!pixEnabled && <p className={styles.hint}>PIX poko disponib pou kont sa a.</p>}
+                      <button type="button" className={styles.primary} disabled={payingPix || payingWallet || walletPreviewLoading}
+                        onClick={() => { setChosenPayment("wallet"); void loadWalletPreview(selectedDraft.id); }}>
+                        {walletPreviewLoading ? "Ap verifye balans..." : "2 — Peye ak balans Bolet ou"}
+                      </button>
+                      {chosenPayment === "wallet" && <>
+                        <p className={styles.hint}>Nou itilize Disponib pou jwe an premye, apre sa Disponib pou retire. Nou pap retire lajan san konfimasyon ou.</p>
+                        {walletPreviewError && <p role="alert" className={styles.notice}>{walletPreviewError}</p>}
+                        {walletPreview && <div className={styles.summary}>
+                          <div><span>Kontribisyon</span><strong>{money(walletPreview.amountCents / 100)}</strong></div>
+                          <div><span>Disponib pou jwe</span><strong>{walletPreview.playPoints} p</strong></div>
+                          <div><span>Disponib pou retire</span><strong>{walletPreview.withdrawablePoints} p</strong></div>
+                          <div><span>Pral retire nan balans jwe</span><strong>{walletPreview.proposedFromPlay} p</strong></div>
+                          <div><span>Pral retire nan balans retire</span><strong>{walletPreview.proposedFromWithdrawable} p</strong></div>
+                          <p className={styles.hint}>{walletPreview.sufficientUnderProposal ? "Balans ou sifi pou peman sa a." : "Balans ou pa sifi. Tanpri rechaje kont ou."}</p>
+                          {walletPreview.paymentEnabled ? <button type="button" className={styles.primary}
+                            disabled={payingWallet || !walletPreview.sufficientUnderProposal}
+                            onClick={() => void payWithWallet(selectedDraft.id)}>
+                            {payingWallet ? "Ap trete peman..." : "Konfime peman ak balans — " + money(walletPreview.amountCents / 100)}
+                          </button> : <p className={styles.hint}>Peman ak balans poko disponib.</p>}
+                        </div>}
+                      </>}
+                      {pixMessage && <p role="alert" className={styles.notice}>{pixMessage}</p>}
+                      {walletPaymentMessage && <p role="status" className={styles.notice}>{walletPaymentMessage}</p>}
+                      {walletPaymentError && <p role="alert" className={styles.notice}>{walletPaymentError}</p>}
+                    </div>}
+                  </>}
+                </div>
                 <button type="button" className={styles.back} onClick={() => void showSavedDraft(selectedDraft.id)}>Rafrechi estati peman mwen</button>
                 <h3>12 kontribisyon yo</h3>
                 <div className={styles.packageGrid}>
