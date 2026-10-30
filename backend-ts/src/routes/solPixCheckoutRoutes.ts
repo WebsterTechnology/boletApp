@@ -71,6 +71,29 @@ router.get("/pix-availability", async (_req, res) => {
   }
 });
 
+/** A read-only admin check, independent of the Sòl payment feature flags. */
+router.get("/pix-readiness", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  if (!currentUser(req).isAdmin) return res.sendStatus(403);
+  let columnExists = false;
+  let migrationRecorded = false;
+  try {
+    const columns = await sequelize.query<{ exists: boolean }>(
+      `SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = 'sol_payment_attempts' AND column_name = 'checkoutUrl') AS "exists"`,
+      { type: QueryTypes.SELECT },
+    );
+    columnExists = columns[0]?.exists === true;
+    const migration = await sequelize.query<{ exists: boolean }>(
+      `SELECT EXISTS (SELECT 1 FROM "SequelizeMeta" WHERE name = '20261025060000-sol-pix-checkout-recovery.js') AS "exists"`,
+      { type: QueryTypes.SELECT },
+    );
+    migrationRecorded = migration[0]?.exists === true;
+  } catch {
+    return res.json({ databaseReady: false, columnExists, migrationRecorded });
+  }
+  return res.json({ databaseReady: columnExists && migrationRecorded, columnExists, migrationRecorded });
+});
+
 /**
  * Sòl-specific PIX checkout initiation. OFF by default.
  * Requires an existing Sòl PIX intent, never accepts client-supplied prices,
