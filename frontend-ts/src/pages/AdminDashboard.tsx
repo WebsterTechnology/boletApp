@@ -61,25 +61,6 @@ export default function AdminDashboard() {
     [token]
   );
 
-  const archiveSolTestContracts = async () => {
-    if (!window.confirm("Achive tout kontra Sòl tès yo? Yo pap parèt nan lis aktif la. Dosye peman yo ap rete pou sekirite.")) return;
-    if (!window.confirm("Konfime ankò: retire tout kontra Sòl ki sou lis aktif la?")) return;
-    setSolLoading(true);
-    setSolError("");
-    try {
-      const response = await axios.post<{ archived: number }>(
-        `${API}/api/admin/sol/archive-test-contracts`,
-        { confirmation: "ARCHIVE_ALL_SOL_TEST_CONTRACTS" }, auth,
-      );
-      alert(`${response.data.archived} kontra Sòl achive.`);
-      await loadSolContracts();
-    } catch (err) {
-      setSolError(isAxiosError(err) && err.response?.status === 409
-        ? "Gen peman PIX ki poko rekonsilye. Pa kapab achive kontra sa yo."
-        : "Nou pa kapab achive kontra Sòl yo.");
-    } finally { setSolLoading(false); }
-  };
-
   const loadSolContracts = async () => {
     setSolLoading(true);
     setSolError("");
@@ -303,7 +284,6 @@ const filteredUsers = useMemo(() => {
             <input aria-label="Chèche kliyan Sòl" placeholder="Chèche non, telefòn oswa ID..."
               value={solSearch} onChange={e => setSolSearch(e.target.value)} style={{ padding: 10, flex: 1, minWidth: 180 }} />
             <button type="button" onClick={() => void loadSolContracts()} disabled={solLoading}>Rafrechi</button>
-            <button type="button" onClick={() => void archiveSolTestContracts()} disabled={solLoading || solContracts.length === 0} style={{ background: "#7f1d1d", color: "white" }}>Netwaye kontra Sòl tès yo</button>
           </div>
           {solLoading && <p>Ap chaje kontra yo...</p>}
           {solError && <p role="alert">{solError}</p>}
@@ -311,15 +291,19 @@ const filteredUsers = useMemo(() => {
           {solContracts.filter(c => [String(c.id),String(c.userId),c.customer?.fullName || "",c.customer?.phone || ""]
             .some(x => x.toLowerCase().includes(solSearch.toLowerCase()))).map(c => (
             <article key={c.id} style={{ border: "1px solid #6b7280", borderRadius: 10, padding: 12, marginBottom: 10 }}>
-              <strong>{c.customer?.fullName || "Kliyan"} — #{c.userId}</strong>
-              <div>{c.customer?.phone || "Pa gen telefòn"} · Kontra #{c.id}</div>
-              <div>Pakè: {solMoney(c.monthlyAmountCents)}/mwa · Eta: {c.status} · Peye: {c.paidMonths}/12</div>
-              <div>Total peye: {solMoney(c.totalContributedCents)}</div>
-              <div>{c.nextInstallment ? `Pwochen peman: mwa ${c.nextInstallment.number} — ${solMoney(c.nextInstallment.amountCents)} · Dat estime: ${c.nextInstallment.estimatedDueDate}` : "Pa gen peman an atant"}</div>
-              <button type="button" onClick={() => setSolExpanded(x => x === c.id ? null : c.id)}>
-                {solExpanded === c.id ? "Fèmen detay" : "Gade 12 mwa ak istwa peman"}
+              <button type="button" aria-expanded={solExpanded === c.id}
+                onClick={() => setSolExpanded(x => x === c.id ? null : c.id)}
+                style={{ width: "100%", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", padding: 12, textAlign: "left" }}>
+                <span><strong>{c.customer?.fullName || "Kliyan"} — #{c.userId}</strong>
+                  <small style={{ display: "block" }}>{c.customer?.phone || "Pa gen telefòn"} · Kontra #{c.id} · {c.paidMonths}/12 peye</small></span>
+                <span>{solExpanded === c.id ? "▲ Fèmen" : "▼ Ouvri"}</span>
               </button>
               {solExpanded === c.id && <>
+                <div style={{ padding: "12px 4px" }}>
+                  <div>Pakè: {solMoney(c.monthlyAmountCents)}/mwa · Eta: {c.status} · Peye: {c.paidMonths}/12</div>
+                  <div>Total peye: {solMoney(c.totalContributedCents)}</div>
+                  <div>{c.nextInstallment ? `Pwochen peman: mwa ${c.nextInstallment.number} — ${solMoney(c.nextInstallment.amountCents)} · Dat estime: ${c.nextInstallment.estimatedDueDate}` : "Pa gen peman an atant"}</div>
+                </div>
                 <h4>Kontribisyon chak mwa</h4>
                 <div style={{ display: "grid", gap: 5 }}>{c.installments.map(i => <div key={i.number}>
                   Mwa {i.number}: {solMoney(i.amountCents)} — {i.status} {i.paidAt ? `(${new Date(i.paidAt).toLocaleDateString()})` : ""}
