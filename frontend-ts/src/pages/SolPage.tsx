@@ -150,9 +150,15 @@ export default function SolPage() {
       await showSavedDraft(pkg.id);
       setSolWithdrawalResult("Demann retrè Sòl anrejistre: " + money(result.netCents / 100) + " annatant admin lan voye lajan an ak PIX.");
     } catch (error) {
-      setSolWithdrawalError(error instanceof Error && error.message.includes("not yet enabled")
-        ? "Retrè Sòl poko aktive."
-        : "Retrè Sòl pa t fèt. Tanpri rafrechi epi verifye estati pake a anvan ou re-eseye.");
+      const reason = error instanceof Error ? error.message : "";
+      const messages: Record<string,string> = {
+        "Sòl withdrawals are not yet enabled": "Retrè Sòl poko aktive.",
+        "PIX payments pending reconciliation": "Gen yon peman PIX ki poko fin verifye sou pake a.",
+        "Payments need review": "Kontribisyon yo bezwen verifikasyon.",
+        "Withdrawal already requested": "Ou deja gen yon demann retrè sou pake sa a.",
+        "Package is not eligible": "Pake sa a pa kalifye pou nouvo demann retrè."
+      };
+      setSolWithdrawalError(messages[reason] || "Demann retrè a pa pase. Kontakte sipò pou verifye dosye a.");
     } finally { setWithdrawingSol(false); }
   };
 
