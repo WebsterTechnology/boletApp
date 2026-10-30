@@ -156,18 +156,21 @@ router.get("/sol/contracts", authenticate, adminOnly, async (_req, res) => {
       const schedule = contributions.filter(c => c.packageId === pkg.id);
       const payments = attempts.filter(a => a.packageId === pkg.id);
       const next = schedule.find(c => c.status !== "paid");
-      const nextDue = next ? new Date(pkg.createdAt) : null;
-      if (nextDue && next) {
-        nextDue.setUTCMonth(nextDue.getUTCMonth() + next.installmentNumber - 1);
-        nextDue.setUTCDate(Math.min(pkg.dueDay, new Date(Date.UTC(nextDue.getUTCFullYear(), nextDue.getUTCMonth() + 1, 0)).getUTCDate()));
-      }
+      // Calendar-based estimate: the selected due day is fixed, but schedule
+      // anchors must be confirmed against the product's contractual start date.
+      const start = new Date(pkg.createdAt);
+      const monthIndex = next ? start.getUTCMonth() + next.installmentNumber - 1 : 0;
+      const year = start.getUTCFullYear() + Math.floor(monthIndex / 12);
+      const month = ((monthIndex % 12) + 12) % 12;
+      const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+      const nextDue = next ? new Date(Date.UTC(year, month, Math.min(pkg.dueDay, lastDay))) : null;
       return {
         id: pkg.id, userId: pkg.userId,
         customer: customer ? { fullName: customer.fullName, phone: customer.phone, email: customer.email } : null,
         monthlyAmountCents: pkg.monthlyAmountCents, dueDay: pkg.dueDay,
         status: pkg.status, paidMonths: pkg.paidMonths, createdAt: pkg.createdAt,
         totalContributedCents: schedule.filter(c => c.status === "paid").reduce((n, c) => n + c.amountCents, 0),
-        nextInstallment: next ? { number: next.installmentNumber, amountCents: next.amountCents, dueDate: nextDue?.toISOString().slice(0,10) } : null,
+        nextInstallment: next ? { number: next.installmentNumber, amountCents: next.amountCents, estimatedDueDate: nextDue?.toISOString().slice(0,10) } : null,
         installments: schedule.map(c => ({ number: c.installmentNumber, amountCents: c.amountCents, status: c.status, paidAt: c.paidAt })),
         payments: payments.map(a => ({ id: a.id, installmentId: a.contributionId, method: a.method, status: a.status, amountCents: a.amountCents, confirmedAt: a.confirmedAt, createdAt: a.createdAt })),
       };
