@@ -39,9 +39,9 @@ const Header = ({ openLogin }: { openLogin: () => void }) => {
             <img src={logoSmall} className={styles.logoSmall} alt="Logo" />
           </Link>
 
-          <Link to={isSol ? "/" : "/sol"} className={styles.switchProduct} aria-label={isSol ? "Jwe Bolet" : "Rantre nan Sòl"}>
-            <span className={styles.switchFull}>{isSol ? "🎲 Jwe Bolet" : "💰 Rantre nan Sòl"}</span>
-            <span className={styles.switchSmall}>{isSol ? "🎲 Bolet" : "💰 Sòl"}</span>
+          <Link to={isSol ? "/" : "/sol"} className={styles.switchProduct} aria-label={isSol ? "Jwe Bolèt" : "Rantre nan Sòl"}>
+            <span className={styles.switchFull}>{isSol ? "🎲 Jwe Bolèt" : "💰 Rantre nan Sòl"}</span>
+            <span className={styles.switchSmall}>{isSol ? "🎲 Jwe Bolèt" : "💰 Rantre nan Sòl"}</span>
           </Link>
 
           <nav className={styles.nav}>
