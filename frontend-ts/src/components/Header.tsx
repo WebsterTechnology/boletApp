@@ -12,7 +12,9 @@ const Header = ({ openLogin }: { openLogin: () => void }) => {
   const [userPhone, setUserPhone] = useState(localStorage.getItem("userPhone"));
   const [showNotif, setShowNotif] = useState(false);
   const navigate = useNavigate();
-  const isSol = useLocation().pathname.startsWith("/sol");
+  const pathname = useLocation().pathname;
+  const isSol = pathname === "/sol";
+  const isBoletGame = pathname === "/game";
   const { unreadCount } = useNotifications();
 
   useEffect(() => {
@@ -39,10 +41,10 @@ const Header = ({ openLogin }: { openLogin: () => void }) => {
             <img src={logoSmall} className={styles.logoSmall} alt="Logo" />
           </Link>
 
-          <Link to={isSol ? "/game" : "/sol"} className={styles.switchProduct} aria-label={isSol ? "Jwe Bolèt" : "Rantre nan Sòl"}>
+          {(isSol || isBoletGame) && <Link to={isSol ? "/game" : "/sol"} className={styles.switchProduct} aria-label={isSol ? "Jwe Bolèt" : "Rantre nan Sòl"}>
             <span className={styles.switchFull}>{isSol ? "🎲 Jwe Bolèt" : "💰 Rantre nan Sòl"}</span>
             <span className={styles.switchSmall}>{isSol ? "🎲 Jwe Bolèt" : "💰 Rantre nan Sòl"}</span>
-          </Link>
+          </Link>}
 
           <nav className={styles.nav}>
             <NavLink
