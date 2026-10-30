@@ -441,7 +441,7 @@ export default function SolPage() {
               <div className={styles.packageGrid}>
                 {drafts.map(draft => <article className={styles.package} key={draft.id}>
                   <strong>{money(draft.monthlyAmountCents / 100)} <small>/ mwa</small></strong>
-                  <p>Estati: {draft.status === "paid_out" ? "Yo peye w deja" : draft.status === "withdrawal_pending" ? "Demann retrè annatant" : draft.status === "draft" ? "Bouyon — pa aktive" : draft.status}</p>
+                  <p style={draft.status === "paid_out" ? { color: "#15803d", fontWeight: 800 } : undefined}>Estati: {draft.status === "paid_out" ? "Yo peye w deja" : draft.status === "withdrawal_pending" ? "Demann retrè annatant" : draft.status === "draft" ? "Bouyon — pa aktive" : draft.status}</p>
                   <p>Jou peman: {draft.dueDay} | Mwa peye: {draft.paidMonths}/12</p>
                   <button className={styles.back} onClick={() => void showSavedDraft(draft.id)}>Gade 12 kontribisyon yo →</button>
                   {draft.status === "draft" && draft.paidMonths === 0 && <button className={styles.back} disabled={deletingDraftId !== null} onClick={() => void deleteDraft(draft)}>{deletingDraftId === draft.id ? "Ap efase..." : "Efase bouyon"}</button>}
