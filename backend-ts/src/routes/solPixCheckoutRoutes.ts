@@ -1,5 +1,6 @@
 import axios from "axios";
 import { Router } from "express";
+import { QueryTypes } from "sequelize";
 import { authenticate, currentUser } from "../middleware/authenticate";
 import { sequelize } from "../config/database";
 import { env } from "../config/env";
@@ -15,7 +16,8 @@ router.use(authenticate);
  * This is an operational UI signal, NOT proof of database readiness;
  * the checkout and verified webhook retain their independent safeguards.
  */
-router.get("/pix-availability", (_req, res) => {
+router.get("/pix-availability", async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   let configured = false;
   try {
     const webhookUrl = new URL(process.env.SOL_PIX_WEBHOOK_URL || "");
@@ -30,11 +32,43 @@ router.get("/pix-availability", (_req, res) => {
   } catch {
     configured = false;
   }
-  res.setHeader("Cache-Control", "no-store");
-  return res.json({
-    enabled: process.env.SOL_PIX_CHECKOUT_ENABLED === "true" &&
-      process.env.SOL_PIX_WEBHOOK_ENABLED === "true" && configured,
-  });
+  if (process.env.SOL_PIX_CHECKOUT_ENABLED !== "true" ||
+      process.env.SOL_PIX_WEBHOOK_ENABLED !== "true" || !configured) {
+    return res.json({ enabled: false });
+  }
+  try {
+    // Query the *actual* PostgreSQL database configured in DATABASE_URL (Render
+    // in production). Do not infer readiness from successful Railway deploys.
+    const result = await sequelize.query<{ ready: boolean }>(
+      `SELECT (
+         EXISTS (
+           SELECT 1 FROM information_schema.columns
+           WHERE table_schema = current_schema()
+             AND table_name = 'sol_payment_attempts'
+             AND column_name = 'checkoutUrl'
+         )
+         AND EXISTS (
+           SELECT 1 FROM information_schema.tables
+           WHERE table_schema = current_schema()
+             AND table_name = 'SequelizeMeta'
+         )
+       ) AS "ready"`,
+      { type: QueryTypes.SELECT },
+    );
+    // A missing migration record must also block checkout visibility.
+    if (result[0]?.ready !== true) return res.json({ enabled: false });
+    const rows = await sequelize.query<{ exists: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM "SequelizeMeta"
+         WHERE name = '20261025060000-sol-pix-checkout-recovery.js'
+       ) AS "exists"`,
+      { type: QueryTypes.SELECT },
+    );
+    return res.json({ enabled: rows[0]?.exists === true });
+  } catch {
+    // Fail closed on database errors or mismatched schema.
+    return res.json({ enabled: false });
+  }
 });
 
 /**

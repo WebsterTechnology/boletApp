@@ -5,6 +5,7 @@ import request from "supertest";
 const mocks = vi.hoisted(() => ({
   providerPost: vi.fn(),
   transaction: vi.fn(),
+  query: vi.fn(),
   packageFindOne: vi.fn(),
   attemptFindOne: vi.fn(),
   contributionsFindAll: vi.fn(),
@@ -14,7 +15,7 @@ vi.mock("../middleware/authenticate", () => ({
   authenticate: (_req: unknown, _res: unknown, next: () => void) => next(),
   currentUser: () => ({ id: 7 }),
 }));
-vi.mock("../config/database", () => ({ sequelize: { transaction: mocks.transaction } }));
+vi.mock("../config/database", () => ({ sequelize: { transaction: mocks.transaction, query: mocks.query } }));
 vi.mock("../config/env", () => ({ env: { infinitepayHandle: "test-merchant" } }));
 vi.mock("../models/Sol", () => ({
   SolPackage: { findOne: mocks.packageFindOne },
@@ -35,6 +36,7 @@ const checkoutUrl = "https://checkout.infinitepay.io/pay/123";
 describe("Sòl PIX checkout recovery", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.query.mockResolvedValue([{ ready: true, exists: true }]);
     process.env.SOL_PIX_CHECKOUT_ENABLED = "true";
     process.env.SOL_PIX_WEBHOOK_ENABLED = "true";
     process.env.SOL_PIX_WEBHOOK_URL = "https://api.example.com/api/sol-pix/webhook";
@@ -55,6 +57,18 @@ describe("Sòl PIX checkout recovery", () => {
     expect(available.body).toEqual({ enabled: true });
     expect(available.headers["cache-control"]).toContain("no-store");
     expect(mocks.providerPost).not.toHaveBeenCalled();
+
+    mocks.query.mockResolvedValueOnce([{ ready: false }]);
+    const missingColumn = await request(app).get("/api/sol/pix-availability");
+    expect(missingColumn.body).toEqual({ enabled: false });
+
+    mocks.query.mockResolvedValueOnce([{ ready: true }]).mockResolvedValueOnce([{ exists: false }]);
+    const missingMigration = await request(app).get("/api/sol/pix-availability");
+    expect(missingMigration.body).toEqual({ enabled: false });
+
+    mocks.query.mockRejectedValueOnce(new Error("database unavailable"));
+    const dbDown = await request(app).get("/api/sol/pix-availability");
+    expect(dbDown.body).toEqual({ enabled: false });
 
     process.env.SOL_PIX_WEBHOOK_ENABLED = "false";
     const disabled = await request(app).get("/api/sol/pix-availability");
