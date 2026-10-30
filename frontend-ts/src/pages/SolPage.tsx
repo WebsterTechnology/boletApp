@@ -23,6 +23,7 @@ export default function SolPage() {
   const [showPaymentNotice, setShowPaymentNotice] = useState(false);
   const [drafts, setDrafts] = useState<SolDraft[]>([]);
   const [selectedDraft, setSelectedDraft] = useState<SolDraft | null>(null);
+  const [solWithdrawals,setSolWithdrawals] = useState<{id:number;packageId:number;netCents:number;status:string;createdAt:string}[]>([]);
   const [withdrawingSol, setWithdrawingSol] = useState(false);
   const [solWithdrawalResult, setSolWithdrawalResult] = useState("");
   const [solWithdrawalError, setSolWithdrawalError] = useState("");
@@ -131,7 +132,7 @@ export default function SolPage() {
     const payout = pkg.paidMonths === 12 ? total + pkg.monthlyAmountCents / 100 : total * 0.9;
     const warning = pkg.paidMonths === 12
       ? "Pake a fini. Ou pral resevwa " + money(payout) + " nan yon demann retrè Sòl."
-      : "Retrè bonè ap fèmen pake Sòl ou nèt. Y ap retire 10% sou " + money(total) + ". Ou pral resevwa " + money(payout) + " nan Disponib pou retire.";
+      : "Retrè bonè ap fèmen pake Sòl ou nèt. Y ap retire 10% sou " + money(total) + ". Ou pral resevwa " + money(payout) + " nan yon demann retrè Sòl.";
     if (!window.confirm(warning + " Kontinye?")) return;
     const token = localStorage.getItem("token");
     if (!token) { setSolWithdrawalError("Tanpri konekte ankò."); return; }
@@ -183,6 +184,11 @@ export default function SolPage() {
       const item = (await response.json()) as SolDraft;
       if (!item || item.id !== id || !Array.isArray(item.contributions)) throw new Error("Invalid response");
       setSelectedDraft(item);
+      try {
+        const withdrawalsResponse=await fetch(API+"/api/sol/withdrawals/mine",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+        if(withdrawalsResponse.ok)setSolWithdrawals(await withdrawalsResponse.json());
+      }catch {setSolWithdrawals([]);}
+
       // A confirmed PIX installment must not reuse its intent key next month.
       // Only the backend-confirmed contribution state can release that key.
       const pixKey = "sol-pix-intent-" + id;
@@ -500,6 +506,12 @@ export default function SolPage() {
                     <small className={styles.solWithdrawHelp}>Demann ou ap parèt nan retrè Sòl yo kòm Annatant. Admin lan ap voye lajan an epi make li kòm Peye.</small>
                   </div>
                 )}
+                {solWithdrawals.filter(w=>w.packageId===selectedDraft.id).map(w=>(
+                  <div className={styles.package} key={w.id} style={{marginBottom:14}}>
+                    <strong>Demann retrè Sòl #{w.id}</strong>
+                    <p>{money(w.netCents/100)} · {w.status==="pending"?"🟠 Annatant peman PIX":w.status==="paid"?"✅ Peye":w.status}</p>
+                  </div>
+                ))}
                 <h3>12 kontribisyon yo</h3>
                 <div className={styles.packageGrid}>
                   {[...(selectedDraft.contributions || [])].sort((a, b) => a.installmentNumber - b.installmentNumber).map(item => {
