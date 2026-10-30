@@ -424,7 +424,7 @@ router.post("/packages/:id/request-withdrawal", async (req,res) => {
    if(previous.length)return {code:409,message:"Withdrawal already requested"};
    const {grossCents,penaltyCents,netCents}=calculateSolPayout(pkg.monthlyAmountCents,paid.length);
    const [record]=await sequelize.query<{id:number}>('INSERT INTO sol_withdrawal_requests ("packageId","userId","grossCents","penaltyCents","netCents","status","createdAt") VALUES (:id,:userId,:grossCents,:penaltyCents,:netCents,\'pending\',NOW()) RETURNING id',{replacements:{id,userId,grossCents,penaltyCents,netCents},type:QueryTypes.SELECT,transaction});
-   pkg.status="withdrawal_pending";await pkg.save({transaction});
+   pkg.status="cancelled";await pkg.save({transaction});
    return {code:201,id:record.id,netCents,status:"pending"};
   });
   return res.status(outcome.code).json(outcome);
@@ -453,7 +453,7 @@ router.patch("/admin/withdrawals/:id/paid",adminOnly,async(req,res)=>{
    ) SELECT "packageId" FROM updated`,{replacements:{id},type:QueryTypes.SELECT,transaction});
    if(rows.length!==1)return false;
    const pkg=await SolPackage.findByPk(rows[0].packageId,{transaction,lock:transaction.LOCK.UPDATE});
-   if(!pkg||pkg.status!=="withdrawal_pending")throw new Error("CONTRACT_NOT_PENDING");
+   if(!pkg||pkg.status!=="cancelled")throw new Error("CONTRACT_NOT_CANCELLED");
    pkg.status="paid_out";await pkg.save({transaction});
    return true;
   });
