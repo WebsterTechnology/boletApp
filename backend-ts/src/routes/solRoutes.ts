@@ -6,6 +6,7 @@ import { SolContribution, SolPackage, SOL_MONTHLY_AMOUNTS_CENTS } from "../model
 import { SolPaymentAttempt } from "../models/SolPaymentAttempt";
 import { User } from "../models/User";
 import { calculateSolWalletDebit } from "../services/solWalletDebit";
+import { calculateSolPayout } from "../services/solPayout";
 
 const router = Router();
 router.use(authenticate);
@@ -441,18 +442,11 @@ router.post("/packages/:id/withdraw-to-wallet", async (req, res) => {
         transaction, lock: transaction.LOCK.UPDATE,
       });
       if (pendingPix) return { code: 409, message: "A PIX payment is pending reconciliation" };
-      const grossCents = paid.reduce((total, c) => total + c.amountCents, 0);
-      const completed = paid.length === 12;
-      // 12 monthly payments earn a 13th; early withdrawal forfeits 10% of contributions.
-      const penaltyCents = completed ? 0 : Math.floor(grossCents / 10);
-      const netCents = completed ? grossCents + pkg.monthlyAmountCents : grossCents - penaltyCents;
-      if (!Number.isSafeInteger(netCents) || netCents <= 0 || netCents % 100 !== 0) {
-        return { code: 409, message: "Payout amount requires review" };
-      }
+      const { grossCents, penaltyCents, netCents, completed, points } =
+        calculateSolPayout(pkg.monthlyAmountCents, paid.length);
       const wallet = await User.findByPk(userId, { transaction, lock: transaction.LOCK.UPDATE });
       if (!wallet) return { code: 404, message: "Wallet not found" };
       const withdrawableBefore = Number(wallet.withdrawablePoints);
-      const points = netCents / 100; // Existing Sòl wallet conversion: 1 point = 1 BRL.
       if (!Number.isSafeInteger(withdrawableBefore) || withdrawableBefore < 0 ||
           !Number.isSafeInteger(withdrawableBefore + points)) {
         return { code: 409, message: "Wallet balance requires review" };
