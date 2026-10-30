@@ -8,12 +8,25 @@ type SolContribution = { id: number; installmentNumber: number; amountCents: num
 type SolPaymentAttempt = { id: number; contributionId: number; amountCents: number; currency: string; method: string; status: string; confirmedAt: string | null; createdAt: string };
 type WalletPreview = { packageId: number; installmentNumber: number; amountCents: number; playPoints: number; withdrawablePoints: number; proposedPoints: number; proposedFromPlay: number; proposedFromWithdrawable: number; sufficientUnderProposal: boolean; proposedConversion: string; paymentEnabled: boolean };
 type PaymentPreview = { packageId: number; installmentNumber: number; amountCents: number; currency: string; methods: string[]; paymentEnabled: boolean };
-type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; contributions?: SolContribution[] };
+type SolDraft = { id: number; monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; createdAt?: string; contributions?: SolContribution[] };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const PACKAGES = [100, 200, 500, 1000] as const;
 // PIX availability is controlled by the backend checkout/webhook safety gates.
 type PackageAmount = (typeof PACKAGES)[number];
 const money = (amount: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(amount);
+
+
+// Use the contract's creation month as an estimate; payment delays may shift the actual completion.
+const projectedSolCompletion = (pkg: SolDraft): string | null => {
+  if (!pkg.createdAt) return null;
+  const started = new Date(pkg.createdAt);
+  if (Number.isNaN(started.getTime())) return null;
+  const twelfthMonth = new Date(Date.UTC(started.getUTCFullYear(), started.getUTCMonth() + 11, pkg.dueDay));
+  return new Intl.DateTimeFormat("ht-HT", { month: "long", year: "numeric", timeZone: "UTC" }).format(twelfthMonth);
+};
+const confirmedSolTotalCents = (pkg: SolDraft) => (pkg.contributions ?? [])
+  .filter(c => c.status === "paid" && Boolean(c.paidAt))
+  .reduce((total, c) => total + c.amountCents, 0);
 
 export default function SolPage() {
   const [view, setView] = useState<View>("home");
@@ -501,7 +514,16 @@ export default function SolPage() {
                   <div><span>Jou peman</span><strong>{selectedDraft.dueDay}</strong></div>
                   <div><span>Estati</span><strong>{selectedDraft.status === "draft" ? "Bouyon — pa aktive" : selectedDraft.status}</strong></div>
                   <div><span>Mwa peye</span><strong>{selectedDraft.paidMonths}/12</strong></div>
-                  <div className={styles.finalAmount}><span>Total ou deja peye</span><strong>{money((selectedDraft.contributions ?? []).filter(c => c.status === "paid" && Boolean(c.paidAt)).reduce((total,c)=>total+c.amountCents,0)/100)}</strong></div>
+                  <div className={styles.finalAmount}><span>Total ou deja peye</span><strong>{money(confirmedSolTotalCents(selectedDraft)/100)}</strong></div>
+                </div>
+                <div className={styles.solForecast} aria-label="Rezime kontribisyon ak retrè Sòl">
+                  <h3>Rezime lajan Sòl ou</h3>
+                  <div><span>Total ou deja kontribye</span><strong>{money(confirmedSolTotalCents(selectedDraft)/100)}</strong></div>
+                  <div><span>Montan apre 12 peman (resevwa 13)</span><strong>{money(selectedDraft.monthlyAmountCents*13/100)}</strong></div>
+                  {projectedSolCompletion(selectedDraft) && <div><span>Dat fini estime si w peye chak mwa alè</span><strong>{projectedSolCompletion(selectedDraft)}</strong></div>}
+                  <div><span>Si ou mande retrè kounye a</span><strong>{money((selectedDraft.paidMonths >= 12 ? confirmedSolTotalCents(selectedDraft)+selectedDraft.monthlyAmountCents : confirmedSolTotalCents(selectedDraft)-Math.floor(confirmedSolTotalCents(selectedDraft)*0.1))/100)}</strong></div>
+                  {selectedDraft.paidMonths < 12 && <small>Retrè bonè: penalite 10% sou kontribisyon ki konfime yo. Pake a ap fèmen; demann retrè a ap rete annatant jiskaske admin lan voye PIX la.</small>}
+                  <small>Dat fini a se yon estimasyon, pa yon garanti. Se peman ki konfime sèlman ki antre nan kalkil sa yo.</small>
                 </div>
                 {solWithdrawalResult && <div role="status" className={styles.notice}>
                   <p>{solWithdrawalResult}</p>
