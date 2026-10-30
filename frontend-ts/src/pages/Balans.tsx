@@ -4,16 +4,7 @@ import { useNavigate } from "react-router-dom";
 import Pwen from "../components/Pwen";
 import WithdrawModal from "../components/WithdrawModal";
 
-type WithdrawalEntry = {id:number;amount:number;status:string;createdAt:string};
 export default function Balans() {
-  const [requests,setRequests]=useState<WithdrawalEntry[]>([]);
-  const loadRequests=useCallback(async()=>{
-    const token=localStorage.getItem("token");if(!token)return;
-    try {
-      const response=await fetch((import.meta.env.VITE_API_URL||"http://localhost:3001")+"/api/withdraw/mine",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
-      if(response.ok)setRequests(await response.json());
-    }catch{/* The balance page remains usable without history */}
-  },[]);
   const navigate = useNavigate();
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawable, setWithdrawable] = useState(0);
@@ -41,7 +32,6 @@ export default function Balans() {
 
   useEffect(() => {
     refreshBalances();
-    void loadRequests();
 
     // Refresh again when the user returns to this tab/page.
     const onFocus = () => refreshBalances();
@@ -55,7 +45,7 @@ export default function Balans() {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [refreshBalances,loadRequests, showWithdraw]);
+  }, [refreshBalances, showWithdraw]);
 
   return (
     <main style={{maxWidth:560,margin:"32px auto",padding:"0 16px"}}>
@@ -69,16 +59,7 @@ export default function Balans() {
           <button onClick={()=>setShowWithdraw(true)} style={{border:0,borderRadius:12,padding:"14px 18px",background:"#ef4444",color:"#fff",fontWeight:800,fontSize:17,cursor:"pointer"}}>Retire Pwen</button>
         </div>
       </div>
-      <section style={{marginTop:18,padding:18,background:"#fff",borderRadius:14,color:"#111827"}}>
-        <h3 style={{marginTop:0}}>Istwa demann retrè</h3>
-        {requests.map(w=><div key={w.id} style={{padding:"12px 0",borderBottom:"1px solid #ddd"}}>
-          <strong>{w.amount} pwen</strong> · {w.status==="pending"?"🟠 Annatant peman":w.status==="paid"?"✅ Peye":w.status}
-          <small style={{display:"block"}}>{new Date(w.createdAt).toLocaleString()}</small>
-        </div>)}
-        {!requests.length&&<p>Pa gen demann retrè.</p>}
-        <button type="button" onClick={()=>{void loadRequests();void refreshBalances();}}>Rafrechi</button>
-      </section>
-      {showWithdraw&&<WithdrawModal onClose={()=>{setShowWithdraw(false);void loadRequests();void refreshBalances();}}/>}
+      {showWithdraw&&<WithdrawModal onClose={()=>{setShowWithdraw(false);void refreshBalances();}}/>}
     </main>
   );
 }
