@@ -395,4 +395,93 @@ router.post("/packages/:id/wallet-payments", async (req, res) => {
   }
 });
 
+
+/**
+ * One-time Sòl settlement into the existing Bolet withdrawable balance.
+ * Users then submit their PIX key through Bolet's existing Retire Pwen form.
+ * No automatic PIX transfer is initiated here.
+ */
+router.post("/packages/:id/withdraw-to-wallet", async (req, res) => {
+  if (process.env.SOL_WITHDRAWALS_ENABLED !== "true") {
+    return res.status(503).json({ message: "Sòl withdrawals are not yet enabled" });
+  }
+  const rawId = req.params.id as string;
+  if (!/^[0-9]+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
+    return res.status(400).json({ message: "Invalid package ID" });
+  }
+  const packageId = Number(rawId);
+  const userId = currentUser(req).id;
+  try {
+    const outcome = await sequelize.transaction(async transaction => {
+      // Lock the package before checking or changing its status to serialize withdrawals.
+      const pkg = await SolPackage.findOne({
+        where: { id: packageId, userId }, transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (!pkg) return { code: 404, message: "Package not found" };
+      if (!["active", "completed"].includes(pkg.status)) {
+        return { code: 409, message: "Package cannot be withdrawn in this state" };
+      }
+      const contributions = await SolContribution.findAll({
+        where: { packageId }, transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (contributions.length !== 12 || contributions.some(c => c.amountCents !== pkg.monthlyAmountCents)) {
+        return { code: 409, message: "Package installments require reconciliation" };
+      }
+      const paid = contributions.filter(c => c.status === "paid" && Boolean(c.paidAt));
+      if (!paid.length || paid.length !== Number(pkg.paidMonths)) {
+        return { code: 409, message: "Paid installments require reconciliation" };
+      }
+      if ((pkg.status === "completed") !== (paid.length === 12)) {
+        return { code: 409, message: "Package completion requires reconciliation" };
+      }
+      // A provider checkout may settle after initiation. Do not allow payout while
+      // an unconfirmed external PIX order exists, even if the user closes the page.
+      const pendingPix = await SolPaymentAttempt.findOne({
+        where: { packageId, method: "pix", status: ["created", "pending", "processing"] },
+        transaction, lock: transaction.LOCK.UPDATE,
+      });
+      if (pendingPix) return { code: 409, message: "A PIX payment is pending reconciliation" };
+      const grossCents = paid.reduce((total, c) => total + c.amountCents, 0);
+      const completed = paid.length === 12;
+      // 12 monthly payments earn a 13th; early withdrawal forfeits 10% of contributions.
+      const penaltyCents = completed ? 0 : Math.floor(grossCents / 10);
+      const netCents = completed ? grossCents + pkg.monthlyAmountCents : grossCents - penaltyCents;
+      if (!Number.isSafeInteger(netCents) || netCents <= 0 || netCents % 100 !== 0) {
+        return { code: 409, message: "Payout amount requires review" };
+      }
+      const wallet = await User.findByPk(userId, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!wallet) return { code: 404, message: "Wallet not found" };
+      const withdrawableBefore = Number(wallet.withdrawablePoints);
+      const points = netCents / 100; // Existing Sòl wallet conversion: 1 point = 1 BRL.
+      if (!Number.isSafeInteger(withdrawableBefore) || withdrawableBefore < 0 ||
+          !Number.isSafeInteger(withdrawableBefore + points)) {
+        return { code: 409, message: "Wallet balance requires review" };
+      }
+      const already = await sequelize.query<{ id: number }>(
+        'SELECT id FROM sol_payouts WHERE "packageId" = :packageId LIMIT 1',
+        { replacements: { packageId }, transaction, type: QueryTypes.SELECT },
+      );
+      if (already.length) return { code: 409, message: "This package was already paid out" };
+      wallet.withdrawablePoints = withdrawableBefore + points;
+      await wallet.save({ transaction });
+      pkg.status = completed ? "paid_out" : "cancelled";
+      await pkg.save({ transaction });
+      await sequelize.query(
+        'INSERT INTO sol_payouts ("packageId", "userId", "kind", "grossCents", "penaltyCents", "netCents", "withdrawableBefore", "withdrawableAfter", "createdAt") VALUES (:packageId, :userId, :kind, :grossCents, :penaltyCents, :netCents, :before, :after, NOW())',
+        { transaction, type: QueryTypes.INSERT, replacements: {
+          packageId, userId, kind: completed ? "completed" : "early",
+          grossCents, penaltyCents, netCents, before: withdrawableBefore, after: withdrawableBefore + points,
+        } },
+      );
+      return { code: 200, packageId, grossCents, penaltyCents, netCents,
+        withdrawablePoints: wallet.withdrawablePoints, status: pkg.status };
+    });
+    if (outcome.code !== 200) return res.status(outcome.code).json({ message: "message" in outcome ? outcome.message : "Withdrawal cannot be processed" });
+    return res.json(outcome);
+  } catch (error) {
+    console.error("Sòl payout failed", error instanceof Error ? error.name : "UnknownError");
+    return res.status(500).json({ message: "Unable to transfer Sòl payout" });
+  }
+});
+
 export default router;
