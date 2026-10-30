@@ -67,6 +67,7 @@ export default function AdminDashboard() {
     for (const contract of solContracts) totals.set(contract.userId,(totals.get(contract.userId)??0)+contract.totalContributedCents);
     return totals;
   },[solContracts]);
+  const solGrandTotalCents = useMemo(() => solContracts.reduce((sum, contract) => sum + contract.totalContributedCents, 0), [solContracts]);
   const [solLoading, setSolLoading] = useState(false);
   const [solError, setSolError] = useState("");
   const [solSearch, setSolSearch] = useState("");
@@ -319,6 +320,11 @@ const filteredUsers = useMemo(() => {
           {solLoading && <p>Ap chaje kontra yo...</p>}
           {solError && <p role="alert">{solError}</p>}
           {!solLoading && !solError && <p>{solContracts.length} kontra Sòl</p>}
+          {!solLoading && !solError && <div style={{background:"#0e7146",border:"1px solid #6ed3a0",borderRadius:12,padding:"16px 20px",margin:"12px 0 18px",color:"#fff"}}>
+            <div style={{fontSize:14,fontWeight:700}}>Total Sòl resevwa — tout kontra yo</div>
+            <strong style={{display:"block",fontSize:"clamp(24px,5vw,34px)",marginTop:6}}>{solMoney(solGrandTotalCents)}</strong>
+            <small style={{display:"block",marginTop:5}}>Sòm kontribisyon ki konfime nan tout {solContracts.length} kontra ki nan lis la. Pa konte PIX annatant ni mwa ki poko peye.</small>
+          </div>}}
           {solContracts.filter(c => [String(c.id),String(c.userId),c.customer?.fullName || "",c.customer?.phone || ""]
             .some(x => x.toLowerCase().includes(solSearch.toLowerCase()))).map(c => (
             <article key={c.id} style={{ border: "1px solid #6b7280", borderRadius: 10, padding: 12, marginBottom: 10 }}>
