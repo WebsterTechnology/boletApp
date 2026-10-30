@@ -1,7 +1,7 @@
 import { Router } from "express";
 import fs from "node:fs";
 import path from "node:path";
-import type { WhereOptions } from "sequelize";
+import { Op, type WhereOptions } from "sequelize";
 import { adminOnly } from "../middleware/adminOnly";
 import { authenticate } from "../middleware/authenticate";
 import { PixPayment, sequelize, User, WinClaim } from "../models";
@@ -135,12 +135,44 @@ router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) 
 /* =========================================================
    SOL CONTRACTS — READ-ONLY ADMIN MONITORING
 ========================================================= */
+router.post("/sol/archive-test-contracts", authenticate, adminOnly, async (req, res) => {
+  if (req.body?.confirmation !== "ARCHIVE_ALL_SOL_TEST_CONTRACTS") {
+    return res.status(400).json({ message: "Explicit archive confirmation required" });
+  }
+  try {
+    const result = await sequelize.transaction(async transaction => {
+      const contracts = await SolPackage.findAll({ where: { status: { [Op.ne]: "archived" } }, transaction, lock: transaction.LOCK.UPDATE });
+      const ids = contracts.map(contract => contract.id);
+      if (!ids.length) return { archived: 0 };
+      // Open PIX orders may settle asynchronously. Never hide them during reconciliation.
+      const pendingPix = await SolPaymentAttempt.count({ where: {
+        packageId: { [Op.in]: ids }, method: "pix", status: "created",
+        providerReference: { [Op.ne]: null },
+      }, transaction });
+      if (pendingPix) return { blocked: true, pendingPix } as const;
+      for (const contract of contracts) {
+        contract.status = "archived";
+        await contract.save({ transaction });
+      }
+      return { archived: contracts.length };
+    });
+    if ("blocked" in result) return res.status(409).json({
+      message: "Open PIX payment orders require reconciliation before archiving",
+      pendingPix: result.pendingPix,
+    });
+    return res.json(result);
+  } catch (error) {
+    console.error("Admin Sòl archive failed", error instanceof Error ? error.name : "UnknownError");
+    return res.status(500).json({ message: "Unable to archive test contracts" });
+  }
+});
+
 router.get("/sol/contracts", authenticate, adminOnly, async (_req, res) => {
   try {
-    const packages = await SolPackage.findAll({ order: [["createdAt", "DESC"]], limit: 500 });
+    const packages = await SolPackage.findAll({ where: { status: { [Op.ne]: "archived" } }, order: [["createdAt", "DESC"]], limit: 500 });
     const ids = packages.map(p => p.id);
     if (ids.length === 0) return res.json([]);
-    const { Op } = await import("sequelize");
+
     const [users, contributions, attempts] = await Promise.all([
       User.findAll({ where: { id: { [Op.in]: packages.map(p => p.userId) } },
         attributes: ["id", "fullName", "phone", "email"] }),
