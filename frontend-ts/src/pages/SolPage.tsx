@@ -630,7 +630,7 @@ export default function SolPage() {
             <div className={styles.menuList}>
               <button onClick={() => go("packages")}>📦 Gade pake yo <span>→</span></button>
               <button onClick={() => go("transactions")}>📋 Istwa tranzaksyon <span>→</span></button>
-              <Link to="/">🏠 Retounen nan HTNovaTech <span>→</span></Link>
+              <Link to="/" className={styles.boletShortcut}>🎲 Jwe Bolet <span>→</span></Link>
             </div>
           </section>
         )}
