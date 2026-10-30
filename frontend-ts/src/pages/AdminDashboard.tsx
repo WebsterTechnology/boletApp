@@ -62,6 +62,11 @@ export default function AdminDashboard() {
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [solOpen, setSolOpen] = useState(false);
   const [solContracts, setSolContracts] = useState<AdminSolContract[]>([]);
+  const solTotalsByUser = useMemo(() => {
+    const totals = new Map<number,number>();
+    for (const contract of solContracts) totals.set(contract.userId,(totals.get(contract.userId)??0)+contract.totalContributedCents);
+    return totals;
+  },[solContracts]);
   const [solLoading, setSolLoading] = useState(false);
   const [solError, setSolError] = useState("");
   const [solSearch, setSolSearch] = useState("");
@@ -321,7 +326,9 @@ const filteredUsers = useMemo(() => {
                 onClick={() => setSolExpanded(x => x === c.id ? null : c.id)}
                 style={{ width: "100%", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", padding: 12, textAlign: "left" }}>
                 <span><strong>{c.customer?.fullName || "Kliyan"} — #{c.userId}</strong>
-                  <small style={{ display: "block" }}>{c.customer?.phone || "Pa gen telefòn"} · Kontra #{c.id} · {c.paidMonths}/12 peye</small></span>
+                  <small style={{ display: "block" }}>{c.customer?.phone || "Pa gen telefòn"} · Kontra #{c.id} · {c.paidMonths}/12 peye</small>
+                  <small style={{ display: "block", fontWeight: 700 }}>Total pake sa a peye: {solMoney(c.totalContributedCents)}</small>
+                  <small style={{ display: "block" }}>Total kliyan sa a peye nan Sòl: {solMoney(solTotalsByUser.get(c.userId)??0)}</small></span>
                 <span>{solExpanded === c.id ? "▲ Fèmen" : "▼ Ouvri"}</span>
               </button>
               {solExpanded === c.id && <>

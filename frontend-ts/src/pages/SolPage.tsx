@@ -501,6 +501,7 @@ export default function SolPage() {
                   <div><span>Jou peman</span><strong>{selectedDraft.dueDay}</strong></div>
                   <div><span>Estati</span><strong>{selectedDraft.status === "draft" ? "Bouyon — pa aktive" : selectedDraft.status}</strong></div>
                   <div><span>Mwa peye</span><strong>{selectedDraft.paidMonths}/12</strong></div>
+                  <div className={styles.finalAmount}><span>Total ou deja peye</span><strong>{money((selectedDraft.contributions ?? []).filter(c => c.status === "paid" && Boolean(c.paidAt)).reduce((total,c)=>total+c.amountCents,0)/100)}</strong></div>
                 </div>
                 {solWithdrawalResult && <div role="status" className={styles.notice}>
                   <p>{solWithdrawalResult}</p>
