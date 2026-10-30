@@ -5,6 +5,8 @@ import type { WhereOptions } from "sequelize";
 import { adminOnly } from "../middleware/adminOnly";
 import { authenticate } from "../middleware/authenticate";
 import { PixPayment, sequelize, User, WinClaim } from "../models";
+import { SolPackage, SolContribution } from "../models/Sol";
+import { SolPaymentAttempt } from "../models/SolPaymentAttempt";
 import { PIX_STATUSES, type PixStatus } from "../models/payments";
 import { queryString } from "../utils/http";
 
@@ -127,6 +129,52 @@ router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) 
   } catch (err) {
     console.error("admin POST /users/:id/remove-pwen error:", err);
     return res.status(500).json({ message: "Error removing pwen" });
+  }
+});
+
+/* =========================================================
+   SOL CONTRACTS — READ-ONLY ADMIN MONITORING
+========================================================= */
+router.get("/sol/contracts", authenticate, adminOnly, async (_req, res) => {
+  try {
+    const packages = await SolPackage.findAll({ order: [["createdAt", "DESC"]], limit: 500 });
+    const ids = packages.map(p => p.id);
+    if (ids.length === 0) return res.json([]);
+    const { Op } = await import("sequelize");
+    const [users, contributions, attempts] = await Promise.all([
+      User.findAll({ where: { id: { [Op.in]: packages.map(p => p.userId) } },
+        attributes: ["id", "fullName", "phone", "email"] }),
+      SolContribution.findAll({ where: { packageId: { [Op.in]: ids } },
+        order: [["installmentNumber", "ASC"]] }),
+      SolPaymentAttempt.findAll({ where: { packageId: { [Op.in]: ids } },
+        attributes: ["id", "packageId", "contributionId", "method", "status", "amountCents", "confirmedAt", "createdAt"],
+        order: [["createdAt", "DESC"]] }),
+    ]);
+    const userMap = new Map(users.map(u => [u.id, u]));
+    return res.json(packages.map(pkg => {
+      const customer = userMap.get(pkg.userId);
+      const schedule = contributions.filter(c => c.packageId === pkg.id);
+      const payments = attempts.filter(a => a.packageId === pkg.id);
+      const next = schedule.find(c => c.status !== "paid");
+      const nextDue = next ? new Date(pkg.createdAt) : null;
+      if (nextDue && next) {
+        nextDue.setUTCMonth(nextDue.getUTCMonth() + next.installmentNumber - 1);
+        nextDue.setUTCDate(Math.min(pkg.dueDay, new Date(Date.UTC(nextDue.getUTCFullYear(), nextDue.getUTCMonth() + 1, 0)).getUTCDate()));
+      }
+      return {
+        id: pkg.id, userId: pkg.userId,
+        customer: customer ? { fullName: customer.fullName, phone: customer.phone, email: customer.email } : null,
+        monthlyAmountCents: pkg.monthlyAmountCents, dueDay: pkg.dueDay,
+        status: pkg.status, paidMonths: pkg.paidMonths, createdAt: pkg.createdAt,
+        totalContributedCents: schedule.filter(c => c.status === "paid").reduce((n, c) => n + c.amountCents, 0),
+        nextInstallment: next ? { number: next.installmentNumber, amountCents: next.amountCents, dueDate: nextDue?.toISOString().slice(0,10) } : null,
+        installments: schedule.map(c => ({ number: c.installmentNumber, amountCents: c.amountCents, status: c.status, paidAt: c.paidAt })),
+        payments: payments.map(a => ({ id: a.id, installmentId: a.contributionId, method: a.method, status: a.status, amountCents: a.amountCents, confirmedAt: a.confirmedAt, createdAt: a.createdAt })),
+      };
+    }));
+  } catch (error) {
+    console.error("Admin Sòl contract listing failed", error instanceof Error ? error.name : "UnknownError");
+    return res.status(500).json({ message: "Unable to load Sòl contracts" });
   }
 });
 
