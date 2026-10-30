@@ -30,9 +30,35 @@ type AdminSolContract = {
 };
 const solMoney = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 
+type WithdrawalEntry = {id:number;userId:number;amount:number;status:string;createdAt:string;customer:{fullName:string|null;phone:string}|null};
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function AdminDashboard() {
+  const [withdrawals,setWithdrawals] = useState<WithdrawalEntry[]>([]);
+  const [withdrawalsOpen,setWithdrawalsOpen] = useState(false);
+  const [withdrawalsError,setWithdrawalsError] = useState("");
+  const [withdrawalsBusy,setWithdrawalsBusy] = useState<number|null>(null);
+  const loadWithdrawals = async () => {
+    try {
+      setWithdrawalsError("");
+      const response=await axios.get<WithdrawalEntry[]>(API+"/api/withdraw/admin",auth);
+      setWithdrawals(response.data);
+    } catch {setWithdrawalsError("Nou pa kapab chaje demann retrè yo.");}
+  };
+  const markWithdrawalPaid = async (id:number) => {
+    if(!window.confirm("Èske ou deja voye PIX pou kliyan sa a?"))return;
+    setWithdrawalsBusy(id);
+    try {await axios.patch(API+"/api/withdraw/admin/"+id+"/paid",{},auth);await loadWithdrawals();}
+    catch {alert("Nou pa kapab make retrè a kòm peye.");}
+    finally {setWithdrawalsBusy(null);}
+  };
+  const archiveWithdrawal = async (id:number) => {
+    if(!window.confirm("Retire demann peye sa a nan lis administratè ak kliyan an? Dosye finansye a ap rete konsève."))return;
+    setWithdrawalsBusy(id);
+    try {await axios.delete(API+"/api/withdraw/admin/"+id,auth);await loadWithdrawals();}
+    catch {alert("Se sèlman retrè ki deja peye ou ka achive.");}
+    finally {setWithdrawalsBusy(null);}
+  };
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [solOpen, setSolOpen] = useState(false);
   const [solContracts, setSolContracts] = useState<AdminSolContract[]>([]);
@@ -318,6 +344,24 @@ const filteredUsers = useMemo(() => {
         </>}
       </section>
 
+
+      <section style={{marginBottom:20}}>
+        <button type="button" onClick={() => {setWithdrawalsOpen(v=>!v);if(!withdrawalsOpen)void loadWithdrawals();}}>
+          💸 Demann retrè — Pending / Paid {withdrawalsOpen?"▲":"▼"}
+        </button>
+        {withdrawalsOpen && <div style={{display:"grid",gap:12,marginTop:12}}>
+          <button type="button" onClick={() => void loadWithdrawals()}>Rafrechi retrè yo</button>
+          {withdrawalsError && <p role="alert">{withdrawalsError}</p>}
+          {withdrawals.map(w=><article key={w.id} style={{padding:14,border:"1px solid #888",borderRadius:12}}>
+            <strong>{w.customer?.fullName||"Kliyan"} — #{w.userId}</strong>
+            <p>{w.customer?.phone||""} · Demann #{w.id} · {w.amount} pwen</p>
+            <p>{w.status==="pending"?"🟠 Annatant peman PIX":w.status==="paid"?"✅ Peye":w.status} · {new Date(w.createdAt).toLocaleString()}</p>
+            {w.status==="pending" && <button type="button" disabled={withdrawalsBusy===w.id} onClick={() => void markWithdrawalPaid(w.id)}>Make kòm peye</button>}
+            {w.status==="paid" && <button type="button" disabled={withdrawalsBusy===w.id} onClick={() => void archiveWithdrawal(w.id)}>Efase nan lis yo</button>}
+          </article>)}
+          {!withdrawalsError && withdrawals.length===0 && <p>Pa gen demann retrè.</p>}
+        </div>}
+      </section>
 
       <section style={{ marginBottom: 20 }}>
         <button onClick={() => setShowBroadcast((open) => !open)} aria-expanded={showBroadcast} className="admin-broadcast-toggle"><span>📣 Broadcast Notification</span><span>{showBroadcast ? "✕ Close" : "Open ▾"}</span></button>
