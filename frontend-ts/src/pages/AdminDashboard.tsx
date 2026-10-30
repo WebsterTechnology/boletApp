@@ -30,7 +30,7 @@ type AdminSolContract = {
 };
 const solMoney = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 
-type SolWithdrawal = {id:number;packageId:number;userId:number;grossCents:number;penaltyCents:number;netCents:number;status:string;createdAt:string;fullName:string|null;phone:string};
+type SolWithdrawal = {id:number;packageId:number;userId:number;recipientName:string|null;pixKey:string|null;grossCents:number;penaltyCents:number;netCents:number;status:string;createdAt:string;fullName:string|null;phone:string};
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function AdminDashboard() {
@@ -355,6 +355,8 @@ const filteredUsers = useMemo(() => {
           {withdrawals.map(w=><article key={w.id} style={{padding:14,border:"1px solid #888",borderRadius:12}}>
             <strong>{w.fullName||"Kliyan"} — #{w.userId}</strong>
             <p>{w.phone||""} · Demann Sòl #{w.id} · {solMoney(w.netCents)} · Kontra Sòl #{w.packageId}</p>
+            <p><strong>Non pou PIX:</strong> {w.recipientName||"Pa bay"} </p>
+            <p><strong>Kle PIX:</strong> {w.pixKey||"Pa bay"} {w.pixKey && <button type="button" onClick={()=>void navigator.clipboard.writeText(w.pixKey||"")}>Kopye kle PIX</button>}</p>
             <p>{w.status==="pending"?"🟠 Annatant peman PIX":w.status==="paid"?"✅ Peye":w.status} · {new Date(w.createdAt).toLocaleString()}</p>
             {w.status==="pending" && <button type="button" disabled={withdrawalsBusy===w.id} onClick={() => void markWithdrawalPaid(w.id)}>Make kòm peye</button>}
             {w.status==="paid" && <button type="button" disabled={withdrawalsBusy===w.id} onClick={() => void archiveWithdrawal(w.id)}>Efase nan lis yo</button>}
