@@ -75,6 +75,23 @@ router.get("/pix-availability", async (_req, res) => {
 router.get("/pix-readiness", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   if (!currentUser(req).isAdmin) return res.sendStatus(403);
+  let urlsConfigured = false;
+  try {
+    const webhook = new URL(process.env.SOL_PIX_WEBHOOK_URL || "");
+    const redirect = new URL(process.env.SOL_PIX_REDIRECT_URL || "");
+    urlsConfigured = webhook.protocol === "https:" &&
+      webhook.pathname === "/api/sol-pix/webhook" &&
+      !webhook.search && !webhook.hash &&
+      !webhook.username && !webhook.password &&
+      redirect.protocol === "https:" &&
+      !redirect.username && !redirect.password &&
+      Boolean(env.infinitepayHandle?.trim());
+  } catch { /* Missing or invalid URLs remain unavailable. */ }
+  const pixConfig = {
+    urlsConfigured,
+    checkoutEnabled: process.env.SOL_PIX_CHECKOUT_ENABLED === "true",
+    webhookEnabled: process.env.SOL_PIX_WEBHOOK_ENABLED === "true",
+  };
   let columnExists = false;
   let migrationRecorded = false;
   try {
@@ -89,9 +106,9 @@ router.get("/pix-readiness", async (req, res) => {
     );
     migrationRecorded = migration[0]?.exists === true;
   } catch {
-    return res.json({ databaseReady: false, columnExists, migrationRecorded });
+    return res.json({ databaseReady: false, columnExists, migrationRecorded, ...pixConfig });
   }
-  return res.json({ databaseReady: columnExists && migrationRecorded, columnExists, migrationRecorded });
+  return res.json({ databaseReady: columnExists && migrationRecorded, columnExists, migrationRecorded, ...pixConfig });
 });
 
 /**

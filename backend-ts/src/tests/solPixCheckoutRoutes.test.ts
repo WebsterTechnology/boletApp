@@ -58,6 +58,7 @@ describe("Sòl PIX checkout recovery", () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       databaseReady: true, columnExists: true, migrationRecorded: true,
+      urlsConfigured: true, checkoutEnabled: false, webhookEnabled: false,
     });
     expect(mocks.providerPost).not.toHaveBeenCalled();
   });
@@ -66,6 +67,7 @@ describe("Sòl PIX checkout recovery", () => {
     const response = await request(app).get("/api/sol/pix-readiness");
     expect(response.body).toEqual({
       databaseReady: false, columnExists: false, migrationRecorded: true,
+      urlsConfigured: true, checkoutEnabled: true, webhookEnabled: true,
     });
     expect(mocks.providerPost).not.toHaveBeenCalled();
   });
