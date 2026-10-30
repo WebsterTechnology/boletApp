@@ -36,10 +36,10 @@ const Header = ({ openLogin }: { openLogin: () => void }) => {
         {/* LEFT */}
         <div className={styles.left}>
           <BurgerMenu />
-          <Link to="/" className={styles.logoLink}>
+          {!(isSol || isBoletGame) && <Link to="/" className={styles.logoLink}>
             <img src={logoFull} className={styles.logoFull} alt="Logo" />
             <img src={logoSmall} className={styles.logoSmall} alt="Logo" />
-          </Link>
+          </Link>}
 
           {(isSol || isBoletGame) && <Link to={isSol ? "/game" : "/sol"} className={styles.switchProduct} aria-label={isSol ? "Jwe Bolèt" : "Rantre nan Sòl"}>
             <span className={styles.switchFull}>{isSol ? "🎲 Jwe Bolèt" : "💰 Rantre nan Sòl"}</span>
