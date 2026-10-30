@@ -130,7 +130,7 @@ export default function SolPage() {
     const total = pkg.paidMonths * pkg.monthlyAmountCents / 100;
     const payout = pkg.paidMonths === 12 ? total + pkg.monthlyAmountCents / 100 : total * 0.9;
     const warning = pkg.paidMonths === 12
-      ? "Pake a fini. Ou pral resevwa " + money(payout) + " nan Disponib pou retire."
+      ? "Pake a fini. Ou pral resevwa " + money(payout) + " nan yon demann retrè Sòl."
       : "Retrè bonè ap fèmen pake Sòl ou nèt. Y ap retire 10% sou " + money(total) + ". Ou pral resevwa " + money(payout) + " nan Disponib pou retire.";
     if (!window.confirm(warning + " Kontinye?")) return;
     const token = localStorage.getItem("token");
@@ -139,15 +139,15 @@ export default function SolPage() {
     setSolWithdrawalError("");
     setSolWithdrawalResult("");
     try {
-      const response = await fetch(API + "/api/sol/packages/" + pkg.id + "/withdraw-to-wallet", {
+      const response = await fetch(API + "/api/sol/packages/" + pkg.id + "/request-withdrawal", {
         method: "POST", headers: { Authorization: "Bearer " + token },
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(typeof result.message === "string" ? result.message : "Retrè Sòl pa disponib.");
-      setSolWithdrawalResult("Transfè Sòl konfime: " + money(result.netCents / 100) + " ajoute nan Disponib pou retire. Sèvi ak Retire Pwen nan Bolet pou voye demann PIX ou.");
+      setSolWithdrawalResult("Demann retrè Sòl anrejistre: " + money(result.netCents / 100) + " annatant admin lan voye lajan an ak PIX.");
       window.dispatchEvent(new Event("pointsUpdated"));
       await showSavedDraft(pkg.id);
-      setSolWithdrawalResult("Transfè Sòl konfime: " + money(result.netCents / 100) + " ajoute nan Disponib pou retire. Sèvi ak Retire Pwen nan Bolet pou voye demann PIX ou.");
+      setSolWithdrawalResult("Demann retrè Sòl anrejistre: " + money(result.netCents / 100) + " annatant admin lan voye lajan an ak PIX.");
     } catch (error) {
       setSolWithdrawalError(error instanceof Error && error.message.includes("not yet enabled")
         ? "Retrè Sòl poko aktive."
@@ -484,7 +484,7 @@ export default function SolPage() {
                   <div><span>Mwa peye</span><strong>{selectedDraft.paidMonths}/12</strong></div>
                 </div>
                 {solWithdrawalResult && <div role="status" className={styles.notice}>
-                  <p>{solWithdrawalResult}</p><Link to="/balans">Ale nan Bolet — Retire Pwen →</Link>
+                  <p>{solWithdrawalResult}</p>
                 </div>}
                 {solWithdrawalError && <p role="alert" className={styles.notice}>{solWithdrawalError}</p>}
                 {["active", "completed"].includes(selectedDraft.status) && selectedDraft.paidMonths > 0 && (
@@ -495,9 +495,9 @@ export default function SolPage() {
                       : "Retrè bonè: 10% penalite sou kontribisyon ou peye yo. Pake a ap fèmen nèt."}</p>
                     <button type="button" className={styles.solWithdrawButton} disabled={withdrawingSol || payingWallet || payingPix}
                       onClick={() => void withdrawSolToBolet(selectedDraft)}>
-                      {withdrawingSol ? "Ap prepare retrè..." : "Retire Sòl nan balans Bolet"}
+                      {withdrawingSol ? "Ap prepare retrè..." : "Mande retrè Sòl"}
                     </button>
-                    <small className={styles.solWithdrawHelp}>Apre transfè a, ouvri Bolet → Balans → Retire Pwen epi antre Chave PIX ou.</small>
+                    <small className={styles.solWithdrawHelp}>Demann ou ap parèt nan retrè Sòl yo kòm Annatant. Admin lan ap voye lajan an epi make li kòm Peye.</small>
                   </div>
                 )}
                 <h3>12 kontribisyon yo</h3>
