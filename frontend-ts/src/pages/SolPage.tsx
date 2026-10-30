@@ -516,7 +516,7 @@ export default function SolPage() {
                   <div><span>Jou peman</span><strong>{selectedDraft.dueDay}</strong></div>
                   <div><span>Estati</span><strong>{selectedDraft.status === "paid_out" ? "Yo remèt ou kòb ou deja." : selectedDraft.status === "draft" ? "Bouyon — pa aktive" : selectedDraft.status}</strong></div>
                   <div><span>Mwa peye</span><strong>{selectedDraft.paidMonths}/12</strong></div>
-                  <div className={styles.finalAmount}><span>Total ou deja peye</span><strong>{money(confirmedSolTotalCents(selectedDraft)/100)}</strong></div>
+                  <div className={styles.finalAmount}><span>Total ou deja peye</span><strong>{money(selectedDraft.status === "paid_out" ? 0 : confirmedSolTotalCents(selectedDraft)/100)}</strong></div>
                 </div>
                 {selectedDraft.status !== "paid_out" && <>
                 <div className={styles.solForecast} aria-label="Rezime kontribisyon ak retrè Sòl">
