@@ -680,3 +680,25 @@ button svg,
 /* Never abbreviate the cross-product action on mobile. */
 @media(max-width:600px){.switchFull{display:inline}.switchSmall{display:none}.switchProduct{white-space:normal;max-width:115px;min-width:92px;padding:6px 7px;font-size:11px;line-height:1.15;flex-shrink:1}.logoFull,.logoSmall{height:30px}.left{flex:0 1 auto;gap:3px}.right{flex:0 0 auto}.container{gap:2px}.buyButton{padding:6px;font-size:10px}.pointsContainer{padding:2px;gap:2px}}
 @media(min-width:601px){.switchFull{display:inline}.switchSmall{display:none}}
+
+/* Strong but accessible cross-product marketing call-to-action. */
+.switchProduct,.switchProduct:visited{
+  background:linear-gradient(120deg,#fa3e8b 0%,#eb2c67 52%,#a71be0 100%);
+  color:#fff;
+  border:2px solid #ffb1df;
+  box-shadow:0 0 0 2px rgba(255,255,255,.12),0 5px 16px rgba(232,45,119,.52);
+  font-weight:900;
+  letter-spacing:.1px;
+  animation:productSwitchGlow 3s ease-in-out infinite;
+}
+.switchProduct:hover,.switchProduct:focus-visible{
+  background:linear-gradient(120deg,#d91f70,#8f18d3);
+  color:#fff;
+  border-color:#fff;
+  box-shadow:0 0 0 3px rgba(255,255,255,.28),0 7px 20px rgba(232,45,119,.62);
+}
+@keyframes productSwitchGlow{
+  0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.12),0 4px 12px rgba(232,45,119,.42)}
+  50%{box-shadow:0 0 0 3px rgba(255,177,223,.32),0 5px 19px rgba(232,45,119,.66)}
+}
+@media(prefers-reduced-motion:reduce){.switchProduct{animation:none}}
