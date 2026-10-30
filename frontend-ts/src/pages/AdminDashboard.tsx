@@ -24,7 +24,7 @@ type AdminSolContract = {
   id: number; userId: number; customer: { fullName: string | null; phone: string; email: string | null } | null;
   monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; createdAt: string;
   totalContributedCents: number;
-  nextInstallment: { number: number; amountCents: number; dueDate: string } | null;
+  nextInstallment: { number: number; amountCents: number; estimatedDueDate: string } | null;
   installments: { number: number; amountCents: number; status: string; paidAt: string | null }[];
   payments: { id: number; installmentId: number; method: string; status: string; amountCents: number; confirmedAt: string | null; createdAt: string }[];
 };
@@ -295,7 +295,7 @@ const filteredUsers = useMemo(() => {
               <div>{c.customer?.phone || "Pa gen telefòn"} · Kontra #{c.id}</div>
               <div>Pakè: {solMoney(c.monthlyAmountCents)}/mwa · Eta: {c.status} · Peye: {c.paidMonths}/12</div>
               <div>Total peye: {solMoney(c.totalContributedCents)}</div>
-              <div>{c.nextInstallment ? `Pwochen peman: mwa ${c.nextInstallment.number} — ${solMoney(c.nextInstallment.amountCents)} · ${c.nextInstallment.dueDate}` : "Pa gen peman an atant"}</div>
+              <div>{c.nextInstallment ? `Pwochen peman: mwa ${c.nextInstallment.number} — ${solMoney(c.nextInstallment.amountCents)} · Dat estime: ${c.nextInstallment.estimatedDueDate}` : "Pa gen peman an atant"}</div>
               <button type="button" onClick={() => setSolExpanded(x => x === c.id ? null : c.id)}>
                 {solExpanded === c.id ? "Fèmen detay" : "Gade 12 mwa ak istwa peman"}
               </button>
