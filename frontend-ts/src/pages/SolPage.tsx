@@ -21,8 +21,10 @@ const projectedSolCompletion = (pkg: SolDraft): string | null => {
   if (!pkg.createdAt) return null;
   const started = new Date(pkg.createdAt);
   if (Number.isNaN(started.getTime())) return null;
-  const twelfthMonth = new Date(Date.UTC(started.getUTCFullYear(), started.getUTCMonth() + 11, pkg.dueDay));
-  return new Intl.DateTimeFormat("ht-HT", { month: "long", year: "numeric", timeZone: "UTC" }).format(twelfthMonth);
+  // Show the estimate one year after the package started, on its chosen due day.
+  const finishDate = new Date(Date.UTC(started.getUTCFullYear() + 1, started.getUTCMonth(), pkg.dueDay));
+  const monthsKreyol = ["jan", "fev", "mas", "avr", "me", "jen", "jiy", "out", "sept", "okt", "nov", "des"];
+  return `${finishDate.getUTCDate()} ${monthsKreyol[finishDate.getUTCMonth()]} ${finishDate.getUTCFullYear()}`;
 };
 const confirmedSolTotalCents = (pkg: SolDraft) => (pkg.contributions ?? [])
   .filter(c => c.status === "paid" && Boolean(c.paidAt))
@@ -520,7 +522,7 @@ export default function SolPage() {
                   <h3>Rezime lajan Sòl ou</h3>
                   <div><span>Total ou deja kontribye</span><strong>{money(confirmedSolTotalCents(selectedDraft)/100)}</strong></div>
                   <div><span>Montan apre 12 peman (resevwa 13)</span><strong>{money(selectedDraft.monthlyAmountCents*13/100)}</strong></div>
-                  {projectedSolCompletion(selectedDraft) && <div><span>Dat fini estime si w peye chak mwa alè</span><strong>{projectedSolCompletion(selectedDraft)}</strong></div>}
+                  {projectedSolCompletion(selectedDraft) && <div><span>Dat fen estime (12 mwa apre kòmansman)</span><strong>{projectedSolCompletion(selectedDraft)}</strong></div>}
                   <div><span>Si ou mande retrè kounye a</span><strong>{money((selectedDraft.paidMonths >= 12 ? confirmedSolTotalCents(selectedDraft)+selectedDraft.monthlyAmountCents : confirmedSolTotalCents(selectedDraft)-Math.floor(confirmedSolTotalCents(selectedDraft)*0.1))/100)}</strong></div>
                   {selectedDraft.paidMonths < 12 && <small>Retrè bonè: penalite 10% sou kontribisyon ki konfime yo. Pake a ap fèmen; demann retrè a ap rete annatant jiskaske admin lan voye PIX la.</small>}
                   <small>Dat fini a se yon estimasyon, pa yon garanti. Se peman ki konfime sèlman ki antre nan kalkil sa yo.</small>
