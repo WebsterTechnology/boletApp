@@ -476,7 +476,7 @@ router.post("/packages/:id/withdraw-to-wallet", async (req, res) => {
       return { code: 200, packageId, grossCents, penaltyCents, netCents,
         withdrawablePoints: wallet.withdrawablePoints, status: pkg.status };
     });
-    if (outcome.code !== 200) return res.status(outcome.code).json({ message: outcome.message });
+    if (outcome.code !== 200) return res.status(outcome.code).json({ message: "message" in outcome ? outcome.message : "Withdrawal cannot be processed" });
     return res.json(outcome);
   } catch (error) {
     console.error("Sòl payout failed", error instanceof Error ? error.name : "UnknownError");
