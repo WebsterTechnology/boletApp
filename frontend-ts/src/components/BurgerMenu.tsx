@@ -88,6 +88,12 @@ const BurgerMenu = () => {
             </Link>
           </li>
 
+          <li>
+            <Link to="/sol" className={`${styles.item} ${styles.solShortcut}`} onClick={closeMenu}>
+              <span aria-hidden="true">💰</span> Rantre nan Sòl
+            </Link>
+          </li>
+
           {/* ✅ Fich (user’s bets) — only show when logged in */}
           {user && (
             <li>
