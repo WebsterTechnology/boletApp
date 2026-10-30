@@ -671,3 +671,8 @@ button svg,
     display: none;
   }
 }
+/* Persistent highlighted product switch in top header on both Bolet and Sòl. */
+.switchProduct,.switchProduct:visited{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;text-align:center;background:#facc15;color:#17212b;text-decoration:none;border:2px solid #fde68a;border-radius:999px;padding:8px 12px;font-weight:800;font-size:13px;line-height:1.1;box-shadow:0 2px 10px #facc1540;white-space:nowrap}
+.switchProduct:hover,.switchProduct:focus-visible{background:#fde047;color:#17212b}
+.switchSmall{display:none}
+@media(max-width:600px){.switchFull{display:none}.switchSmall{display:inline}.switchProduct{padding:8px 9px;font-size:12px}.left{min-width:0;gap:5px}.container{gap:4px}.right{gap:4px}.pointsContainer{gap:3px;padding:2px}.buyButton{padding:6px 9px;font-size:11px}}
