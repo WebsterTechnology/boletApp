@@ -23,6 +23,10 @@ export default function SolPage() {
   const [showPaymentNotice, setShowPaymentNotice] = useState(false);
   const [drafts, setDrafts] = useState<SolDraft[]>([]);
   const [selectedDraft, setSelectedDraft] = useState<SolDraft | null>(null);
+  const [withdrawingSol, setWithdrawingSol] = useState(false);
+  const [solWithdrawalResult, setSolWithdrawalResult] = useState("");
+  const [solWithdrawalError, setSolWithdrawalError] = useState("");
+
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [paymentPreview, setPaymentPreview] = useState<PaymentPreview | null>(null);
@@ -121,6 +125,36 @@ export default function SolPage() {
     finally { setDeletingDraftId(null); }
   };
 
+  const withdrawSolToBolet = async (pkg: SolDraft) => {
+    if (withdrawingSol || !["active", "completed"].includes(pkg.status) || pkg.paidMonths < 1) return;
+    const total = pkg.paidMonths * pkg.monthlyAmountCents / 100;
+    const payout = pkg.paidMonths === 12 ? total + pkg.monthlyAmountCents / 100 : total * 0.9;
+    const warning = pkg.paidMonths === 12
+      ? "Pake a fini. Ou pral resevwa " + money(payout) + " nan Disponib pou retire."
+      : "Retrè bonè ap fèmen pake Sòl ou nèt. Y ap retire 10% sou " + money(total) + ". Ou pral resevwa " + money(payout) + " nan Disponib pou retire.";
+    if (!window.confirm(warning + " Kontinye?")) return;
+    const token = localStorage.getItem("token");
+    if (!token) { setSolWithdrawalError("Tanpri konekte ankò."); return; }
+    setWithdrawingSol(true);
+    setSolWithdrawalError("");
+    setSolWithdrawalResult("");
+    try {
+      const response = await fetch(API + "/api/sol/packages/" + pkg.id + "/withdraw-to-wallet", {
+        method: "POST", headers: { Authorization: "Bearer " + token },
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(typeof result.message === "string" ? result.message : "Retrè Sòl pa disponib.");
+      setSolWithdrawalResult("Transfè Sòl konfime: " + money(result.netCents / 100) + " ajoute nan Disponib pou retire. Sèvi ak Retire Pwen nan Bolet pou voye demann PIX ou.");
+      window.dispatchEvent(new Event("pointsUpdated"));
+      await showSavedDraft(pkg.id);
+      setSolWithdrawalResult("Transfè Sòl konfime: " + money(result.netCents / 100) + " ajoute nan Disponib pou retire. Sèvi ak Retire Pwen nan Bolet pou voye demann PIX ou.");
+    } catch (error) {
+      setSolWithdrawalError(error instanceof Error && error.message.includes("not yet enabled")
+        ? "Retrè Sòl poko aktive."
+        : "Retrè Sòl pa t fèt. Tanpri rafrechi epi verifye estati pake a anvan ou re-eseye.");
+    } finally { setWithdrawingSol(false); }
+  };
+
   const showSavedDraft = async (id: number) => {
     setPaymentChoiceOpen(false);
     setChosenPayment(null);
@@ -129,6 +163,8 @@ export default function SolPage() {
     if (!token) { setDraftError("Tanpri konekte ankò."); return; }
     setDetailLoading(true);
     setDetailError("");
+    setSolWithdrawalError("");
+    setSolWithdrawalResult("");
     setSelectedDraft(null);
     setPaymentPreview(null);
     setPaymentPreviewError("");
@@ -447,12 +483,29 @@ export default function SolPage() {
                   <div><span>Estati</span><strong>{selectedDraft.status === "draft" ? "Bouyon — pa aktive" : selectedDraft.status}</strong></div>
                   <div><span>Mwa peye</span><strong>{selectedDraft.paidMonths}/12</strong></div>
                 </div>
+                {solWithdrawalResult && <div role="status" className={styles.notice}>
+                  <p>{solWithdrawalResult}</p><Link to="/balans">Ale nan Bolet — Retire Pwen →</Link>
+                </div>}
+                {solWithdrawalError && <p role="alert" className={styles.notice}>{solWithdrawalError}</p>}
+                {["active", "completed"].includes(selectedDraft.status) && selectedDraft.paidMonths > 0 && (
+                  <div className={styles.package} style={{ marginBottom: 16 }}>
+                    <strong>Retire lajan Sòl ou</strong>
+                    <p>{selectedDraft.paidMonths === 12
+                      ? "12 mwa fini. Resevwa 13 mwa kontribisyon sou balans Disponib pou retire."
+                      : "Retrè bonè: 10% penalite sou kontribisyon ou peye yo. Pake a ap fèmen nèt."}</p>
+                    <button type="button" disabled={withdrawingSol || payingWallet || payingPix}
+                      onClick={() => void withdrawSolToBolet(selectedDraft)}>
+                      {withdrawingSol ? "Ap prepare retrè..." : "Retire Sòl nan balans Bolet"}
+                    </button>
+                    <small>Apre transfè a, ouvri Bolet → Balans → Retire Pwen epi antre Chave PIX ou.</small>
+                  </div>
+                )}
                 <h3>12 kontribisyon yo</h3>
                 <div className={styles.packageGrid}>
                   {[...(selectedDraft.contributions || [])].sort((a, b) => a.installmentNumber - b.installmentNumber).map(item => {
                     const paid = item.status === "paid" || Boolean(item.paidAt);
                     const nextUnpaid = selectedDraft.contributions?.filter(contribution => contribution.status !== "paid" && !contribution.paidAt).reduce((first, contribution) => Math.min(first, contribution.installmentNumber), Infinity);
-                    const canPay = !paid && item.installmentNumber === nextUnpaid && selectedDraft.status !== "cancelled";
+                    const canPay = !paid && item.installmentNumber === nextUnpaid && ["draft", "active"].includes(selectedDraft.status);
                     return <article className={styles.package} key={item.id}>
                       <div className={styles.packageTop}><span>Mwa {item.installmentNumber}</span><span className={styles.duration}>{paid ? "Peye" : "Annatant"}</span></div>
                       <strong>{money(item.amountCents / 100)}</strong>
