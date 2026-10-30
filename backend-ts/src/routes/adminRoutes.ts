@@ -142,6 +142,9 @@ router.post("/sol/archive-test-contracts", authenticate, adminOnly, async (req, 
   try {
     const result = await sequelize.transaction(async transaction => {
       const contracts = await SolPackage.findAll({ where: { status: { [Op.ne]: "archived" } }, transaction, lock: transaction.LOCK.UPDATE });
+      // The operator verified exactly six test contracts in the admin view.
+      // Refuse a blanket archive if new live contracts have appeared.
+      if (contracts.length !== 6) return { blocked: true, countChanged: true } as const;
       const ids = contracts.map(contract => contract.id);
       if (!ids.length) return { archived: 0 };
       // Open PIX orders may settle asynchronously. Never hide them during reconciliation.
@@ -157,8 +160,7 @@ router.post("/sol/archive-test-contracts", authenticate, adminOnly, async (req, 
       return { archived: contracts.length };
     });
     if ("blocked" in result) return res.status(409).json({
-      message: "Open PIX payment orders require reconciliation before archiving",
-      pendingPix: result.pendingPix,
+      message: "Archive refused: contract count changed or open PIX orders require reconciliation",
     });
     return res.json(result);
   } catch (error) {
