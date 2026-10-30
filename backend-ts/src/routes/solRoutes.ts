@@ -7,6 +7,7 @@ import { SolPaymentAttempt } from "../models/SolPaymentAttempt";
 import { User } from "../models/User";
 import { calculateSolWalletDebit } from "../services/solWalletDebit";
 import { calculateSolPayout } from "../services/solPayout";
+import { adminOnly } from "../middleware/adminOnly";
 
 const router = Router();
 router.use(authenticate);
@@ -402,80 +403,59 @@ router.post("/packages/:id/wallet-payments", async (req, res) => {
  * Users then submit their PIX key through Bolet's existing Retire Pwen form.
  * No automatic PIX transfer is initiated here.
  */
-router.post("/packages/:id/withdraw-to-wallet", async (req, res) => {
-  if (process.env.SOL_WITHDRAWALS_ENABLED !== "true") {
-    return res.status(503).json({ message: "Sòl withdrawals are not yet enabled" });
-  }
-  const rawId = req.params.id as string;
-  if (!/^[0-9]+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
-    return res.status(400).json({ message: "Invalid package ID" });
-  }
-  const packageId = Number(rawId);
-  const userId = currentUser(req).id;
-  try {
-    const outcome = await sequelize.transaction(async transaction => {
-      // Lock the package before checking or changing its status to serialize withdrawals.
-      const pkg = await SolPackage.findOne({
-        where: { id: packageId, userId }, transaction, lock: transaction.LOCK.UPDATE,
-      });
-      if (!pkg) return { code: 404, message: "Package not found" };
-      if (!["active", "completed"].includes(pkg.status)) {
-        return { code: 409, message: "Package cannot be withdrawn in this state" };
-      }
-      const contributions = await SolContribution.findAll({
-        where: { packageId }, transaction, lock: transaction.LOCK.UPDATE,
-      });
-      if (contributions.length !== 12 || contributions.some(c => c.amountCents !== pkg.monthlyAmountCents)) {
-        return { code: 409, message: "Package installments require reconciliation" };
-      }
-      const paid = contributions.filter(c => c.status === "paid" && Boolean(c.paidAt));
-      if (!paid.length || paid.length !== Number(pkg.paidMonths)) {
-        return { code: 409, message: "Paid installments require reconciliation" };
-      }
-      if ((pkg.status === "completed") !== (paid.length === 12)) {
-        return { code: 409, message: "Package completion requires reconciliation" };
-      }
-      // A provider checkout may settle after initiation. Do not allow payout while
-      // an unconfirmed external PIX order exists, even if the user closes the page.
-      const pendingPix = await SolPaymentAttempt.findOne({
-        where: { packageId, method: "pix", status: ["created", "pending", "processing"] },
-        transaction, lock: transaction.LOCK.UPDATE,
-      });
-      if (pendingPix) return { code: 409, message: "A PIX payment is pending reconciliation" };
-      const { grossCents, penaltyCents, netCents, completed, points } =
-        calculateSolPayout(pkg.monthlyAmountCents, paid.length);
-      const wallet = await User.findByPk(userId, { transaction, lock: transaction.LOCK.UPDATE });
-      if (!wallet) return { code: 404, message: "Wallet not found" };
-      const withdrawableBefore = Number(wallet.withdrawablePoints);
-      if (!Number.isSafeInteger(withdrawableBefore) || withdrawableBefore < 0 ||
-          !Number.isSafeInteger(withdrawableBefore + points)) {
-        return { code: 409, message: "Wallet balance requires review" };
-      }
-      const already = await sequelize.query<{ id: number }>(
-        'SELECT id FROM sol_payouts WHERE "packageId" = :packageId LIMIT 1',
-        { replacements: { packageId }, transaction, type: QueryTypes.SELECT },
-      );
-      if (already.length) return { code: 409, message: "This package was already paid out" };
-      wallet.withdrawablePoints = withdrawableBefore + points;
-      await wallet.save({ transaction });
-      pkg.status = completed ? "paid_out" : "cancelled";
-      await pkg.save({ transaction });
-      await sequelize.query(
-        'INSERT INTO sol_payouts ("packageId", "userId", "kind", "grossCents", "penaltyCents", "netCents", "withdrawableBefore", "withdrawableAfter", "createdAt") VALUES (:packageId, :userId, :kind, :grossCents, :penaltyCents, :netCents, :before, :after, NOW())',
-        { transaction, type: QueryTypes.INSERT, replacements: {
-          packageId, userId, kind: completed ? "completed" : "early",
-          grossCents, penaltyCents, netCents, before: withdrawableBefore, after: withdrawableBefore + points,
-        } },
-      );
-      return { code: 200, packageId, grossCents, penaltyCents, netCents,
-        withdrawablePoints: wallet.withdrawablePoints, status: pkg.status };
-    });
-    if (outcome.code !== 200) return res.status(outcome.code).json({ message: "message" in outcome ? outcome.message : "Withdrawal cannot be processed" });
-    return res.json(outcome);
-  } catch (error) {
-    console.error("Sòl payout failed", error instanceof Error ? error.name : "UnknownError");
-    return res.status(500).json({ message: "Unable to transfer Sòl payout" });
-  }
+router.post("/packages/:id/request-withdrawal", async (req,res) => {
+ if(process.env.SOL_WITHDRAWALS_ENABLED!=="true")return res.status(503).json({message:"Sòl withdrawals are not yet enabled"});
+ const raw=req.params.id as string,id=Number(raw),userId=currentUser(req).id;
+ if(!/^[0-9]+$/.test(raw)||!Number.isSafeInteger(id)||id<1)return res.status(400).json({message:"Invalid package"});
+ try {
+  const outcome=await sequelize.transaction(async transaction=>{
+   const pkg=await SolPackage.findOne({where:{id,userId},transaction,lock:transaction.LOCK.UPDATE});
+   if(!pkg)return {code:404,message:"Package not found"};
+   if(!["active","completed"].includes(pkg.status))return {code:409,message:"Package is not eligible"};
+   const contributions=await SolContribution.findAll({where:{packageId:id},transaction,lock:transaction.LOCK.UPDATE});
+   if(contributions.length!==12||contributions.some(c=>c.amountCents!==pkg.monthlyAmountCents))return {code:409,message:"Installments need review"};
+   const paid=contributions.filter(c=>c.status==="paid"&&Boolean(c.paidAt));
+   if(!paid.length||paid.length!==pkg.paidMonths||(pkg.status==="completed")!==(paid.length===12))return {code:409,message:"Payments need review"};
+   const unsettled=await SolPaymentAttempt.findOne({where:{packageId:id,method:"pix",status:["created","pending","processing"]},transaction});
+   if(unsettled)return {code:409,message:"PIX payments pending reconciliation"};
+   const previous=await sequelize.query<{id:number}>('SELECT id FROM sol_withdrawal_requests WHERE "packageId"=:id LIMIT 1',{replacements:{id},type:QueryTypes.SELECT,transaction});
+   if(previous.length)return {code:409,message:"Withdrawal already requested"};
+   const {grossCents,penaltyCents,netCents}=calculateSolPayout(pkg.monthlyAmountCents,paid.length);
+   const [record]=await sequelize.query<{id:number}>('INSERT INTO sol_withdrawal_requests ("packageId","userId","grossCents","penaltyCents","netCents","status","createdAt") VALUES (:id,:userId,:grossCents,:penaltyCents,:netCents,\'pending\',NOW()) RETURNING id',{replacements:{id,userId,grossCents,penaltyCents,netCents},type:QueryTypes.SELECT,transaction});
+   pkg.status="withdrawal_pending";await pkg.save({transaction});
+   return {code:201,id:record.id,netCents,status:"pending"};
+  });
+  return res.status(outcome.code).json(outcome);
+ }catch(error){console.error("Sòl withdrawal request failed",error instanceof Error?error.name:"UnknownError");return res.status(500).json({message:"Cannot request Sòl withdrawal"});}
+});
+router.get("/withdrawals/mine",async(req,res)=>{
+ try{
+  const rows=await sequelize.query('SELECT id,"packageId","netCents",status,"createdAt","paidAt" FROM sol_withdrawal_requests WHERE "userId"=:userId AND "archivedAt" IS NULL ORDER BY id DESC LIMIT 100',{replacements:{userId:currentUser(req).id},type:QueryTypes.SELECT});
+  return res.json(rows);
+ }catch{return res.status(500).json({message:"Cannot load Sòl withdrawals"});}
+});
+router.get("/admin/withdrawals",adminOnly,async(_req,res)=>{
+ try{
+  const rows=await sequelize.query('SELECT r.id,r."packageId",r."userId",r."grossCents",r."penaltyCents",r."netCents",r.status,r."createdAt",u."fullName",u.phone FROM sol_withdrawal_requests r JOIN users u ON u.id=r."userId" WHERE r."archivedAt" IS NULL ORDER BY r.id DESC LIMIT 300',{type:QueryTypes.SELECT});
+  return res.json(rows);
+ }catch{return res.status(500).json({message:"Cannot load Sòl withdrawals"});}
+});
+router.patch("/admin/withdrawals/:id/paid",adminOnly,async(req,res)=>{
+ const id=Number(req.params.id);if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({message:"Invalid withdrawal"});
+ try{
+  const [rows]=await sequelize.query('UPDATE sol_withdrawal_requests SET status=\'paid\',"paidAt"=NOW() WHERE id=:id AND status=\'pending\' AND "archivedAt" IS NULL RETURNING id',{replacements:{id},type:QueryTypes.UPDATE});
+  // Sequelize UPDATE result varies by dialect; affected count must be checked.
+  if(!Array.isArray(rows)||rows.length!==1)return res.status(409).json({message:"Request is not pending"});
+  return res.json({status:"paid"});
+ }catch{return res.status(500).json({message:"Cannot mark Sòl withdrawal paid"});}
+});
+router.delete("/admin/withdrawals/:id",adminOnly,async(req,res)=>{
+ const id=Number(req.params.id);if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({message:"Invalid withdrawal"});
+ try{
+  const [rows]=await sequelize.query('UPDATE sol_withdrawal_requests SET "archivedAt"=NOW() WHERE id=:id AND status=\'paid\' AND "archivedAt" IS NULL RETURNING id',{replacements:{id},type:QueryTypes.UPDATE});
+  if(!Array.isArray(rows)||rows.length!==1)return res.status(409).json({message:"Only paid requests may be archived"});
+  return res.status(204).send();
+ }catch{return res.status(500).json({message:"Cannot archive Sòl withdrawal"});}
 });
 
 export default router;
