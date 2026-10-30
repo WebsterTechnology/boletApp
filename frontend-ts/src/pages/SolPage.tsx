@@ -505,10 +505,41 @@ export default function SolPage() {
                       <div className={styles.packageTop}><span>Mwa {item.installmentNumber}</span><span className={styles.duration}>{paid ? "Peye" : "Annatant"}</span></div>
                       <strong>{money(item.amountCents / 100)}</strong>
                       <small>{item.paidAt ? "Peye: " + new Date(item.paidAt).toLocaleDateString("pt-BR") : "Peman poko fèt"}</small>
-                      {canPay && <button type="button" className={styles.installmentPayButton} onClick={() => {
-                        void loadWalletPreview(selectedDraft.id);
-                        document.getElementById("sol-wallet-payment")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                      }}>Peye mwa {item.installmentNumber} →</button>}
+                      {canPay && <>
+                        <button type="button" className={styles.installmentPayButton} aria-expanded={paymentChoiceOpen}
+                          onClick={() => { setPaymentChoiceOpen(open => !open); setChosenPayment(null); void refreshPixAvailability(); }}>
+                          Peye mwa {item.installmentNumber} {paymentChoiceOpen ? "▲" : "→"}
+                        </button>
+                        {paymentChoiceOpen && <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
+                          <strong>Chwazi fason pou peye {money(item.amountCents / 100)}</strong>
+                          <button type="button" className={styles.installmentPayButton}
+                            disabled={!pixEnabled || payingPix || payingWallet}
+                            onClick={() => { setChosenPayment("pix"); void payWithPix(selectedDraft.id); }}>
+                            {payingPix ? "Ap prepare PIX..." : "1 — Peye ak PIX"}
+                          </button>
+                          {!pixEnabled && <small>PIX poko disponib pou kont sa a.</small>}
+                          <button type="button" className={styles.installmentPayButton}
+                            disabled={payingPix || payingWallet || walletPreviewLoading}
+                            onClick={() => { setChosenPayment("wallet"); void loadWalletPreview(selectedDraft.id); }}>
+                            {walletPreviewLoading ? "Ap verifye balans..." : "2 — Peye ak balans Bolet ou"}
+                          </button>
+                          {chosenPayment === "wallet" && <>
+                            {walletPreviewError && <p role="alert" className={styles.notice}>{walletPreviewError}</p>}
+                            {walletPreview && walletPreview.installmentNumber === item.installmentNumber && <div style={{ display: "grid", gap: 8 }}>
+                              <small>Disponib pou jwe: {walletPreview.playPoints} p · Disponib pou retire: {walletPreview.withdrawablePoints} p</small>
+                              <small>{walletPreview.sufficientUnderProposal ? "Balans ou sifi." : "Balans ou pa sifi. Tanpri rechaje."}</small>
+                              <button type="button" className={styles.installmentPayButton}
+                                disabled={!walletPreview.paymentEnabled || !walletPreview.sufficientUnderProposal || payingWallet}
+                                onClick={() => void payWithWallet(selectedDraft.id)}>
+                                {payingWallet ? "Ap trete peman..." : "Konfime peman ak balans — " + money(walletPreview.amountCents / 100)}
+                              </button>
+                            </div>}
+                          </>}
+                          {pixMessage && <p role="alert" className={styles.notice}>{pixMessage}</p>}
+                          {walletPaymentMessage && <p role="status" className={styles.notice}>{walletPaymentMessage}</p>}
+                          {walletPaymentError && <p role="alert" className={styles.notice}>{walletPaymentError}</p>}
+                        </div>}
+                      </>}
                       {!paid && !canPay && selectedDraft.status !== "cancelled" && <small className={styles.installmentHint}>Peye mwa anvan yo an premye.</small>}
                     </article>;
                   })}
