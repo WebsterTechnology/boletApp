@@ -20,10 +20,26 @@ interface NotificationForm {
   recipientUserId: string;
 }
 
+type AdminSolContract = {
+  id: number; userId: number; customer: { fullName: string | null; phone: string; email: string | null } | null;
+  monthlyAmountCents: number; dueDay: number; status: string; paidMonths: number; createdAt: string;
+  totalContributedCents: number;
+  nextInstallment: { number: number; amountCents: number; dueDate: string } | null;
+  installments: { number: number; amountCents: number; status: string; paidAt: string | null }[];
+  payments: { id: number; installmentId: number; method: string; status: string; amountCents: number; confirmedAt: string | null; createdAt: string }[];
+};
+const solMoney = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
+
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function AdminDashboard() {
   const [showBroadcast, setShowBroadcast] = useState(false);
+  const [solOpen, setSolOpen] = useState(false);
+  const [solContracts, setSolContracts] = useState<AdminSolContract[]>([]);
+  const [solLoading, setSolLoading] = useState(false);
+  const [solError, setSolError] = useState("");
+  const [solSearch, setSolSearch] = useState("");
+  const [solExpanded, setSolExpanded] = useState<number | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [amounts, setAmounts] = useState<Record<number, string>>({});
   const [balanceTypes, setBalanceTypes] = useState<Record<number, "play" | "withdraw">>({});
@@ -44,6 +60,17 @@ export default function AdminDashboard() {
     () => ({ headers: { Authorization: `Bearer ${token}` } }),
     [token]
   );
+
+  const loadSolContracts = async () => {
+    setSolLoading(true);
+    setSolError("");
+    try {
+      const response = await axios.get<AdminSolContract[]>(`${API}/api/admin/sol/contracts`, auth);
+      setSolContracts(response.data);
+    } catch {
+      setSolError("Nou pa kapab chaje kontra Sòl yo.");
+    } finally { setSolLoading(false); }
+  };
 
   /* ================= FETCH USERS ================= */
 
@@ -247,6 +274,46 @@ const filteredUsers = useMemo(() => {
     <div className="admin-dashboard">
       <h2>👑 Admin Dashboard</h2>
       <AdminChat />
+      <section style={{ margin: "20px 0", padding: 16, border: "1px solid #4b5563", borderRadius: 12 }}>
+        <button type="button" onClick={() => { setSolOpen(v => !v); if (!solOpen) void loadSolContracts(); }}
+          style={{ padding: 12, width: "100%", fontWeight: 700 }}>
+          📋 Sòl — Kontra ak peman {solOpen ? "▲" : "▼"}
+        </button>
+        {solOpen && <>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, margin: "14px 0" }}>
+            <input aria-label="Chèche kliyan Sòl" placeholder="Chèche non, telefòn oswa ID..."
+              value={solSearch} onChange={e => setSolSearch(e.target.value)} style={{ padding: 10, flex: 1, minWidth: 180 }} />
+            <button type="button" onClick={() => void loadSolContracts()} disabled={solLoading}>Rafrechi</button>
+          </div>
+          {solLoading && <p>Ap chaje kontra yo...</p>}
+          {solError && <p role="alert">{solError}</p>}
+          {!solLoading && !solError && <p>{solContracts.length} kontra Sòl</p>}
+          {solContracts.filter(c => [String(c.id),String(c.userId),c.customer?.fullName || "",c.customer?.phone || ""]
+            .some(x => x.toLowerCase().includes(solSearch.toLowerCase()))).map(c => (
+            <article key={c.id} style={{ border: "1px solid #6b7280", borderRadius: 10, padding: 12, marginBottom: 10 }}>
+              <strong>{c.customer?.fullName || "Kliyan"} — #{c.userId}</strong>
+              <div>{c.customer?.phone || "Pa gen telefòn"} · Kontra #{c.id}</div>
+              <div>Pakè: {solMoney(c.monthlyAmountCents)}/mwa · Eta: {c.status} · Peye: {c.paidMonths}/12</div>
+              <div>Total peye: {solMoney(c.totalContributedCents)}</div>
+              <div>{c.nextInstallment ? `Pwochen peman: mwa ${c.nextInstallment.number} — ${solMoney(c.nextInstallment.amountCents)} · ${c.nextInstallment.dueDate}` : "Pa gen peman an atant"}</div>
+              <button type="button" onClick={() => setSolExpanded(x => x === c.id ? null : c.id)}>
+                {solExpanded === c.id ? "Fèmen detay" : "Gade 12 mwa ak istwa peman"}
+              </button>
+              {solExpanded === c.id && <>
+                <h4>Kontribisyon chak mwa</h4>
+                <div style={{ display: "grid", gap: 5 }}>{c.installments.map(i => <div key={i.number}>
+                  Mwa {i.number}: {solMoney(i.amountCents)} — {i.status} {i.paidAt ? `(${new Date(i.paidAt).toLocaleDateString()})` : ""}
+                </div>)}</div>
+                <h4>Istwa peman (balans / PIX)</h4>
+                {c.payments.length === 0 ? <p>Pa gen peman anrejistre.</p> :
+                  c.payments.map(p => <div key={p.id}>#{p.id} · {p.method.toUpperCase()} · {solMoney(p.amountCents)} · {p.status}
+                    {p.confirmedAt ? ` · ${new Date(p.confirmedAt).toLocaleString()}` : ""}</div>)}
+              </>}
+            </article>
+          ))}
+        </>}
+      </section>
+
 
       <section style={{ marginBottom: 20 }}>
         <button onClick={() => setShowBroadcast((open) => !open)} aria-expanded={showBroadcast} className="admin-broadcast-toggle"><span>📣 Broadcast Notification</span><span>{showBroadcast ? "✕ Close" : "Open ▾"}</span></button>
