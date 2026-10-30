@@ -413,3 +413,6 @@
 .sidebar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
 }
+/* Always-highlighted shortcut between Bolet and Sòl. */
+.menu .solShortcut,.menu .solShortcut:visited{background:#facc15;color:#17212b;font-weight:800;border:2px solid #fde68a;box-shadow:0 3px 12px #facc153b;}
+.menu .solShortcut:hover,.menu .solShortcut:focus-visible{background:#fde047;color:#17212b;border-color:#fff;}
