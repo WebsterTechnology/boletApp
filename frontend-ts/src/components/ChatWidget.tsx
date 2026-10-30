@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { useLocation } from "react-router-dom";
 import { io, type Socket } from "socket.io-client";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -7,6 +8,7 @@ type Message = { id:number; userId:number; sender:"user"|"admin"; text:string; c
 const auth = () => ({ headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` } });
 
 export default function ChatWidget() {
+  const isSolPage = useLocation().pathname === "/sol";
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -55,7 +57,7 @@ export default function ChatWidget() {
     finally { setSending(false); }
   };
 
-  return <div style={{position:"fixed",right:20,bottom:20,zIndex:1000}}>
+  return <div style={{position:"fixed",right:20,bottom:isSolPage ? "calc(105px + env(safe-area-inset-bottom, 0px))" : 20,zIndex:1000}}>
     {open&&<div style={{width:"min(360px,calc(100vw - 40px))",height:460,background:"#fff",border:"1px solid #ddd",borderRadius:16,boxShadow:"0 12px 35px rgba(0,0,0,.2)",display:"flex",flexDirection:"column",overflow:"hidden",marginBottom:10}}>
       <div style={{padding:"14px 16px",background:"#111827",color:"#fff",display:"flex",justifyContent:"space-between"}}><strong>💬 HTNovaTech Sipò</strong><button onClick={()=>setOpen(false)} style={{background:"none",border:0,color:"#fff",cursor:"pointer"}}>✕</button></div>
       <div ref={scrollRef} style={{flex:1,overflowY:"auto",padding:14,display:"flex",flexDirection:"column",gap:8}}>
