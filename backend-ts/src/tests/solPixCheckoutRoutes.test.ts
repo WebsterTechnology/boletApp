@@ -79,6 +79,19 @@ describe("Sòl PIX checkout recovery", () => {
     const wrongWebhook = await request(app).get("/api/sol/pix-availability");
     expect(wrongWebhook.body).toEqual({ enabled: false });
   });
+  it("blocks direct checkout when Render migration is missing", async () => {
+    mocks.query.mockResolvedValueOnce([{ ready: false }]);
+    const response = await request(app).post(path).set("Idempotency-Key", key);
+    expect(response.status).toBe(503);
+    expect(mocks.transaction).not.toHaveBeenCalled();
+    expect(mocks.providerPost).not.toHaveBeenCalled();
+  });
+  it("blocks direct checkout if the migration record is missing", async () => {
+    mocks.query.mockResolvedValueOnce([{ ready: true }]).mockResolvedValueOnce([{ exists: false }]);
+    const response = await request(app).post(path).set("Idempotency-Key", key);
+    expect(response.status).toBe(503);
+    expect(mocks.transaction).not.toHaveBeenCalled();
+  });
   it("recovers the original checkout URL without a second provider call", async () => {
     mocks.attemptFindOne.mockResolvedValue({
       id: 12, userId: 7, packageId: 4, contributionId: 31,

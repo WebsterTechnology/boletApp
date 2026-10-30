@@ -84,6 +84,35 @@ router.post("/packages/:id/pix-checkout", async (req, res) => {
   if (process.env.SOL_PIX_CHECKOUT_ENABLED !== "true" || process.env.SOL_PIX_WEBHOOK_ENABLED !== "true") {
     return res.status(503).json({ message: "Sòl PIX checkout is not enabled" });
   }
+  // Enforce the Render database migration server-side as well as in the UI.
+  // A direct API caller must never initiate a payable Sòl order without the
+  // checkout recovery column and migration record.
+  try {
+    const columns = await sequelize.query<{ ready: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM information_schema.columns
+         WHERE table_schema = current_schema()
+           AND table_name = 'sol_payment_attempts'
+           AND column_name = 'checkoutUrl'
+       ) AS "ready"`,
+      { type: QueryTypes.SELECT },
+    );
+    if (columns[0]?.ready !== true) {
+      return res.status(503).json({ message: "Sòl PIX database migration is not ready" });
+    }
+    const migration = await sequelize.query<{ exists: boolean }>(
+      `SELECT EXISTS (
+         SELECT 1 FROM "SequelizeMeta"
+         WHERE name = '20261025060000-sol-pix-checkout-recovery.js'
+       ) AS "exists"`,
+      { type: QueryTypes.SELECT },
+    );
+    if (migration[0]?.exists !== true) {
+      return res.status(503).json({ message: "Sòl PIX migration is not recorded" });
+    }
+  } catch {
+    return res.status(503).json({ message: "Sòl PIX database readiness could not be verified" });
+  }
   const rawId = req.params.id as string;
   const key = req.get("Idempotency-Key");
   if (!/^[0-9]+$/.test(rawId) || !Number.isSafeInteger(Number(rawId)) || Number(rawId) < 1) {
