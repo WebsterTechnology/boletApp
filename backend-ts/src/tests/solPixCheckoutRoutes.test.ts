@@ -13,7 +13,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("axios", () => ({ default: { post: mocks.providerPost } }));
 vi.mock("../middleware/authenticate", () => ({
   authenticate: (_req: unknown, _res: unknown, next: () => void) => next(),
-  currentUser: () => ({ id: 7 }),
+  currentUser: () => ({ id: 7, isAdmin: true }),
 }));
 vi.mock("../config/database", () => ({ sequelize: { transaction: mocks.transaction, query: mocks.query } }));
 vi.mock("../config/env", () => ({ env: { infinitepayHandle: "test-merchant" } }));
@@ -50,6 +50,24 @@ describe("Sòl PIX checkout recovery", () => {
       paidAt: i === 0 ? new Date() : null,
       paymentReference: i === 0 ? "sol-wallet-9" : null,
     })));
+  });
+  it("checks Render database migration without enabling payments", async () => {
+    process.env.SOL_PIX_CHECKOUT_ENABLED = "false";
+    process.env.SOL_PIX_WEBHOOK_ENABLED = "false";
+    const response = await request(app).get("/api/sol/pix-readiness");
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({
+      databaseReady: true, columnExists: true, migrationRecorded: true,
+    });
+    expect(mocks.providerPost).not.toHaveBeenCalled();
+  });
+  it("reports missing Render recovery column without modifying data", async () => {
+    mocks.query.mockResolvedValueOnce([{ exists: false }]).mockResolvedValueOnce([{ exists: true }]);
+    const response = await request(app).get("/api/sol/pix-readiness");
+    expect(response.body).toEqual({
+      databaseReady: false, columnExists: false, migrationRecorded: true,
+    });
+    expect(mocks.providerPost).not.toHaveBeenCalled();
   });
   it("reports PIX available only when verified checkout configuration is enabled", async () => {
     const available = await request(app).get("/api/sol/pix-availability");
