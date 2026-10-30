@@ -61,6 +61,25 @@ export default function AdminDashboard() {
     [token]
   );
 
+  const archiveSolTestContracts = async () => {
+    if (!window.confirm("Achive tout kontra Sòl tès yo? Yo pap parèt nan lis aktif la. Dosye peman yo ap rete pou sekirite.")) return;
+    if (!window.confirm("Konfime ankò: retire tout kontra Sòl ki sou lis aktif la?")) return;
+    setSolLoading(true);
+    setSolError("");
+    try {
+      const response = await axios.post<{ archived: number }>(
+        `${API}/api/admin/sol/archive-test-contracts`,
+        { confirmation: "ARCHIVE_ALL_SOL_TEST_CONTRACTS" }, auth,
+      );
+      alert(`${response.data.archived} kontra Sòl achive.`);
+      await loadSolContracts();
+    } catch (err) {
+      setSolError(isAxiosError(err) && err.response?.status === 409
+        ? "Gen peman PIX ki poko rekonsilye. Pa kapab achive kontra sa yo."
+        : "Nou pa kapab achive kontra Sòl yo.");
+    } finally { setSolLoading(false); }
+  };
+
   const loadSolContracts = async () => {
     setSolLoading(true);
     setSolError("");
@@ -284,6 +303,7 @@ const filteredUsers = useMemo(() => {
             <input aria-label="Chèche kliyan Sòl" placeholder="Chèche non, telefòn oswa ID..."
               value={solSearch} onChange={e => setSolSearch(e.target.value)} style={{ padding: 10, flex: 1, minWidth: 180 }} />
             <button type="button" onClick={() => void loadSolContracts()} disabled={solLoading}>Rafrechi</button>
+            <button type="button" onClick={() => void archiveSolTestContracts()} disabled={solLoading || solContracts.length === 0} style={{ background: "#7f1d1d", color: "white" }}>Netwaye kontra Sòl tès yo</button>
           </div>
           {solLoading && <p>Ap chaje kontra yo...</p>}
           {solError && <p role="alert">{solError}</p>}
