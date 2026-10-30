@@ -12,3 +12,7 @@
 
 .solWithdrawButton{display:block;width:100%;max-width:100%;white-space:normal;overflow-wrap:anywhere;padding:14px 16px;line-height:1.35;text-align:center;border-radius:12px;margin-top:12px}
 .solWithdrawHelp{display:block;margin-top:12px;font-size:13px;line-height:1.6;overflow-wrap:anywhere}
+
+/* Keep Bolet navigation prominent in the Sòl menu. */
+.menuList .boletShortcut,.menuList .boletShortcut:visited{background:#facc15;color:#17212b;border:2px solid #eab308;font-weight:800;box-shadow:0 4px 12px #eab30822;}
+.menuList .boletShortcut:hover,.menuList .boletShortcut:focus-visible{background:#fde047;color:#17212b;border-color:#ca8a04;}
