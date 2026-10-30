@@ -443,17 +443,30 @@ router.get("/admin/withdrawals",adminOnly,async(_req,res)=>{
 router.patch("/admin/withdrawals/:id/paid",adminOnly,async(req,res)=>{
  const id=Number(req.params.id);if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({message:"Invalid withdrawal"});
  try{
-  const [rows]=await sequelize.query('UPDATE sol_withdrawal_requests SET status=\'paid\',"paidAt"=NOW() WHERE id=:id AND status=\'pending\' AND "archivedAt" IS NULL RETURNING id',{replacements:{id},type:QueryTypes.UPDATE});
-  // Sequelize UPDATE result varies by dialect; affected count must be checked.
-  if(!Array.isArray(rows)||rows.length!==1)return res.status(409).json({message:"Request is not pending"});
+  const outcome=await sequelize.transaction(async transaction=>{
+   const rows=await sequelize.query<{packageId:number}>(`WITH updated AS (
+     UPDATE sol_withdrawal_requests SET status='paid',"paidAt"=NOW()
+     WHERE id=:id AND status='pending' AND "archivedAt" IS NULL
+     RETURNING "packageId"
+   ) SELECT "packageId" FROM updated`,{replacements:{id},type:QueryTypes.SELECT,transaction});
+   if(rows.length!==1)return false;
+   const pkg=await SolPackage.findByPk(rows[0].packageId,{transaction,lock:transaction.LOCK.UPDATE});
+   if(!pkg||pkg.status!=="withdrawal_pending")throw new Error("CONTRACT_NOT_PENDING");
+   pkg.status="paid_out";await pkg.save({transaction});
+   return true;
+  });
+  if(!outcome)return res.status(409).json({message:"Request is not pending"});
   return res.json({status:"paid"});
  }catch{return res.status(500).json({message:"Cannot mark Sòl withdrawal paid"});}
 });
 router.delete("/admin/withdrawals/:id",adminOnly,async(req,res)=>{
  const id=Number(req.params.id);if(!Number.isSafeInteger(id)||id<1)return res.status(400).json({message:"Invalid withdrawal"});
  try{
-  const [rows]=await sequelize.query('UPDATE sol_withdrawal_requests SET "archivedAt"=NOW() WHERE id=:id AND status=\'paid\' AND "archivedAt" IS NULL RETURNING id',{replacements:{id},type:QueryTypes.UPDATE});
-  if(!Array.isArray(rows)||rows.length!==1)return res.status(409).json({message:"Only paid requests may be archived"});
+  const rows=await sequelize.query<{id:number}>(`WITH archived AS (
+    UPDATE sol_withdrawal_requests SET "archivedAt"=NOW()
+    WHERE id=:id AND status='paid' AND "archivedAt" IS NULL RETURNING id
+  ) SELECT id FROM archived`,{replacements:{id},type:QueryTypes.SELECT});
+  if(rows.length!==1)return res.status(409).json({message:"Only paid requests may be archived"});
   return res.status(204).send();
  }catch{return res.status(500).json({message:"Cannot archive Sòl withdrawal"});}
 });
