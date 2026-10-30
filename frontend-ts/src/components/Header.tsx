@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import { NavLink, Link, useNavigate, useLocation } from "react-router-dom";
 import BurgerMenu from "./BurgerMenu";
 import styles from "../style/Header.module.css";
 import logoFull from "../assets/logo.png";
@@ -12,6 +12,7 @@ const Header = ({ openLogin }: { openLogin: () => void }) => {
   const [userPhone, setUserPhone] = useState(localStorage.getItem("userPhone"));
   const [showNotif, setShowNotif] = useState(false);
   const navigate = useNavigate();
+  const isSol = useLocation().pathname.startsWith("/sol");
   const { unreadCount } = useNotifications();
 
   useEffect(() => {
@@ -36,6 +37,11 @@ const Header = ({ openLogin }: { openLogin: () => void }) => {
           <Link to="/" className={styles.logoLink}>
             <img src={logoFull} className={styles.logoFull} alt="Logo" />
             <img src={logoSmall} className={styles.logoSmall} alt="Logo" />
+          </Link>
+
+          <Link to={isSol ? "/" : "/sol"} className={styles.switchProduct} aria-label={isSol ? "Jwe Bolet" : "Rantre nan Sòl"}>
+            <span className={styles.switchFull}>{isSol ? "🎲 Jwe Bolet" : "💰 Rantre nan Sòl"}</span>
+            <span className={styles.switchSmall}>{isSol ? "🎲 Bolet" : "💰 Sòl"}</span>
           </Link>
 
           <nav className={styles.nav}>
