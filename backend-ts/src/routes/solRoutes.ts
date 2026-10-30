@@ -404,6 +404,11 @@ router.post("/packages/:id/wallet-payments", async (req, res) => {
  * No automatic PIX transfer is initiated here.
  */
 router.post("/packages/:id/request-withdrawal", async (req,res) => {
+ const recipientName=typeof req.body?.recipientName==="string"?req.body.recipientName.trim():"";
+ const pixKey=typeof req.body?.pixKey==="string"?req.body.pixKey.trim():"";
+ if(recipientName.length<2||recipientName.length>160||pixKey.length<3||pixKey.length>255||/[\u0000-\u001f]/.test(recipientName+pixKey))
+  return res.status(400).json({message:"Recipient name and PIX key are required"});
+
  if(process.env.SOL_WITHDRAWALS_ENABLED!=="true")return res.status(503).json({message:"Sòl withdrawals are not yet enabled"});
  const raw=req.params.id as string,id=Number(raw),userId=currentUser(req).id;
  if(!/^[0-9]+$/.test(raw)||!Number.isSafeInteger(id)||id<1)return res.status(400).json({message:"Invalid package"});
@@ -423,7 +428,7 @@ router.post("/packages/:id/request-withdrawal", async (req,res) => {
    const previous=await sequelize.query<{id:number}>('SELECT id FROM sol_withdrawal_requests WHERE "packageId"=:id LIMIT 1',{replacements:{id},type:QueryTypes.SELECT,transaction});
    if(previous.length)return {code:409,message:"Withdrawal already requested"};
    const {grossCents,penaltyCents,netCents}=calculateSolPayout(pkg.monthlyAmountCents,paid.length);
-   const [record]=await sequelize.query<{id:number}>('INSERT INTO sol_withdrawal_requests ("packageId","userId","grossCents","penaltyCents","netCents","status","createdAt") VALUES (:id,:userId,:grossCents,:penaltyCents,:netCents,\'pending\',NOW()) RETURNING id',{replacements:{id,userId,grossCents,penaltyCents,netCents},type:QueryTypes.SELECT,transaction});
+   const [record]=await sequelize.query<{id:number}>('INSERT INTO sol_withdrawal_requests ("packageId","userId","grossCents","penaltyCents","netCents","recipientName","pixKey","status","createdAt") VALUES (:id,:userId,:grossCents,:penaltyCents,:netCents,:recipientName,:pixKey,\'pending\',NOW()) RETURNING id',{replacements:{id,userId,grossCents,penaltyCents,netCents,recipientName,pixKey},type:QueryTypes.SELECT,transaction});
    pkg.status="cancelled";await pkg.save({transaction});
    return {code:201,id:record.id,netCents,status:"pending"};
   });
@@ -438,7 +443,7 @@ router.get("/withdrawals/mine",async(req,res)=>{
 });
 router.get("/admin/withdrawals",adminOnly,async(_req,res)=>{
  try{
-  const rows=await sequelize.query('SELECT r.id,r."packageId",r."userId",r."grossCents",r."penaltyCents",r."netCents",r.status,r."createdAt",u."fullName",u.phone FROM sol_withdrawal_requests r JOIN users u ON u.id=r."userId" WHERE r."archivedAt" IS NULL ORDER BY r.id DESC LIMIT 300',{type:QueryTypes.SELECT});
+  const rows=await sequelize.query('SELECT r.id,r."packageId",r."userId",r."grossCents",r."penaltyCents",r."netCents",r."recipientName",r."pixKey",r.status,r."createdAt",u."fullName",u.phone FROM sol_withdrawal_requests r JOIN users u ON u.id=r."userId" WHERE r."archivedAt" IS NULL ORDER BY r.id DESC LIMIT 300',{type:QueryTypes.SELECT});
   return res.json(rows);
  }catch{return res.status(500).json({message:"Cannot load Sòl withdrawals"});}
 });
