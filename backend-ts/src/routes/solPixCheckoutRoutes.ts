@@ -11,12 +11,18 @@ import { buildSolPixCheckoutPayload, parseSolPixCheckoutUrl, solPixOrderNsu } fr
 const router = Router();
 router.use(authenticate);
 
+// All real Sòl PIX checkout remains admin-only until controlled testing ends.
+const solPixCustomerAllowed = (isAdmin: boolean): boolean =>
+  process.env.SOL_PIX_CUSTOMER_ACCESS_ENABLED === "true" || isAdmin;
+
+
 /**
  * Safe read-only availability for the Sòl checkout button.
  * This is an operational UI signal, NOT proof of database readiness;
  * the checkout and verified webhook retain their independent safeguards.
  */
-router.get("/pix-availability", async (_req, res) => {
+router.get("/pix-availability", async (req, res) => {
+  if (!solPixCustomerAllowed(currentUser(req).isAdmin === true)) return res.json({ enabled: false });
   res.setHeader("Cache-Control", "no-store");
   let configured = false;
   try {
@@ -120,6 +126,9 @@ router.get("/pix-readiness", async (req, res) => {
  * webhook settlement is deployed and end-to-end tested.
  */
 router.post("/packages/:id/pix-checkout", async (req, res) => {
+  if (!solPixCustomerAllowed(currentUser(req).isAdmin === true)) {
+    return res.status(403).json({ message: "Sòl PIX is currently restricted to controlled testing" });
+  }
   // Never issue a payable link unless the settlement receiver is enabled too.
   if (process.env.SOL_PIX_CHECKOUT_ENABLED !== "true" || process.env.SOL_PIX_WEBHOOK_ENABLED !== "true") {
     return res.status(503).json({ message: "Sòl PIX checkout is not enabled" });
