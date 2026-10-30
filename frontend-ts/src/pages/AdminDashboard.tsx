@@ -324,7 +324,7 @@ const filteredUsers = useMemo(() => {
             <div style={{fontSize:14,fontWeight:700}}>Total Sòl resevwa — tout kontra yo</div>
             <strong style={{display:"block",fontSize:"clamp(24px,5vw,34px)",marginTop:6}}>{solMoney(solGrandTotalCents)}</strong>
             <small style={{display:"block",marginTop:5}}>Sòm kontribisyon ki konfime nan tout {solContracts.length} kontra ki nan lis la. Pa konte PIX annatant ni mwa ki poko peye.</small>
-          </div>}}
+          </div>}
           {solContracts.filter(c => [String(c.id),String(c.userId),c.customer?.fullName || "",c.customer?.phone || ""]
             .some(x => x.toLowerCase().includes(solSearch.toLowerCase()))).map(c => (
             <article key={c.id} style={{ border: "1px solid #6b7280", borderRadius: 10, padding: 12, marginBottom: 10 }}>
