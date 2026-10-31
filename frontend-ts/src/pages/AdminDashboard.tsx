@@ -324,7 +324,7 @@ const filteredUsers = useMemo(() => {
           </div>
           {solLoading && <p>Ap chaje kontra yo...</p>}
           {solError && <p role="alert">{solError}</p>}
-          {!solLoading && !solError && <p>{solContracts.length} kontra Sòl</p>}
+          {!solLoading && !solError && <p>{solProductionContracts.length} kontra Sòl reyèl <small style={{display:"block",opacity:0.8}}>{solContracts.length-solProductionContracts.length} kontra tès (#2 ak #204) pa konte</small></p>}
           {!solLoading && !solError && <div style={{background:"#0e7146",border:"1px solid #6ed3a0",borderRadius:12,padding:"16px 20px",margin:"12px 0 18px",color:"#fff"}}>
             <div style={{fontSize:14,fontWeight:700}}>Total Sòl resevwa — san kont tès yo</div>
             <strong style={{display:"block",fontSize:"clamp(24px,5vw,34px)",marginTop:6}}>{solMoney(solGrandTotalCents)}</strong>
