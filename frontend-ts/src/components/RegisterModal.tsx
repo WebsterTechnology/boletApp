@@ -34,7 +34,7 @@ const API = import.meta.env.VITE_API_URL;
 const handleRegister = async () => {
   if (!isAdult) return alert("Ou dwe gen 18 lane oswa plis.");
   if (!form.fullName.trim() || !form.email.trim()) return alert("Tanpri antre non ak e-mail ou.");
-  if (password !== form.confirmPassword) return alert("PIN yo pa menm.");
+  if (password !== form.confirmPassword) return alert("Kòd sekrè yo pa menm.");
 
   try {
     const res = await fetch(`${API}/api/auth/register`, {
@@ -135,8 +135,8 @@ const handleRegister = async () => {
             onClick={() => setShowPassword(!showPassword)}
           />
         </div>
-        <input type="password" inputMode="numeric" maxLength={4} placeholder="Konfime PIN ou *" className={styles.input} value={form.confirmPassword} onChange={(e)=>setForm(f=>({...f,confirmPassword:e.target.value.replace(/\D/g,"").slice(0,4)}))} style={{marginTop:10}} />
-        <small className={styles.pinHelp}>PIN nan dwe gen egzakteman 4 chif</small>
+        <input type="password" inputMode="numeric" maxLength={4} placeholder="Konfime kòd sekrè ou *" className={styles.input} value={form.confirmPassword} onChange={(e)=>setForm(f=>({...f,confirmPassword:e.target.value.replace(/\D/g,"").slice(0,4)}))} style={{marginTop:10}} />
+        <small className={styles.pinHelp}>Kòd sekrè a dwe gen egzakteman 4 chif</small>
 
         <div className={styles.checkboxWrapper}>
           <input
