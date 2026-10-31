@@ -7,7 +7,7 @@
   padding: 16px;
   border-radius: 24px 24px 0 0;
   width: 100%;
-  min-height: 100vh;
+  min-height: 0; /* Let the betting panel end after its content. */
   box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
