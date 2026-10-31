@@ -59,6 +59,7 @@ export default function AdminDashboard() {
     catch {alert("Se sèlman retrè ki deja peye ou ka achive.");}
     finally {setWithdrawalsBusy(null);}
   };
+  const [customersOpen, setCustomersOpen] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [solOpen, setSolOpen] = useState(false);
   const [solContracts, setSolContracts] = useState<AdminSolContract[]>([]);
@@ -414,6 +415,13 @@ const filteredUsers = useMemo(() => {
 
    
 
+<section style={{marginBottom:20}}>
+        <button type="button" aria-expanded={customersOpen} onClick={() => setCustomersOpen(v => !v)}
+          style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"14px 18px",borderRadius:12,fontWeight:800,cursor:"pointer"}}>
+          <span>👥 Kliyan yo ({users.length})</span>
+          <span>{customersOpen ? "▲ Fèmen" : "▼ Ouvri"}</span>
+        </button>
+        {customersOpen && <div style={{marginTop:14}}>
 <input
   type="text"
   placeholder="🔍 Search name, CPF, phone or email..."
@@ -497,6 +505,9 @@ const filteredUsers = useMemo(() => {
           ))}
         </tbody>
       </table></div>
+
+        </div>}
+      </section>
 
       {loading && <p>Loading…</p>}
 
