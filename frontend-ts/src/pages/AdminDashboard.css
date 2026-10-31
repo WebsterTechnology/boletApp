@@ -26,3 +26,12 @@
 .admin-dashboard>input,.admin-dashboard>select{max-width:100%;padding:10px}
 .admin-dashboard>button{min-height:40px}
 @media (min-width:768px){.admin-dashboard{padding:24px}.admin-broadcast-toggle{max-width:420px}.admin-search{width:360px}.admin-users-table{min-width:1100px}.admin-users-table thead{display:table-header-group}.admin-users-table tbody{display:table-row-group}.admin-users-table tr{display:table-row;margin:0;padding:0;border:0;border-radius:0;box-shadow:none}.admin-users-table th,.admin-users-table td{display:table-cell;width:auto;border:1px solid #d1d5db;padding:8px;vertical-align:top}.admin-users-table th{font-weight:700}.admin-users-table td::before{content:none!important}.admin-users-table td:nth-child(9) input{width:90px!important}.admin-users-table td:nth-child(9) select{min-width:150px}.admin-users-table td:nth-child(10){display:table-cell;white-space:normal}.admin-users-table td:nth-child(10) button{width:auto;margin:3px!important}.admin-broadcast-panel{padding:20px}}
+
+/* Unified mobile-first admin accordion headings. */
+.admin-dashboard .admin-accordion-section{width:100%;max-width:100%;box-sizing:border-box;margin:0 0 16px;padding:0;border:0;background:transparent;}
+.admin-dashboard .admin-section-toggle{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;min-height:64px;box-sizing:border-box;margin:0;padding:14px 18px;border:1px solid #73b7ff;border-radius:14px;background:#087df1;color:#fff;font:inherit;font-size:clamp(14px,3.3vw,17px);font-weight:800;line-height:1.35;text-align:left;cursor:pointer;box-shadow:0 3px 10px rgba(0,76,170,.18);}
+.admin-dashboard .admin-section-toggle span:first-child{min-width:0;overflow-wrap:anywhere;}
+.admin-dashboard .admin-section-toggle span:last-child{flex-shrink:0;white-space:nowrap;font-size:13px;}
+.admin-dashboard .admin-section-toggle:hover,.admin-dashboard .admin-section-toggle:focus-visible{background:#086ddd;outline:2px solid #acd8ff;outline-offset:2px;}
+.admin-dashboard .admin-section-toggle[aria-expanded="true"]{border-radius:14px 14px 10px 10px;}
+@media(max-width:420px){.admin-dashboard .admin-section-toggle{padding:12px 14px;min-height:62px;font-size:14px;}}
