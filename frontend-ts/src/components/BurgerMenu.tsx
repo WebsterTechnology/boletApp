@@ -108,7 +108,7 @@ const BurgerMenu = () => {
               className={styles.item}
               onClick={closeMenu}
             >
-              <FaWhatsapp /> Sipò
+              <FaWhatsapp /> Nimewo WhatsApp nou
             </Link>
           </li>
           <li>
