@@ -311,10 +311,10 @@ const filteredUsers = useMemo(() => {
     <div className="admin-dashboard">
       <h2>👑 Admin Dashboard</h2>
       <AdminChat />
-      <section style={{ margin: "20px 0", padding: 16, border: "1px solid #4b5563", borderRadius: 12 }}>
+      <section className="admin-accordion-section">
         <button type="button" onClick={() => { setSolOpen(v => !v); if (!solOpen) void loadSolContracts(); }}
-          style={{ padding: 12, width: "100%", fontWeight: 700 }}>
-          📋 Sòl — Kontra ak peman {solOpen ? "▲" : "▼"}
+          className="admin-section-toggle" aria-expanded={solOpen}>
+          <span>📋 Sòl — Kontra ak peman</span><span>{solOpen ? "▲ Fèmen" : "▼ Ouvri"}</span>
         </button>
         {solOpen && <>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 10, margin: "14px 0" }}>
@@ -364,9 +364,9 @@ const filteredUsers = useMemo(() => {
       </section>
 
 
-      <section style={{marginBottom:20}}>
-        <button type="button" onClick={() => {setWithdrawalsOpen(v=>!v);if(!withdrawalsOpen)void loadWithdrawals();}}>
-          💸 Demann retrè Sòl — Annatant / Peye {withdrawalsOpen?"▲":"▼"}
+      <section className="admin-accordion-section">
+        <button className="admin-section-toggle" aria-expanded={withdrawalsOpen} type="button" onClick={() => {setWithdrawalsOpen(v=>!v);if(!withdrawalsOpen)void loadWithdrawals();}}>
+          <span>💸 Demann retrè Sòl — Annatant / Peye</span><span>{withdrawalsOpen ? "▲ Fèmen" : "▼ Ouvri"}</span>
         </button>
         {withdrawalsOpen && <div style={{display:"grid",gap:12,marginTop:12}}>
           <button type="button" onClick={() => void loadWithdrawals()}>Rafrechi retrè yo</button>
@@ -384,8 +384,8 @@ const filteredUsers = useMemo(() => {
         </div>}
       </section>
 
-      <section style={{ marginBottom: 20 }}>
-        <button onClick={() => setShowBroadcast((open) => !open)} aria-expanded={showBroadcast} className="admin-broadcast-toggle"><span>📣 Broadcast Notification</span><span>{showBroadcast ? "✕ Close" : "Open ▾"}</span></button>
+      <section className="admin-accordion-section">
+        <button onClick={() => setShowBroadcast((open) => !open)} aria-expanded={showBroadcast} className="admin-section-toggle"><span>📣 Broadcast Notification</span><span>{showBroadcast ? "▲ Fèmen" : "▼ Ouvri"}</span></button>
         {showBroadcast && (
           <div className="admin-broadcast-panel">
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,marginBottom:14}}><h3 style={{margin:0}}>📣 Broadcast Notification</h3><button onClick={() => setShowBroadcast(false)} style={{border:0,background:"#eee",borderRadius:8,padding:"7px 10px",cursor:"pointer"}}>✕ Close</button></div>
@@ -415,9 +415,8 @@ const filteredUsers = useMemo(() => {
 
    
 
-<section style={{marginBottom:20}}>
-        <button type="button" aria-expanded={customersOpen} onClick={() => setCustomersOpen(v => !v)}
-          style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"14px 18px",borderRadius:12,fontWeight:800,cursor:"pointer"}}>
+<section className="admin-accordion-section">
+        <button type="button" className="admin-section-toggle" aria-expanded={customersOpen} onClick={() => setCustomersOpen(v => !v)}>
           <span>👥 Kliyan yo ({users.length})</span>
           <span>{customersOpen ? "▲ Fèmen" : "▼ Ouvri"}</span>
         </button>
