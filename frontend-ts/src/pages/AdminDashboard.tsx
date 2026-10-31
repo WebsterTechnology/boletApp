@@ -67,7 +67,11 @@ export default function AdminDashboard() {
     for (const contract of solContracts) totals.set(contract.userId,(totals.get(contract.userId)??0)+contract.totalContributedCents);
     return totals;
   },[solContracts]);
-  const solGrandTotalCents = useMemo(() => solContracts.reduce((sum, contract) => sum + contract.totalContributedCents, 0), [solContracts]);
+  // Test user #204 is excluded from the business total, but all contracts remain visible for audit.
+  const SOL_TEST_USER_IDS = [204];
+  const solProductionContracts = useMemo(() => solContracts.filter(c => !SOL_TEST_USER_IDS.includes(c.userId)), [solContracts]);
+  const solGrandTotalCents = useMemo(() => solProductionContracts.reduce((sum, contract) => sum + contract.totalContributedCents, 0), [solProductionContracts]);
+  const solTestTotalCents = useMemo(() => solContracts.filter(c => SOL_TEST_USER_IDS.includes(c.userId)).reduce((sum, c) => sum + c.totalContributedCents, 0), [solContracts]);
   const [solLoading, setSolLoading] = useState(false);
   const [solError, setSolError] = useState("");
   const [solSearch, setSolSearch] = useState("");
@@ -321,9 +325,10 @@ const filteredUsers = useMemo(() => {
           {solError && <p role="alert">{solError}</p>}
           {!solLoading && !solError && <p>{solContracts.length} kontra Sòl</p>}
           {!solLoading && !solError && <div style={{background:"#0e7146",border:"1px solid #6ed3a0",borderRadius:12,padding:"16px 20px",margin:"12px 0 18px",color:"#fff"}}>
-            <div style={{fontSize:14,fontWeight:700}}>Total Sòl resevwa — tout kontra yo</div>
+            <div style={{fontSize:14,fontWeight:700}}>Total Sòl resevwa — san kont tès yo</div>
             <strong style={{display:"block",fontSize:"clamp(24px,5vw,34px)",marginTop:6}}>{solMoney(solGrandTotalCents)}</strong>
-            <small style={{display:"block",marginTop:5}}>Sòm kontribisyon ki konfime nan tout {solContracts.length} kontra ki nan lis la. Pa konte PIX annatant ni mwa ki poko peye.</small>
+            <small style={{display:"block",marginTop:5}}>Sòm kontribisyon konfime nan {solProductionContracts.length} kontra, san itilizatè tès #204. Pa konte PIX annatant ni mwa ki poko peye.</small>
+            {solTestTotalCents > 0 && <small style={{display:"block",marginTop:6}}>Kont tès #204 eskli: {solMoney(solTestTotalCents)}</small>}
           </div>}
           {solContracts.filter(c => [String(c.id),String(c.userId),c.customer?.fullName || "",c.customer?.phone || ""]
             .some(x => x.toLowerCase().includes(solSearch.toLowerCase()))).map(c => (
