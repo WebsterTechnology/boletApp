@@ -83,7 +83,7 @@ const BurgerMenu = () => {
 
         <ul className={styles.menu}>
           <li>
-            <Link to="/" className={styles.item} onClick={closeMenu}>
+            <Link to="/game" className={styles.item} onClick={closeMenu}>
               <FaDice /> Jwe
             </Link>
           </li>
