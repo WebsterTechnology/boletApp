@@ -35,3 +35,9 @@
 .admin-dashboard .admin-section-toggle:hover,.admin-dashboard .admin-section-toggle:focus-visible{background:#086ddd;outline:2px solid #acd8ff;outline-offset:2px;}
 .admin-dashboard .admin-section-toggle[aria-expanded="true"]{border-radius:14px 14px 10px 10px;}
 @media(max-width:420px){.admin-dashboard .admin-section-toggle{padding:12px 14px;min-height:62px;font-size:14px;}}
+
+.admin-borrow-countdown{margin:12px 0;padding:13px 15px;border-radius:12px;background:#13283a;border:1px solid #3c6077;color:#eaf4ff;line-height:1.5}
+.admin-borrow-days{color:#fbbf24;font-size:1.12em}
+.admin-borrow-clock{color:#7dd3fc;font-size:1.4rem;font-weight:800;letter-spacing:1px;font-variant-numeric:tabular-nums}
+.admin-borrow-countdown small{color:#b6c6d5}
+.admin-borrow-overdue{color:#fca5a5;font-weight:700}
