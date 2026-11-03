@@ -139,7 +139,7 @@ router.patch("/admin/:id/credit", adminOnly, async (req, res) => {
 });
 
 const LOAN_TERM_MS = 30 * 86400000;
-import { loanTotal, repaymentAllowed, allocateWalletRepayment, walletRepaymentReconciles } from "../services/borrowRepayment";
+import { loanTotal, repaymentAllowed, allocateWalletRepayment, walletRepaymentReconciles, repaymentLedgerReconciles } from "../services/borrowRepayment";
 
 // Loan repayments are feature-flagged until ledger and settlement tests pass.
 // PIX settlement requires a separate, verified payment-provider integration.
@@ -223,7 +223,8 @@ router.get("/:id/repayments", async (req,res) => {
     const auditedPayments=payments.map(payment=>({
       ...payment, balancesReconcile:payment.method==="wallet" ? walletRepaymentReconciles(payment) : null
     }));
-    return res.json({total:loanTotal(Number(loan.amount)),repaid:Number(loan.repaidPoints),remaining:Math.max(0,loanTotal(Number(loan.amount))-Number(loan.repaidPoints)),payments:auditedPayments});
+    const ledgerReconciles=repaymentLedgerReconciles(Number(loan.repaidPoints),payments.map(p=>Number(p.amount)));
+    return res.json({total:loanTotal(Number(loan.amount)),repaid:Number(loan.repaidPoints),remaining:Math.max(0,loanTotal(Number(loan.amount))-Number(loan.repaidPoints)),payments:auditedPayments,ledgerReconciles});
   } catch {return res.status(500).json({message:"Pa kapab chaje peman yo."});}
 });
 
