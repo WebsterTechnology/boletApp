@@ -5,13 +5,14 @@ import Pwen from "../components/Pwen";
 import WithdrawModal from "../components/WithdrawModal";
 import styles from "./Balans.module.css";
 
-type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null };
+type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const statusLabel:Record<BorrowRequest["status"],string> = {
   pending:"🟠 Annatant", approved:"✅ Apwouve", rejected:"❌ Refize"
 };
 export default function Balans() {
   const [requestOpen,setRequestOpen] = useState(false);
+  const [historyOpen,setHistoryOpen] = useState(false);
   const [requestAmount,setRequestAmount] = useState("");
   const [requestReason,setRequestReason] = useState("");
   const [requests,setRequests] = useState<BorrowRequest[]>([]);
@@ -80,9 +81,9 @@ export default function Balans() {
     void refreshRequests();
 
     // Refresh again when the user returns to this tab/page.
-    const onFocus = () => refreshBalances();
+    const onFocus = () => { void refreshBalances(); void refreshRequests(); };
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") refreshBalances();
+      if (document.visibilityState === "visible") { void refreshBalances(); void refreshRequests(); }
     };
 
     window.addEventListener("focus", onFocus);
@@ -137,12 +138,22 @@ export default function Balans() {
         </div>
 
         <section className={styles.requestHistory}>
-          <h2>Demann prè mwen yo</h2>
-          {requests.length===0 && <p>Ou poko voye okenn demann prè.</p>}
-          {requests.map(request=><div className={styles.requestRow} key={request.id}>
-            <span>{request.amount.toLocaleString("pt-BR")} pwen · {request.reason}</span>
-            <strong>{statusLabel[request.status]}</strong>
-          </div>)}
+          <button type="button" className={styles.historyToggle}
+            aria-expanded={historyOpen} aria-controls="borrow-history-list"
+            onClick={()=>setHistoryOpen(open=>!open)}>
+            <span className={styles.historyTitle}>
+              <span aria-hidden="true">📋</span> Demann prè mwen yo
+              {requests.length>0 && <span className={styles.historyCount}>{requests.length}</span>}
+            </span>
+            <span className={styles.historyChevron} aria-hidden="true">{historyOpen ? "⌃" : "⌄"}</span>
+          </button>
+          {historyOpen && <div id="borrow-history-list" className={styles.historyList}>
+            {requests.length===0 && <p>Ou poko voye okenn demann prè.</p>}
+            {requests.map(request=><div className={styles.requestRow} key={request.id}>
+              <span>{request.amount.toLocaleString("pt-BR")} pwen · {request.reason}</span>
+              <strong>{statusLabel[request.status]}{request.status==="approved" ? (request.creditedAt ? " · Kredite" : " · Poko kredite") : ""}</strong>
+            </div>)}
+          </div>}
         </section>
         <div className={styles.actions}>
           <button type="button" className={`${styles.action} ${styles.buyButton}`} onClick={() => navigate("/buy-credits")}>

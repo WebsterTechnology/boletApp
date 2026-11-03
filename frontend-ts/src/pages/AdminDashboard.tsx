@@ -33,7 +33,7 @@ const solMoney = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "cur
 type SolWithdrawal = {id:number;packageId:number;userId:number;recipientName:string|null;pixKey:string|null;grossCents:number;penaltyCents:number;netCents:number;status:string;createdAt:string;fullName:string|null;phone:string};
 type AdminBorrowRequest = {
   id:number; userId:number; amount:number; reason:string;
-  status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null;
+  status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null;
   customer:{id:number;fullName:string|null;phone:string;borrowablePoints:number}|null;
 };
 const borrowStatusLabels:Record<AdminBorrowRequest["status"],string> = {
@@ -80,15 +80,25 @@ export default function AdminDashboard() {
   };
   const decideBorrow = async (id:number,decision:"approved"|"rejected") => {
     if (!window.confirm(decision==="approved"
-      ? "Apwouve demann sa a pou revizyon sèlman? Sa pap transfere okenn pwen."
+      ? "Apwouve demann sa a epi transfere kantite pwen yo soti nan Disponib pou prete pou ale nan Disponib pou retire? Aksyon sa a kredite balans kliyan an."
       : "Refize demann prè sa a?")) return;
     setBorrowBusy(id);
     try {
       await axios.patch(API + "/api/borrow-requests/admin/" + id + "/decision", {decision}, auth);
-      await loadBorrowRequests();
+      await Promise.all([loadBorrowRequests(), fetchUsers()]);
     } catch (error) {
       alert((isAxiosError(error) && error.response?.data?.message) || "Pa kapab anrejistre desizyon an.");
     } finally {setBorrowBusy(null);}
+  };
+  const creditLegacyBorrow = async (id:number,amount:number) => {
+    if (!window.confirm(`Kredite ${amount} pwen pou demann deja apwouve #${id}? Sa ap retire kantite a nan Disponib pou prete epi ajoute li nan Disponib pou retire.`)) return;
+    setBorrowBusy(id);
+    try {
+      await axios.patch(API + "/api/borrow-requests/admin/" + id + "/credit", {}, auth);
+      await Promise.all([loadBorrowRequests(), fetchUsers()]);
+    } catch (error) {
+      alert((isAxiosError(error) && error.response?.data?.message) || "Pa kapab kredite prè sa a.");
+    } finally { setBorrowBusy(null); }
   };
   const [customersOpen, setCustomersOpen] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
@@ -358,7 +368,13 @@ const filteredUsers = useMemo(() => {
             <p style={{margin:"8px 0"}}>{request.customer?.phone||""} · Demann #{request.id}</p>
             <p style={{margin:"8px 0"}}><b>{request.amount.toLocaleString("pt-BR")} pwen</b> · Limit kliyan: {Number(request.customer?.borrowablePoints??0).toLocaleString("pt-BR")} pwen</p>
             <p style={{margin:"8px 0"}}>Rezon: {request.reason}</p>
-            <p style={{margin:"8px 0"}}>{borrowStatusLabels[request.status]} · {new Date(request.createdAt).toLocaleString()}</p>
+            <p style={{margin:"8px 0"}}>{borrowStatusLabels[request.status]}{request.creditedAt ? " · 💸 Kredite nan balans retrè" : request.status==="approved" ? " · ⚠️ Poko kredite" : ""} · {new Date(request.createdAt).toLocaleString()}</p>
+            {request.status==="approved" && !request.creditedAt && <button
+              type="button" disabled={borrowBusy===request.id}
+              onClick={()=>void creditLegacyBorrow(request.id,request.amount)}
+              style={{background:"#0a7b63",color:"white",padding:"10px 14px",borderRadius:9,border:0,fontWeight:800}}>
+              Kredite {request.amount.toLocaleString("pt-BR")} pwen nan Disponib pou retire
+            </button>}
             {request.status==="pending" && <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
               <button type="button" disabled={borrowBusy===request.id}
                 onClick={()=>void decideBorrow(request.id,"approved")}
@@ -372,7 +388,7 @@ const filteredUsers = useMemo(() => {
               </button>
             </div>}
           </article>)}
-          <small>Desizyon sa yo pa bay kredi, yo pa transfere lajan, epi yo pa chanje balans kliyan an.</small>
+          <small>Apwobasyon transfere kantite demann nan soti nan Disponib pou prete pou ale nan Disponib pou retire. Yon demann deja kredite pa kapab kredite de fwa. Demann ki te apwouve anvan aktyalizasyon sa a mande yon klik Kredite apa.</small>
         </div>}
       </section>
 
