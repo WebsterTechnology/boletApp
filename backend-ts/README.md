@@ -58,3 +58,7 @@ data/                  disabledNumbers.json / disabledLocations.json
 - Game routes run `authenticate` once instead of twice (it was applied both at the mount point and on each route).
 - Not ported, because they were never mounted in `app.js`: `asaasRoutes.js`, `stripeRoutes.js` (fully commented out) and the `Bet` model (never registered). Also not ported: `GET /api/admin/bets` in `adminRoutes.js`, which `adminBetsRoutes` always answers first.
 - Fixed crashes: `/api/pix/debug/users` selected a `createdAt` column that `users` doesn't have. `/api/pix/debug/pix-requests` included `User` without its alias. Login and register threw when the password arrived as a JSON number.
+
+## Borrowing allowance (stage 1)
+
+A separate `users.borrowablePoints` INTEGER column defaults to zero for every account. The database migration is registered as `20261103000000-add-borrowable-points.js` and runs through the normal backend startup migrator. `GET /api/users/me`, auth responses and `GET /api/admin/users` return `borrowablePoints`. An authenticated admin can choose `balanceType: "borrow"` when calling `POST /api/admin/users/:id/add-pwen` or `/remove-pwen` to change this limit, without changing `points` or `withdrawablePoints`. The customer's Balans view displays it as **Disponib pou prete**. **This is only an allowance, not disbursed cash or spendable betting funds.** No borrow/disburse, loan agreement, interest, repayment, PIX or withdrawal logic is enabled by this step. Validate legal requirements before enabling loans.
