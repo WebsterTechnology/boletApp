@@ -1,7 +1,9 @@
 /** Loan principal and repayment amounts are whole Bolet points. */
 export function loanTotal(principal: number): number {
   if (!Number.isSafeInteger(principal) || principal <= 0) throw new Error("Invalid loan principal");
-  return Math.ceil(principal * 120 / 100);
+  const total = Math.ceil(principal * 120 / 100);
+  if (!Number.isSafeInteger(total) || total > 2147483647) throw new Error("Loan total exceeds supported points");
+  return total;
 }
 
 /** Partial payments are forbidden throughout the final 24 hours and after the due date. */
