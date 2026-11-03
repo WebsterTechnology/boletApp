@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { loanTotal, repaymentAllowed, allocateWalletRepayment } from "./borrowRepayment";
+import { loanTotal, repaymentAllowed, allocateWalletRepayment, walletRepaymentReconciles } from "./borrowRepayment";
 
 describe("borrow repayment policy", () => {
   it("charges one-time 20% interest with whole-point rounding", () => {
@@ -40,5 +40,18 @@ describe("wallet repayment allocation", () => {
     expect(allocateWalletRepayment(-1,20,1)).toBeNull();
     expect(allocateWalletRepayment(1.5,20,1)).toBeNull();
     expect(allocateWalletRepayment(Number.MAX_SAFE_INTEGER,1,1)).toBeNull();
+  });
+});
+
+describe("repayment ledger reconciliation", () => {
+  const valid = { amount:50, playDebited:10, withdrawDebited:40,
+    playBefore:80, withdrawBefore:40, playAfter:70, withdrawAfter:0 };
+  it("accepts a balanced wallet deduction", () => {
+    expect(walletRepaymentReconciles(valid)).toBe(true);
+  });
+  it("detects mismatched and incomplete balance snapshots", () => {
+    expect(walletRepaymentReconciles({...valid,playAfter:71})).toBe(false);
+    expect(walletRepaymentReconciles({...valid,withdrawDebited:39})).toBe(false);
+    expect(walletRepaymentReconciles({...valid,playBefore:null})).toBe(false);
   });
 });
