@@ -20,3 +20,16 @@ export function allocateWalletRepayment(play: number, withdraw: number, amount: 
   const playDebited = amount - withdrawDebited;
   return { withdrawDebited, playDebited, withdrawAfter: withdraw - withdrawDebited, playAfter: play - playDebited };
 }
+
+export function walletRepaymentReconciles(record: {
+  amount: number; playDebited: number; withdrawDebited: number;
+  playBefore: number | null; withdrawBefore: number | null;
+  playAfter: number | null; withdrawAfter: number | null;
+}): boolean {
+  const values = [record.amount, record.playDebited, record.withdrawDebited,
+    record.playBefore, record.withdrawBefore, record.playAfter, record.withdrawAfter];
+  if (!values.every(v => typeof v === "number" && Number.isSafeInteger(v) && v >= 0)) return false;
+  return record.amount === record.playDebited + record.withdrawDebited &&
+    record.playBefore! - record.playDebited === record.playAfter &&
+    record.withdrawBefore! - record.withdrawDebited === record.withdrawAfter;
+}
