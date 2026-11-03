@@ -92,3 +92,5 @@ On Balans, eligible customers can tap **Mande yon prè**, select a positive whol
 ## Borrow allowance to withdrawal balance (stage 3)
 
 Admin approval now credits the approved amount into `Disponib pou retire` and deducts it from `Disponib pou prete`. Admin request cards display whether the approved loan has been **Kredite**. For approvals made before this release, the administrator has an explicit **Kredite N pwen nan Disponib pou retire** button, because previous approvals never moved any money. The customer balance page and request history refresh on return to the app; an approved-and-credited request is labeled accordingly. The backend transaction and audit markers prevent double credit. No automatic conversion of old approvals occurs. Ensure backend rollout and migration have succeeded before testing.
+
+Customer Balans now presents **Demann prè mwen yo** in a collapsed-by-default, accessible accordion with a count badge, open/close chevron, and the existing request statuses visible only when expanded. This keeps the mobile balance screen compact.
