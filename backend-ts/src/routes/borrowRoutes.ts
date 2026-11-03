@@ -191,6 +191,14 @@ router.post("/:id/wallet-repayments", async (req, res) => {
       );
       if (walletRecords.some(record=>!walletRepaymentReconciles(record)))
         return { code:409, message:"Gen yon diferans nan balans peman yo. Kontakte administratè a." };
+      // A pending PIX checkout could settle later; prevent a wallet debit
+      // from consuming its reserved repayment amount.
+      const pendingPix = await sequelize.query<{points:number}>(
+        'SELECT points FROM borrow_pix_attempts WHERE "borrowRequestId"=:id AND status IN (\'pending\',\'checkout_created\')',
+        { replacements:{id}, type:QueryTypes.SELECT, transaction }
+      );
+      if (pendingPix.length)
+        return { code:409, message:"Gen yon peman PIX ki poko fini. Verifye eta li anvan ou peye ak balans." };
       const total = loanTotal(Number(loan.amount));
       const remaining = total - Number(loan.repaidPoints);
       if (!Number.isSafeInteger(remaining) || remaining <= 0 || amount > remaining)
