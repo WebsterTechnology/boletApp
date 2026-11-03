@@ -72,3 +72,9 @@ The `20261103010000-borrow-requests.js` migration creates `borrow_requests` with
 - `PATCH /api/borrow-requests/admin/:id/decision`: admin-only `{decision:"approved"|"rejected"}`, only when pending. Approval validates the user's current limit again, sets reviewer/time and **does not disburse credit or change balances**.
 
 Do not interpret approval as a real loan or legal commitment. This release has no disbursement, repayment, gambling-credit usage, fees, interest, or debt creation. Any real-money lending must undergo legal and operational review before enabling it.
+
+## Borrow approvals credit the withdrawable wallet (stage 3)
+
+Migration `20261103020000-borrow-credit-audit.js` adds `creditedAt`, `creditedBy`, `borrowableBefore`, and `withdrawableBefore` to `borrow_requests`. An admin approval of a *pending* request now locks the request and user wallet in one PostgreSQL transaction. Given a 100-pwen borrowing allowance, a 50-pwen approval atomically decreases `borrowablePoints` to 50 and increases `withdrawablePoints` by 50. A credit audit timestamp and prior balances are saved in that same transaction; repeat approvals are rejected. Invalid/insufficient/overflowing balances are rejected without moving points. Rejection leaves both balances untouched.
+
+Previously approved records are intentionally **not automatically credited** on migration. Admin must separately use `PATCH /api/borrow-requests/admin/:id/credit` to fund an older approved, not-yet-credited request. This endpoint checks status, allowance, audit marker and locks rows; repeat releases are rejected. New approvals use `PATCH /api/borrow-requests/admin/:id/decision` with `{decision:"approved"}` and do not require a second click. Test on a controlled account before production use. Real-money loans may require a legally compliant loan agreement, credit underwriting and repayment record; this code does not implement those requirements.
