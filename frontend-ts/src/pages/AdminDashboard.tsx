@@ -31,6 +31,14 @@ type AdminSolContract = {
 const solMoney = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(cents / 100);
 
 type SolWithdrawal = {id:number;packageId:number;userId:number;recipientName:string|null;pixKey:string|null;grossCents:number;penaltyCents:number;netCents:number;status:string;createdAt:string;fullName:string|null;phone:string};
+type AdminBorrowRequest = {
+  id:number; userId:number; amount:number; reason:string;
+  status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null;
+  customer:{id:number;fullName:string|null;phone:string;borrowablePoints:number}|null;
+};
+const borrowStatusLabels:Record<AdminBorrowRequest["status"],string> = {
+  pending:"🟠 Annatant", approved:"✅ Apwouve", rejected:"❌ Refize"
+};
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 export default function AdminDashboard() {
@@ -58,6 +66,29 @@ export default function AdminDashboard() {
     try {await axios.delete(API+"/api/sol/admin/withdrawals/"+id,auth);await loadWithdrawals();}
     catch {alert("Se sèlman retrè ki deja peye ou ka achive.");}
     finally {setWithdrawalsBusy(null);}
+  };
+  const [borrowRequestsOpen,setBorrowRequestsOpen] = useState(false);
+  const [borrowRequests,setBorrowRequests] = useState<AdminBorrowRequest[]>([]);
+  const [borrowError,setBorrowError] = useState("");
+  const [borrowBusy,setBorrowBusy] = useState<number|null>(null);
+  const loadBorrowRequests = async () => {
+    try {
+      setBorrowError("");
+      const response = await axios.get<AdminBorrowRequest[]>(API + "/api/borrow-requests/admin", auth);
+      setBorrowRequests(response.data);
+    } catch { setBorrowError("Pa kapab chaje demann prè yo."); }
+  };
+  const decideBorrow = async (id:number,decision:"approved"|"rejected") => {
+    if (!window.confirm(decision==="approved"
+      ? "Apwouve demann sa a pou revizyon sèlman? Sa pap transfere okenn pwen."
+      : "Refize demann prè sa a?")) return;
+    setBorrowBusy(id);
+    try {
+      await axios.patch(API + "/api/borrow-requests/admin/" + id + "/decision", {decision}, auth);
+      await loadBorrowRequests();
+    } catch (error) {
+      alert((isAxiosError(error) && error.response?.data?.message) || "Pa kapab anrejistre desizyon an.");
+    } finally {setBorrowBusy(null);}
   };
   const [customersOpen, setCustomersOpen] = useState(false);
   const [showBroadcast, setShowBroadcast] = useState(false);
@@ -311,6 +342,40 @@ const filteredUsers = useMemo(() => {
     <div className="admin-dashboard">
       <h2>👑 Admin Dashboard</h2>
       <AdminChat />
+      <section className="admin-accordion-section">
+        <button className="admin-section-toggle" type="button" aria-expanded={borrowRequestsOpen}
+          onClick={() => {setBorrowRequestsOpen(v=>!v);if(!borrowRequestsOpen)void loadBorrowRequests();}}>
+          <span>🤝 Demann prè — Annatant / Apwouve / Refize</span>
+          <span>{borrowRequestsOpen ? "▲ Fèmen" : "▼ Ouvri"}</span>
+        </button>
+        {borrowRequestsOpen && <div style={{display:"grid",gap:12,marginTop:14}}>
+          <button type="button" onClick={()=>void loadBorrowRequests()}>Rafrechi demann prè yo</button>
+          {borrowError && <p role="alert">{borrowError}</p>}
+          {!borrowError && borrowRequests.length===0 && <p>Pa gen demann prè.</p>}
+          {borrowRequests.map(request=><article key={request.id}
+            style={{border:"1px solid #61728a",borderRadius:12,padding:15,overflowWrap:"anywhere"}}>
+            <strong>{request.customer?.fullName||"Kliyan"} — #{request.userId}</strong>
+            <p style={{margin:"8px 0"}}>{request.customer?.phone||""} · Demann #{request.id}</p>
+            <p style={{margin:"8px 0"}}><b>{request.amount.toLocaleString("pt-BR")} pwen</b> · Limit kliyan: {Number(request.customer?.borrowablePoints??0).toLocaleString("pt-BR")} pwen</p>
+            <p style={{margin:"8px 0"}}>Rezon: {request.reason}</p>
+            <p style={{margin:"8px 0"}}>{borrowStatusLabels[request.status]} · {new Date(request.createdAt).toLocaleString()}</p>
+            {request.status==="pending" && <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
+              <button type="button" disabled={borrowBusy===request.id}
+                onClick={()=>void decideBorrow(request.id,"approved")}
+                style={{background:"#11864d",color:"white",padding:"10px 14px",borderRadius:9,border:0,fontWeight:800}}>
+                Apwouve
+              </button>
+              <button type="button" disabled={borrowBusy===request.id}
+                onClick={()=>void decideBorrow(request.id,"rejected")}
+                style={{background:"#b72c46",color:"white",padding:"10px 14px",borderRadius:9,border:0,fontWeight:800}}>
+                Refize
+              </button>
+            </div>}
+          </article>)}
+          <small>Desizyon sa yo pa bay kredi, yo pa transfere lajan, epi yo pa chanje balans kliyan an.</small>
+        </div>}
+      </section>
+
       <section className="admin-accordion-section">
         <button type="button" onClick={() => { setSolOpen(v => !v); if (!solOpen) void loadSolContracts(); }}
           className="admin-section-toggle" aria-expanded={solOpen}>
