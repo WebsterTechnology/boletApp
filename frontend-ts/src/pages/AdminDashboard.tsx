@@ -33,7 +33,7 @@ const solMoney = (cents: number) => new Intl.NumberFormat("pt-BR", { style: "cur
 type SolWithdrawal = {id:number;packageId:number;userId:number;recipientName:string|null;pixKey:string|null;grossCents:number;penaltyCents:number;netCents:number;status:string;createdAt:string;fullName:string|null;phone:string};
 type AdminBorrowRequest = {
   id:number; userId:number; amount:number; reason:string;
-  status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null;
+  status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null; repaidPoints?:number;
   customer:{id:number;fullName:string|null;phone:string;borrowablePoints:number}|null;
 };
 const borrowStatusLabels:Record<AdminBorrowRequest["status"],string> = {
@@ -42,7 +42,7 @@ const borrowStatusLabels:Record<AdminBorrowRequest["status"],string> = {
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const BORROW_TERM_MS = 30 * 24 * 60 * 60 * 1000;
 const BORROW_INTEREST = 1.2;
-function AdminBorrowCountdown({creditedAt,amount,now}:{creditedAt:string;amount:number;now:number}) {
+function AdminBorrowCountdown({creditedAt,amount,repaid,now}:{creditedAt:string;amount:number;repaid:number;now:number}) {
   const credited = Date.parse(creditedAt);
   if (!Number.isFinite(credited)) return <p>Dat kredi a pa disponib.</p>;
   const seconds = Math.max(0,Math.ceil((credited + BORROW_TERM_MS - now)/1000));
@@ -50,12 +50,14 @@ function AdminBorrowCountdown({creditedAt,amount,now}:{creditedAt:string;amount:
   const hours = Math.floor((seconds%86400)/3600);
   const minutes = Math.floor((seconds%3600)/60);
   const secs = seconds%60;
-  const total = Math.round(amount * BORROW_INTEREST * 100)/100;
+  const total = Math.ceil(amount * BORROW_INTEREST);
+  const outstanding = Math.max(0,total-repaid);
   return <div className="admin-borrow-countdown" role="timer">
-    <div>Rete <strong className="admin-borrow-days">{days} jou</strong> pou remèt <strong>{total.toLocaleString("pt-BR")} pwen</strong></div>
-    <div className="admin-borrow-clock">⏱ {[hours,minutes,secs].map(n=>String(n).padStart(2,"0")).join(":")}</div>
-    <small>Èdtan : Minit : Segonn</small>
-    {seconds===0 && <div className="admin-borrow-overdue">⚠️ Delè 30 jou a pase</div>}
+    {outstanding===0 ? <strong>✅ Prè a fin peye.</strong> : <div>Rete <strong className="admin-borrow-days">{days} jou</strong> pou remèt <strong>{outstanding.toLocaleString("pt-BR")} pwen</strong></div>}
+    {outstanding>0 && <div className="admin-borrow-clock">⏱ {[hours,minutes,secs].map(n=>String(n).padStart(2,"0")).join(":")}</div>}
+    {outstanding>0 && <small>Èdtan : Minit : Segonn</small>}
+    <div>Peye deja: {repaid.toLocaleString("pt-BR")} pwen</div>
+    {outstanding>0 && seconds===0 && <div className="admin-borrow-overdue">⚠️ Delè 30 jou a pase</div>}
   </div>;
 }
 
@@ -91,6 +93,27 @@ export default function AdminDashboard() {
   const [borrowRequests,setBorrowRequests] = useState<AdminBorrowRequest[]>([]);
   const [borrowError,setBorrowError] = useState("");
   const [borrowBusy,setBorrowBusy] = useState<number|null>(null);
+  const [borrowHistory,setBorrowHistory] = useState<Record<number,{
+    payments:{id:number;amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[];
+    ledgerReconciles:boolean;
+  }>>({});
+  const [borrowHistoryError,setBorrowHistoryError] = useState<Record<number,string>>({});
+  const showBorrowHistory = async (id:number) => {
+    if (borrowHistory[id]) {
+      setBorrowHistory(previous=>{const next={...previous};delete next[id];return next;});
+      return;
+    }
+    try {
+      setBorrowHistoryError(previous=>({...previous,[id]:""}));
+      const response=await axios.get<{
+        payments:{id:number;amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[];
+        ledgerReconciles:boolean;
+      }>(API+"/api/borrow-requests/"+id+"/repayments",auth);
+      setBorrowHistory(previous=>({...previous,[id]:response.data}));
+    } catch {
+      setBorrowHistoryError(previous=>({...previous,[id]:"Pa kapab chaje istwa peman prè a."}));
+    }
+  };
   const loadBorrowRequests = async () => {
     try {
       setBorrowError("");
@@ -389,7 +412,21 @@ const filteredUsers = useMemo(() => {
             <p style={{margin:"8px 0"}}><b>{request.amount.toLocaleString("pt-BR")} pwen</b> · Limit kliyan: {Number(request.customer?.borrowablePoints??0).toLocaleString("pt-BR")} pwen</p>
             <p style={{margin:"8px 0"}}>Rezon: {request.reason}</p>
             <p style={{margin:"8px 0"}}>{borrowStatusLabels[request.status]}{request.creditedAt ? " · 💸 Kredite nan balans retrè" : request.status==="approved" ? " · ⚠️ Poko kredite" : ""} · {new Date(request.createdAt).toLocaleString()}</p>
-            {request.status==="approved" && request.creditedAt && <AdminBorrowCountdown creditedAt={request.creditedAt} amount={request.amount} now={borrowClockNow}/>}
+            {request.status==="approved" && request.creditedAt && <>
+              <button type="button" onClick={()=>void showBorrowHistory(request.id)}>
+                {borrowHistory[request.id]?"Fèmen istwa peman":"Gade istwa peman"}
+              </button>
+              {borrowHistoryError[request.id] && <p role="alert">{borrowHistoryError[request.id]}</p>}
+              {borrowHistory[request.id] && <section aria-label="Istwa peman prè">
+                <strong>{borrowHistory[request.id].ledgerReconciles?"✓ Total peman yo koresponn":"⚠️ Diferans nan total peman yo"}</strong>
+                {borrowHistory[request.id].payments.length===0 ? <p>Pa gen peman anrejistre.</p> :
+                  <ul>{borrowHistory[request.id].payments.map(payment=><li key={payment.id}>
+                    {payment.amount.toLocaleString("pt-BR")} pwen · {payment.method==="wallet"?"Balans Bolet":payment.method} · {new Date(payment.createdAt).toLocaleString("fr-CA")}
+                    {payment.balancesReconcile===false?" · ⚠️ Diferans nan balans":""}
+                  </li>)}</ul>}
+              </section>}
+            </>}
+            {request.status==="approved" && request.creditedAt && <AdminBorrowCountdown creditedAt={request.creditedAt} amount={request.amount} repaid={Number(request.repaidPoints??0)} now={borrowClockNow}/>}
             {request.status==="approved" && !request.creditedAt && <button
               type="button" disabled={borrowBusy===request.id}
               onClick={()=>void creditLegacyBorrow(request.id,request.amount)}

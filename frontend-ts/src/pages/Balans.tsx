@@ -5,11 +5,11 @@ import Pwen from "../components/Pwen";
 import WithdrawModal from "../components/WithdrawModal";
 import styles from "./Balans.module.css";
 
-type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null };
+type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null; repaidPoints?:number };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const LOAN_TERM_DAYS = 30;
 const LOAN_INTEREST_PERCENT = 20;
-const repaymentTotal = (amount:number) => Math.round(amount * (100 + LOAN_INTEREST_PERCENT)) / 100;
+const repaymentTotal = (amount:number) => Math.ceil(amount * (100 + LOAN_INTEREST_PERCENT) / 100);
 const remainingTime = (creditedAt:string, now:number) => {
   const credited = Date.parse(creditedAt);
   if (!Number.isFinite(credited)) return null;
@@ -28,6 +28,58 @@ export default function Balans() {
   const [requests,setRequests] = useState<BorrowRequest[]>([]);
   const [requestError,setRequestError] = useState("");
   const [requestBusy,setRequestBusy] = useState(false);
+  const [paying,setPaying] = useState<BorrowRequest|null>(null);
+  const [paymentAmount,setPaymentAmount] = useState("");
+  const [paymentError,setPaymentError] = useState("");
+  const [paymentBusy,setPaymentBusy] = useState(false);
+  const [paymentAuditMismatch,setPaymentAuditMismatch] = useState(false);
+  const [paymentHistory,setPaymentHistory] = useState<{amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[]>([]);
+  const repaymentEnabled = import.meta.env.VITE_BORROW_REPAYMENTS_ENABLED === "true";
+  const openRepayment = async (request: BorrowRequest) => {
+    const outstanding = Math.max(0,repaymentTotal(request.amount)-Number(request.repaidPoints??0));
+    setPaying(request);setPaymentAmount(String(outstanding));setPaymentError("");setPaymentHistory([]);setPaymentAuditMismatch(false);
+    const token=localStorage.getItem("token");
+    if(!token)return;
+    try {
+      const response=await fetch(API+"/api/borrow-requests/"+request.id+"/repayments",{headers:{Authorization:"Bearer "+token}});
+      if(response.ok){
+        const result=await response.json() as {payments?:{amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[];ledgerReconciles?:boolean};
+        setPaymentHistory(result.payments??[]);
+        if(result.ledgerReconciles===false || result.payments?.some(p=>p.balancesReconcile===false)){
+          setPaymentAuditMismatch(true);
+          setPaymentError("Gen yon diferans nan istwa peman an. Kontakte administratè a anvan ou fè yon lòt peman.");
+        }
+      }
+    }catch{ /* History can be viewed on the next request. */ }
+  };
+  const submitWalletRepayment = async () => {
+    if (!paying || !repaymentEnabled || paymentAuditMismatch) return;
+    const outstanding = Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0));
+    const amount = Number(paymentAmount);
+    const time = remainingTime(paying.creditedAt||"",Date.now());
+    if (!Number.isSafeInteger(amount) || amount<=0 || amount>outstanding || (time?.days===0 && amount!==outstanding)) {
+      setPaymentError("Kantite peman an pa valid. Nan dènye jou a, ou dwe peye tout rès la.");
+      return;
+    }
+    const token=localStorage.getItem("token");
+    if(!token){setPaymentError("Ou dwe konekte.");return;}
+    if(!window.confirm("Konfime peman "+amount+" pwen nan balans Bolet ou?"))return;
+    setPaymentBusy(true);setPaymentError("");
+    try {
+      const response=await fetch(API+"/api/borrow-requests/"+paying.id+"/wallet-repayments",{
+        method:"POST",
+        headers:{"Content-Type":"application/json",Authorization:"Bearer "+token,"Idempotency-Key":crypto.randomUUID().replace(/-/g,"")},
+        body:JSON.stringify({amount})
+      });
+      const result=await response.json() as {message?:string};
+      if(!response.ok)throw new Error(result.message||"Peman an pa pase.");
+      setPaying(null);setPaymentAmount("");
+      await refreshRequests();
+      window.location.reload();
+    }catch(error){setPaymentError(error instanceof Error?error.message:"Peman an pa pase.");}
+    finally{setPaymentBusy(false);}
+  };
+
   const refreshRequests = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -171,11 +223,13 @@ export default function Balans() {
                 {request.status==="approved" && request.creditedAt && (() => {
                   const time = remainingTime(request.creditedAt,clockNow);
                   const expired = time !== null && time.days===0 && time.hours===0 && time.minutes===0 && time.seconds===0;
+                  const outstanding = Math.max(0,repaymentTotal(request.amount)-Number(request.repaidPoints??0));
                   const clock = time ? [time.hours,time.minutes,time.seconds].map(value=>String(value).padStart(2,"0")).join(":") : "--:--:--";
                   return <div className={styles.repaymentDue} role="timer" aria-label="Tan ki rete pou remèt prè a">
-                    <span className={styles.repaymentSentence}>Rete <strong className={expired ? styles.repaymentOverdue : styles.repaymentDays}>{time?.days ?? "—"} jou</strong> pou remèt <strong>{repaymentTotal(request.amount).toLocaleString("pt-BR")} pwen</strong></span>
-                    <span className={styles.repaymentClock}>⏱ {clock} <small>èdtan : minit : segonn</small></span>
-                    {expired && <span className={styles.repaymentOverdue}>Delè 30 jou a pase</span>}
+                    {outstanding===0 ? <strong>✅ Prè a fin peye.</strong> : <span className={styles.repaymentSentence}>Rete <strong className={expired ? styles.repaymentOverdue : styles.repaymentDays}>{time?.days ?? "—"} jou</strong> pou remèt <strong>{outstanding.toLocaleString("pt-BR")} pwen</strong></span>}
+                    {outstanding>0 && <span className={styles.repaymentClock}>⏱ {clock} <small>èdtan : minit : segonn</small></span>}
+                    {outstanding>0 && repaymentEnabled && <button type="button" onClick={()=>void openRepayment(request)}>Remèt prè mwen</button>}
+                    {outstanding>0 && expired && <span className={styles.repaymentOverdue}>Delè 30 jou a pase</span>}
                   </div>;
                 })()}
               </div>
@@ -191,6 +245,29 @@ export default function Balans() {
           </button>
         </div>
       </section>
+
+      {paying && <div className={styles.modalBackdrop} role="presentation" onClick={()=>{if(!paymentBusy)setPaying(null);}}>
+        <div className={styles.requestModal} role="dialog" aria-modal="true" aria-label="Remèt prè mwen" onClick={e=>e.stopPropagation()}>
+          <h2>Remèt prè mwen</h2>
+          <p>Rès prè a: <strong>{Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0)).toLocaleString("pt-BR")} pwen</strong></p>
+          <p>{remainingTime(paying.creditedAt||"",clockNow)?.days===0?"Dènye jou: ou dwe peye tout rès la.":"Ou ka peye yon pati oswa tout rès la."}</p>
+          <label htmlFor="loan-repayment-amount">Kantite pou peye ak balans Bolet ou</label>
+          <input id="loan-repayment-amount" type="number" min={1} step={1}
+            max={Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0))}
+            value={paymentAmount} onChange={e=>setPaymentAmount(e.target.value)}
+            readOnly={remainingTime(paying.creditedAt||"",clockNow)?.days===0}/>
+          <button type="button" onClick={()=>setPaymentAmount(String(Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0))))}>Peye tout rès la</button>
+          {paymentHistory.length>0 && <section aria-label="Istwa peman prè">
+            <h3>Istwa peman yo</h3>
+            <ul>{paymentHistory.map((entry,index)=><li key={index}>{entry.amount.toLocaleString("pt-BR")} pwen — {entry.method==="wallet"?"Balans Bolet":entry.method} — {new Date(entry.createdAt).toLocaleDateString("fr-CA")}{entry.balancesReconcile===true?" — ✓ Verifye":entry.balancesReconcile===false?" — ⚠ Verifye ak administratè a":""}</li>)}</ul>
+          </section>}
+          {paymentError && <p role="alert" className={styles.requestError}>{paymentError}</p>}
+          <div className={styles.modalActions}>
+            <button type="button" disabled={paymentBusy} onClick={()=>setPaying(null)}>Anile</button>
+            <button type="button" disabled={paymentBusy || paymentAuditMismatch} onClick={()=>void submitWalletRepayment()}>Konfime peman</button>
+          </div>
+        </div>
+      </div>}
       {requestOpen && <div className={styles.modalBackdrop} role="presentation" onClick={()=>{if(!requestBusy)setRequestOpen(false);}}>
         <div className={styles.requestModal} role="dialog" aria-modal="true" aria-labelledby="borrow-title" onClick={e=>e.stopPropagation()}>
           <h2 id="borrow-title">Mande yon prè</h2>
