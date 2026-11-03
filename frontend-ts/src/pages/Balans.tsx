@@ -32,11 +32,12 @@ export default function Balans() {
   const [paymentAmount,setPaymentAmount] = useState("");
   const [paymentError,setPaymentError] = useState("");
   const [paymentBusy,setPaymentBusy] = useState(false);
+  const [paymentAuditMismatch,setPaymentAuditMismatch] = useState(false);
   const [paymentHistory,setPaymentHistory] = useState<{amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[]>([]);
   const repaymentEnabled = import.meta.env.VITE_BORROW_REPAYMENTS_ENABLED === "true";
   const openRepayment = async (request: BorrowRequest) => {
     const outstanding = Math.max(0,repaymentTotal(request.amount)-Number(request.repaidPoints??0));
-    setPaying(request);setPaymentAmount(String(outstanding));setPaymentError("");setPaymentHistory([]);
+    setPaying(request);setPaymentAmount(String(outstanding));setPaymentError("");setPaymentHistory([]);setPaymentAuditMismatch(false);
     const token=localStorage.getItem("token");
     if(!token)return;
     try {
@@ -45,13 +46,14 @@ export default function Balans() {
         const result=await response.json() as {payments?:{amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[];ledgerReconciles?:boolean};
         setPaymentHistory(result.payments??[]);
         if(result.ledgerReconciles===false || result.payments?.some(p=>p.balancesReconcile===false)){
+          setPaymentAuditMismatch(true);
           setPaymentError("Gen yon diferans nan istwa peman an. Kontakte administratè a anvan ou fè yon lòt peman.");
         }
       }
     }catch{ /* History can be viewed on the next request. */ }
   };
   const submitWalletRepayment = async () => {
-    if (!paying || !repaymentEnabled) return;
+    if (!paying || !repaymentEnabled || paymentAuditMismatch) return;
     const outstanding = Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0));
     const amount = Number(paymentAmount);
     const time = remainingTime(paying.creditedAt||"",Date.now());
@@ -262,7 +264,7 @@ export default function Balans() {
           {paymentError && <p role="alert" className={styles.requestError}>{paymentError}</p>}
           <div className={styles.modalActions}>
             <button type="button" disabled={paymentBusy} onClick={()=>setPaying(null)}>Anile</button>
-            <button type="button" disabled={paymentBusy} onClick={()=>void submitWalletRepayment()}>Konfime peman</button>
+            <button type="button" disabled={paymentBusy || paymentAuditMismatch} onClick={()=>void submitWalletRepayment()}>Konfime peman</button>
           </div>
         </div>
       </div>}
