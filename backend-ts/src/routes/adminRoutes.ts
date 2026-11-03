@@ -108,7 +108,8 @@ router.patch("/users/:id/admin-status", authenticate, adminOnly, async (req, res
 
 router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) => {
   const toRemove = Number(req.body?.amount);
-  const balanceType = req.body?.balanceType === "withdraw" ? "withdraw" : "play";
+  const balanceType = req.body?.balanceType ?? "play";
+  if (!["play", "withdraw", "borrow"].includes(balanceType)) return res.status(400).json({ message: "Invalid balance type" });
   if (!Number.isSafeInteger(toRemove) || toRemove <= 0) {
     return res.status(400).json({ message: "Amount must be a positive whole number" });
   }
