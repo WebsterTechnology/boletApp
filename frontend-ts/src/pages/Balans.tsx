@@ -12,6 +12,7 @@ const statusLabel:Record<BorrowRequest["status"],string> = {
 };
 export default function Balans() {
   const [requestOpen,setRequestOpen] = useState(false);
+  const [historyOpen,setHistoryOpen] = useState(false);
   const [requestAmount,setRequestAmount] = useState("");
   const [requestReason,setRequestReason] = useState("");
   const [requests,setRequests] = useState<BorrowRequest[]>([]);
@@ -137,12 +138,22 @@ export default function Balans() {
         </div>
 
         <section className={styles.requestHistory}>
-          <h2>Demann prè mwen yo</h2>
-          {requests.length===0 && <p>Ou poko voye okenn demann prè.</p>}
-          {requests.map(request=><div className={styles.requestRow} key={request.id}>
-            <span>{request.amount.toLocaleString("pt-BR")} pwen · {request.reason}</span>
-            <strong>{statusLabel[request.status]}{request.status==="approved" ? (request.creditedAt ? " · Kredite" : " · Poko kredite") : ""}</strong>
-          </div>)}
+          <button type="button" className={styles.historyToggle}
+            aria-expanded={historyOpen} aria-controls="borrow-history-list"
+            onClick={()=>setHistoryOpen(open=>!open)}>
+            <span className={styles.historyTitle}>
+              <span aria-hidden="true">📋</span> Demann prè mwen yo
+              {requests.length>0 && <span className={styles.historyCount}>{requests.length}</span>}
+            </span>
+            <span className={styles.historyChevron} aria-hidden="true">{historyOpen ? "⌃" : "⌄"}</span>
+          </button>
+          {historyOpen && <div id="borrow-history-list" className={styles.historyList}>
+            {requests.length===0 && <p>Ou poko voye okenn demann prè.</p>}
+            {requests.map(request=><div className={styles.requestRow} key={request.id}>
+              <span>{request.amount.toLocaleString("pt-BR")} pwen · {request.reason}</span>
+              <strong>{statusLabel[request.status]}{request.status==="approved" ? (request.creditedAt ? " · Kredite" : " · Poko kredite") : ""}</strong>
+            </div>)}
+          </div>}
         </section>
         <div className={styles.actions}>
           <button type="button" className={`${styles.action} ${styles.buyButton}`} onClick={() => navigate("/buy-credits")}>
