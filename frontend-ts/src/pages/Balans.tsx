@@ -236,7 +236,7 @@ export default function Balans() {
           <input id="loan-repayment-amount" type="number" min={1} step={1}
             max={Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0))}
             value={paymentAmount} onChange={e=>setPaymentAmount(e.target.value)}
-            disabled={remainingTime(paying.creditedAt||"",clockNow)?.days===0}/>
+            readOnly={remainingTime(paying.creditedAt||"",clockNow)?.days===0}/>
           <button type="button" onClick={()=>setPaymentAmount(String(Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0))))}>Peye tout rès la</button>
           {paymentError && <p role="alert" className={styles.requestError}>{paymentError}</p>}
           <div className={styles.modalActions}>
