@@ -31,7 +31,7 @@ router.post("/", async (req, res) => {
       const request = await BorrowRequest.create({ userId: user.id, amount, reason }, { transaction });
       return { request };
     });
-    if ("error" in result) return res.status(result.status).json({ message: result.error });
+    if ("error" in result) return res.status(result.status ?? 400).json({ message: result.error });
     return res.status(201).json(result.request);
   } catch (error) {
     if (error instanceof UniqueConstraintError) return res.status(409).json({ message: "Ou deja gen yon demann prè annatant." });
@@ -72,7 +72,7 @@ router.patch("/admin/:id/decision", adminOnly, async (req, res) => {
       await request.save({ transaction });
       return { request };
     });
-    if ("message" in result) return res.status(result.status).json({ message: result.message });
+    if ("message" in result) return res.status(result.status ?? 400).json({ message: result.message });
     return res.json(result.request);
   } catch (error) {
     console.error("borrow decision failed", error instanceof Error ? error.name : "unknown");
