@@ -55,7 +55,7 @@
 .playCard { background: linear-gradient(115deg, #fff9ea, #fffdf8); border-color: #f6dca3; }
 .playCard .balanceIcon { background: #fff0c7; color: #9a620d; }
 .playValue { display: flex; align-items: center; min-width: 0; }
-.playValue > span { max-width: 100%; white-space: normal; text-align: center; }
+.playValue > span { max-width: 100%; white-space: normal; text-align: left; }
 .withdrawCard .balanceIcon { background: #e3f7eb; color: #13854b; }
 .withdrawCard .amount { color: #126e48; }
 .borrowCard { background: linear-gradient(115deg, #f2f4ff, #fafbff); border-color: #cfd8f8; }

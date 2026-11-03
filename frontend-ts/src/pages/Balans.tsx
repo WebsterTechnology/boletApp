@@ -69,8 +69,8 @@ export default function Balans() {
           <div className={`${styles.balanceCard} ${styles.playCard}`}>
             <div className={styles.balanceIcon} aria-hidden="true">⭐</div>
             <div className={styles.balanceContent}>
-              <p className={styles.balanceLabel}>Balans pou jwe</p>
-              <div className={styles.playValue}><Pwen label /></div>
+              <p className={styles.balanceLabel}>Disponib pou jwe</p>
+              <div className={styles.playValue}><Pwen plain /></div>
             </div>
           </div>
 
