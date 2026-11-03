@@ -15,7 +15,7 @@ function readCachedPoints() {
   }
 }
 
-export default function Pwen({ label = false }: { label?: boolean }) {
+export default function Pwen({ label = false, plain = false }: { label?: boolean; plain?: boolean }) {
   const { total = 0 } = useBet(); // pending total from cart/context
   const [basePoints, setBasePoints] = useState(readCachedPoints);
 
@@ -67,6 +67,8 @@ export default function Pwen({ label = false }: { label?: boolean }) {
 
   // Available = server/base points minus current cart total
   const available = Math.max(0, Number(basePoints) - Number(total || 0));
+
+  if (plain) return <span style={{ fontSize: "clamp(25px, 6vw, 32px)", fontWeight: 800, color: "#9a620d", lineHeight: 1.13, fontVariantNumeric: "tabular-nums", letterSpacing: "-.035em" }}>{available.toLocaleString("pt-BR")} <small style={{ fontSize: 13, fontWeight: 600, color: "#90794b", letterSpacing: 0 }}>pwen</small></span>;
 
   return <span className={styles.pointsBubble}>{label ? `Disponib pou jwe: ${available}` : `${available} P`}</span>;
 }
