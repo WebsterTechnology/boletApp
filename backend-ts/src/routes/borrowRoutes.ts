@@ -20,7 +20,7 @@ router.get("/mine", async (req, res) => {
 router.post("/", async (req, res) => {
   const amount = req.body?.amount;
   const reason = typeof req.body?.reason === "string" ? req.body.reason.trim() : "";
-  if (!Number.isSafeInteger(amount) || amount <= 0 || !reason || reason.length > 120)
+  if (!Number.isSafeInteger(amount) || amount <= 0 || amount > 1789569705 || !reason || reason.length > 120)
     return res.status(400).json({ message: "Antre yon kantite pwen valid ak yon rezon." });
   try {
     const result = await sequelize.transaction(async transaction => {
