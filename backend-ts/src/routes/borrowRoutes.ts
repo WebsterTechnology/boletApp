@@ -3,6 +3,7 @@ import { UniqueConstraintError } from "sequelize";
 import { authenticate, currentUser } from "../middleware/authenticate";
 import { adminOnly } from "../middleware/adminOnly";
 import { BorrowRequest, User, sequelize } from "../models";
+import type { Transaction } from "sequelize";
 
 const router = Router();
 router.use(authenticate);
@@ -51,7 +52,30 @@ router.get("/admin", adminOnly, async (_req, res) => {
   } catch { return res.status(500).json({ message: "Pa kapab chaje demann prè yo." }); }
 });
 
-// Approval is review status ONLY; never move points or create a debt automatically.
+// The request row and customer wallet row are locked in the same database transaction.
+// A creditedAt audit marker on the locked request prevents a second credit on retries.
+async function creditApprovedRequest(request: BorrowRequest, user: User, adminId: number, transaction: Transaction) {
+  if (request.creditedAt) return { status: 409, message: "Prè sa a deja kredite." };
+  const amount = Number(request.amount);
+  const allowance = Number(user.borrowablePoints ?? 0);
+  const withdrawable = Number(user.withdrawablePoints ?? 0);
+  if (!Number.isSafeInteger(amount) || amount <= 0 || !Number.isSafeInteger(allowance) || allowance < amount)
+    return { status: 409, message: "Limit prè kliyan an pa sifi pou demann sa a." };
+  if (!Number.isSafeInteger(withdrawable) || withdrawable < 0 || !Number.isSafeInteger(withdrawable + amount) || withdrawable + amount > 2147483647)
+    return { status: 409, message: "Balans retrè kliyan an pa ka resevwa kantite sa a." };
+
+  user.borrowablePoints = allowance - amount;
+  user.withdrawablePoints = withdrawable + amount;
+  request.borrowableBefore = allowance;
+  request.withdrawableBefore = withdrawable;
+  request.creditedAt = new Date();
+  request.creditedBy = adminId;
+  await user.save({ transaction });
+  await request.save({ transaction });
+  return null;
+}
+
+// Approvals now atomically move the approved amount into withdrawable points.
 router.patch("/admin/:id/decision", adminOnly, async (req, res) => {
   const id = Number(req.params.id);
   const decision = req.body?.decision;
@@ -66,17 +90,51 @@ router.patch("/admin/:id/decision", adminOnly, async (req, res) => {
       if (!user) return { status: 404, message: "Kliyan pa jwenn." };
       if (decision === "approved" && request.amount > Number(user.borrowablePoints ?? 0))
         return { status: 409, message: "Limit kliyan an chanje; demann nan depase limit aktyèl la." };
+      if (decision === "approved") {
+        const error = await creditApprovedRequest(request, user, currentUser(req).id, transaction);
+        if (error) return error;
+      }
       request.status = decision;
       request.reviewedBy = currentUser(req).id;
       request.reviewedAt = new Date();
       await request.save({ transaction });
-      return { request };
+      return { request, wallet: {
+        borrowablePoints: Number(user.borrowablePoints ?? 0),
+        withdrawablePoints: Number(user.withdrawablePoints ?? 0),
+      } };
     });
     if ("message" in result) return res.status(result.status ?? 400).json({ message: result.message });
     return res.json(result.request);
   } catch (error) {
     console.error("borrow decision failed", error instanceof Error ? error.name : "unknown");
     return res.status(500).json({ message: "Pa kapab anrejistre desizyon an." });
+  }
+});
+// Older approved requests predate wallet crediting. Require a separate explicit
+// administrator click rather than silently crediting historical requests during deployment.
+router.patch("/admin/:id/credit", adminOnly, async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id <= 0) return res.status(400).json({ message: "ID demann lan pa valid." });
+  try {
+    const result = await sequelize.transaction(async transaction => {
+      const request = await BorrowRequest.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!request) return { status: 404, message: "Demann pa jwenn." };
+      if (request.status !== "approved") return { status: 409, message: "Se sèlman prè apwouve ki ka kredite." };
+      if (request.creditedAt) return { status: 409, message: "Prè sa a deja kredite." };
+      const user = await User.findByPk(request.userId, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!user) return { status: 404, message: "Kliyan pa jwenn." };
+      const error = await creditApprovedRequest(request, user, currentUser(req).id, transaction);
+      if (error) return error;
+      return { request, wallet: {
+        borrowablePoints: Number(user.borrowablePoints ?? 0),
+        withdrawablePoints: Number(user.withdrawablePoints ?? 0),
+      } };
+    });
+    if ("message" in result) return res.status(result.status ?? 400).json({ message: result.message });
+    return res.json(result);
+  } catch (error) {
+    console.error("borrow credit failed", error instanceof Error ? error.name : "unknown");
+    return res.status(500).json({ message: "Pa kapab kredite prè a." });
   }
 });
 export default router;
