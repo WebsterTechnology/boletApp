@@ -139,7 +139,7 @@ router.patch("/admin/:id/credit", adminOnly, async (req, res) => {
 });
 
 const LOAN_TERM_MS = 30 * 86400000;
-import { loanTotal, repaymentAllowed } from "../services/borrowRepayment";
+import { loanTotal, repaymentAllowed, allocateWalletRepayment } from "../services/borrowRepayment";
 
 // Loan repayments are feature-flagged until ledger and settlement tests pass.
 // PIX settlement requires a separate, verified payment-provider integration.
@@ -178,12 +178,11 @@ router.post("/:id/wallet-repayments", async (req, res) => {
         return { code: 409, message: "Nan dènye jou a, ou dwe peye tout rès prè a." };
       const play = Number(user.points);
       const withdraw = Number(user.withdrawablePoints);
-      if (!Number.isSafeInteger(play) || !Number.isSafeInteger(withdraw) || play < 0 || withdraw < 0 || !Number.isSafeInteger(play + withdraw) || play + withdraw < amount)
-        return { code: 409, message: "Balans Bolet ou pa sifi." };
-      const withdrawDebited = Math.min(withdraw, amount);
-      const playDebited = amount - withdrawDebited;
-      user.withdrawablePoints = withdraw - withdrawDebited;
-      user.points = play - playDebited;
+      const debit = allocateWalletRepayment(play, withdraw, amount);
+      if (!debit) return { code: 409, message: "Balans Bolet ou pa sifi." };
+      const { withdrawDebited, playDebited } = debit;
+      user.withdrawablePoints = debit.withdrawAfter;
+      user.points = debit.playAfter;
       loan.repaidPoints = Number(loan.repaidPoints) + amount;
       await user.save({ transaction });
       await loan.save({ transaction });
