@@ -234,6 +234,28 @@ router.post("/:id/pix-intents", async (req,res) => {
   return res.status(503).json({message:"Koneksyon PIX pou prè poko pare."});
 });
 
+/** Read-only checkout status. Pending PIX attempts never count as repayments. */
+router.get("/:id/pix-attempts", async (req,res) => {
+  const id=Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id<1)
+    return res.status(400).json({message:"ID pa valid."});
+  try {
+    const loan=await BorrowRequest.findByPk(id);
+    if (!loan || (loan.userId!==currentUser(req).id && !currentUser(req).isAdmin))
+      return res.status(404).json({message:"Prè pa jwenn."});
+    const attempts=await sequelize.query<{
+      id:number;points:number;amountCents:number;currency:string;status:string;
+      createdAt:Date;confirmedAt:Date|null;
+    }>(
+      'SELECT id,points,"amountCents",currency,status,"createdAt","confirmedAt" FROM borrow_pix_attempts WHERE "borrowRequestId"=:id ORDER BY "createdAt" DESC LIMIT 50',
+      {replacements:{id},type:QueryTypes.SELECT}
+    );
+    return res.json({attempts});
+  } catch {
+    return res.status(500).json({message:"Pa kapab chaje eta peman PIX yo."});
+  }
+});
+
 router.get("/:id/repayments", async (req,res) => {
   const id=Number(req.params.id);
   if(!Number.isSafeInteger(id)||id<1) return res.status(400).json({message:"ID pa valid."});
