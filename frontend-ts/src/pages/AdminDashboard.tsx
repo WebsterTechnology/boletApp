@@ -79,7 +79,7 @@ export default function AdminDashboard() {
   const [solExpanded, setSolExpanded] = useState<number | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [amounts, setAmounts] = useState<Record<number, string>>({});
-  const [balanceTypes, setBalanceTypes] = useState<Record<number, "play" | "withdraw">>({});
+  const [balanceTypes, setBalanceTypes] = useState<Record<number, "play" | "withdraw" | "borrow">>({});
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<NotificationForm>({ title: "", message: "", priority: "info", imageUrl: "", linkUrl: "", recipientType: "all", recipientUserId: "" });
   const [notificationHistory, setNotificationHistory] = useState<NotificationHistoryItem[]>([]);
@@ -439,6 +439,7 @@ const filteredUsers = useMemo(() => {
             <th>Address</th>
             <th>Disponib pou jwe</th>
             <th>Disponib pou retire</th>
+            <th>Disponib pou prete</th>
             <th>Role</th>
             <th>Amount</th>
             <th>Actions</th>
@@ -456,6 +457,7 @@ const filteredUsers = useMemo(() => {
               <td>{u.address ? `${u.address}, ${u.city} - ${u.state}, CEP ${u.cep}` : "Cadastro pendente"}</td>
               <td>{u.points}</td>
               <td>{u.withdrawablePoints || 0}</td>
+              <td>{u.borrowablePoints ?? 0}</td>
               <td>{u.isAdmin ? "👑 Admin" : "User"}</td>
 
               <td>
@@ -470,9 +472,10 @@ const filteredUsers = useMemo(() => {
                   }
                   style={{ width: 80 }}
                 />
-                <select value={balanceTypes[u.id] || "play"} onChange={(e)=>setBalanceTypes(s=>({...s,[u.id]:e.target.value as "play"|"withdraw"}))} style={{display:"block",marginTop:6}}>
+                <select value={balanceTypes[u.id] || "play"} onChange={(e)=>setBalanceTypes(s=>({...s,[u.id]:e.target.value as "play"|"withdraw"|"borrow"}))} style={{display:"block",marginTop:6}}>
                   <option value="play">Disponib pou jwe</option>
                   <option value="withdraw">Disponib pou retire</option>
+                  <option value="borrow">Disponib pou prete</option>
                 </select>
               </td>
               <td>
