@@ -6,6 +6,7 @@ describe("borrow repayment policy", () => {
     expect(loanTotal(100)).toBe(120);
     expect(loanTotal(101)).toBe(122);
     expect(loanTotal(1)).toBe(2);
+    expect(() => loanTotal(2147483647)).toThrow();
   });
   it("allows partial repayments before the final day", () => {
     expect(repaymentAllowed(50,120,30*86400000,0)).toBe(true);
