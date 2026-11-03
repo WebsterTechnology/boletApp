@@ -139,7 +139,7 @@ router.patch("/admin/:id/credit", adminOnly, async (req, res) => {
 });
 
 const LOAN_TERM_MS = 30 * 86400000;
-const loanTotal = (amount: number) => Math.ceil(amount * 120 / 100);
+import { loanTotal, repaymentAllowed } from "../services/borrowRepayment";
 
 // Loan repayments are feature-flagged until ledger and settlement tests pass.
 // PIX settlement requires a separate, verified payment-provider integration.
@@ -174,11 +174,11 @@ router.post("/:id/wallet-repayments", async (req, res) => {
       if (!Number.isSafeInteger(remaining) || remaining <= 0 || amount > remaining)
         return { code: 409, message: "Kantite a depase rès prè a oswa prè a fin peye." };
       const dueAt = new Date(loan.creditedAt).getTime() + LOAN_TERM_MS;
-      if (Date.now() >= dueAt - 86400000 && amount !== remaining)
+      if (!repaymentAllowed(amount, remaining, dueAt, Date.now()))
         return { code: 409, message: "Nan dènye jou a, ou dwe peye tout rès prè a." };
       const play = Number(user.points);
       const withdraw = Number(user.withdrawablePoints);
-      if (!Number.isSafeInteger(play) || !Number.isSafeInteger(withdraw) || play < 0 || withdraw < 0 || play + withdraw < amount)
+      if (!Number.isSafeInteger(play) || !Number.isSafeInteger(withdraw) || play < 0 || withdraw < 0 || !Number.isSafeInteger(play + withdraw) || play + withdraw < amount)
         return { code: 409, message: "Balans Bolet ou pa sifi." };
       const withdrawDebited = Math.min(withdraw, amount);
       const playDebited = amount - withdrawDebited;
