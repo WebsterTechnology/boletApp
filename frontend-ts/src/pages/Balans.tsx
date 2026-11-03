@@ -32,7 +32,7 @@ export default function Balans() {
   const [paymentAmount,setPaymentAmount] = useState("");
   const [paymentError,setPaymentError] = useState("");
   const [paymentBusy,setPaymentBusy] = useState(false);
-  const [paymentHistory,setPaymentHistory] = useState<{amount:number;method:string;createdAt:string}[]>([]);
+  const [paymentHistory,setPaymentHistory] = useState<{amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[]>([]);
   const repaymentEnabled = import.meta.env.VITE_BORROW_REPAYMENTS_ENABLED === "true";
   const openRepayment = async (request: BorrowRequest) => {
     const outstanding = Math.max(0,repaymentTotal(request.amount)-Number(request.repaidPoints??0));
@@ -42,8 +42,11 @@ export default function Balans() {
     try {
       const response=await fetch(API+"/api/borrow-requests/"+request.id+"/repayments",{headers:{Authorization:"Bearer "+token}});
       if(response.ok){
-        const result=await response.json() as {payments?:{amount:number;method:string;createdAt:string}[]};
+        const result=await response.json() as {payments?:{amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[];ledgerReconciles?:boolean};
         setPaymentHistory(result.payments??[]);
+        if(result.ledgerReconciles===false || result.payments?.some(p=>p.balancesReconcile===false)){
+          setPaymentError("Gen yon diferans nan istwa peman an. Kontakte administratè a anvan ou fè yon lòt peman.");
+        }
       }
     }catch{ /* History can be viewed on the next request. */ }
   };
@@ -254,7 +257,7 @@ export default function Balans() {
           <button type="button" onClick={()=>setPaymentAmount(String(Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0))))}>Peye tout rès la</button>
           {paymentHistory.length>0 && <section aria-label="Istwa peman prè">
             <h3>Istwa peman yo</h3>
-            <ul>{paymentHistory.map((entry,index)=><li key={index}>{entry.amount.toLocaleString("pt-BR")} pwen — {entry.method==="wallet"?"Balans Bolet":entry.method} — {new Date(entry.createdAt).toLocaleDateString("fr-CA")}</li>)}</ul>
+            <ul>{paymentHistory.map((entry,index)=><li key={index}>{entry.amount.toLocaleString("pt-BR")} pwen — {entry.method==="wallet"?"Balans Bolet":entry.method} — {new Date(entry.createdAt).toLocaleDateString("fr-CA")}{entry.balancesReconcile===true?" — ✓ Verifye":entry.balancesReconcile===false?" — ⚠ Verifye ak administratè a":""}</li>)}</ul>
           </section>}
           {paymentError && <p role="alert" className={styles.requestError}>{paymentError}</p>}
           <div className={styles.modalActions}>
