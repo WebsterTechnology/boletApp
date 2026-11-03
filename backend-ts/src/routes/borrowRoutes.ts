@@ -154,10 +154,15 @@ router.post("/:id/wallet-repayments", async (req, res) => {
     return res.status(400).json({ message: "Kantite oswa referans peman an pa valid." });
   try {
     const result = await sequelize.transaction(async transaction => {
-      const loan = await BorrowRequest.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
-      if (!loan || loan.userId !== currentUser(req).id) return { code: 404, message: "Prè pa jwenn." };
-      const user = await User.findByPk(loan.userId, { transaction, lock: transaction.LOCK.UPDATE });
+      // Match the approval path's lock order (user, then loan) to reduce deadlocks.
+      // Recheck ownership on the locked row; the preliminary read is not trusted.
+      const candidate = await BorrowRequest.findByPk(id, { transaction });
+      if (!candidate || candidate.userId !== currentUser(req).id)
+        return { code: 404, message: "Prè pa jwenn." };
+      const user = await User.findByPk(currentUser(req).id, { transaction, lock: transaction.LOCK.UPDATE });
       if (!user) return { code: 404, message: "Kont pa jwenn." };
+      const loan = await BorrowRequest.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!loan || loan.userId !== user.id) return { code: 404, message: "Prè pa jwenn." };
       const previous = await sequelize.query<{ borrowRequestId: number; userId: number; amount: number }>(
         'SELECT "borrowRequestId", "userId", amount FROM borrow_repayments WHERE "idempotencyKey" = :key LIMIT 1',
         { replacements: { key }, type: QueryTypes.SELECT, transaction }
