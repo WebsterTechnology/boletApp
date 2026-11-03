@@ -19,6 +19,10 @@ const migration: Migration = {
         playDebited: { type: DataTypes.INTEGER, allowNull: false },
         withdrawDebited: { type: DataTypes.INTEGER, allowNull: false },
         method: { type: DataTypes.STRING(12), allowNull: false },
+        playBefore: { type: DataTypes.INTEGER, allowNull: true },
+        withdrawBefore: { type: DataTypes.INTEGER, allowNull: true },
+        playAfter: { type: DataTypes.INTEGER, allowNull: true },
+        withdrawAfter: { type: DataTypes.INTEGER, allowNull: true },
         idempotencyKey: { type: DataTypes.STRING(128), allowNull: false, unique: true },
         createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW }
       });
