@@ -9,6 +9,7 @@ const shapeUser = (u: User) => ({
   phone: u.phone,
   points: Number(u.points ?? 0),
   withdrawablePoints: Number(u.withdrawablePoints ?? 0),
+  borrowablePoints: Number(u.borrowablePoints ?? 0),
   isAdmin: !!u.isAdmin,
   fullName: u.fullName || "",
   email: u.email || "",
