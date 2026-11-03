@@ -1,5 +1,6 @@
 import { sequelize } from "../config/database";
 import { initUser, User } from "./User";
+import { BorrowRequest, initBorrowRequest } from "./BorrowRequest";
 import { initSol, SolPackage, SolContribution } from "./Sol";
 import { initSolPaymentAttempt, SolPaymentAttempt } from "./SolPaymentAttempt";
 import { ChatMessage, initChatMessage } from "./ChatMessage";
@@ -15,6 +16,7 @@ import {
 } from "./notifications";
 
 initUser(sequelize);
+initBorrowRequest(sequelize);
 initSol(sequelize);
 initSolPaymentAttempt(sequelize);
 initBets(sequelize);
@@ -25,6 +27,8 @@ initChatMessage(sequelize);
 initWithdrawalRequest(sequelize);
 
 // ==================== ASSOCIATIONS ====================
+User.hasMany(BorrowRequest, { foreignKey: "userId", as: "borrowRequests" });
+BorrowRequest.belongsTo(User, { foreignKey: "userId", as: "customer" });
 User.hasMany(SolPackage, { foreignKey: "userId", as: "solPackages" });
 SolPackage.belongsTo(User, { foreignKey: "userId" });
 User.hasMany(ChatMessage, { foreignKey: "userId", onDelete: "CASCADE" });
@@ -67,6 +71,7 @@ NotificationTarget.belongsTo(User, { foreignKey: "userId", as: "user" });
 export {
   sequelize,
   User,
+  BorrowRequest,
   YonChif,
   DeChif,
   TwaChif,
