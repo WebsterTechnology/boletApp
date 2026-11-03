@@ -1,0 +1,86 @@
+/* HTNovaTech — Balans: mobile-first, three distinct non-interchangeable balances */
+.page {
+  width: 100%;
+  max-width: 620px;
+  margin: 24px auto 44px;
+  padding: 0 16px;
+  box-sizing: border-box;
+  color: #effaf7;
+}
+.panel {
+  overflow: hidden;
+  border: 1px solid rgba(139, 191, 180, .22);
+  border-radius: 26px;
+  background: linear-gradient(160deg, #182d37 0%, #101d2d 55%, #10182a 100%);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .26);
+}
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 26px 24px 21px;
+  border-bottom: 1px solid rgba(255, 255, 255, .09);
+}
+.headingGroup { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.headerIcon {
+  width: 52px; height: 52px; display: grid; place-items: center; flex: none;
+  border-radius: 16px; background: rgba(255, 255, 255, .1); font-size: 26px;
+}
+.eyebrow { margin: 0 0 4px; color: #96cfc2; font-size: 11px; letter-spacing: .1em; font-weight: 800; text-transform: uppercase; }
+.heading { margin: 0; color: #fff; line-height: 1.15; font-size: clamp(23px, 5.5vw, 29px); font-weight: 850; }
+.subtitle { margin: 7px 0 0; font-size: 12px; color: #b6c8cc; line-height: 1.4; }
+.backButton {
+  flex: none; width: 40px; height: 40px; border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 12px; background: rgba(255, 255, 255, .07); color: #e9fcf8;
+  font: inherit; font-size: 22px; cursor: pointer;
+}
+.backButton:focus-visible, .action:focus-visible { outline: 3px solid #80e3cd; outline-offset: 3px; }
+.balances { display: grid; gap: 12px; padding: 20px 20px 12px; }
+.balanceCard {
+  display: flex; align-items: center; gap: 15px; min-width: 0; min-height: 99px;
+  padding: 18px; box-sizing: border-box; border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, .11);
+  background: #fff; color: #142532;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, .08);
+}
+.balanceIcon {
+  display: grid; place-items: center; flex: none;
+  width: 46px; height: 46px; border-radius: 15px; font-size: 25px; font-weight: 800;
+}
+.balanceContent { min-width: 0; flex: 1; }
+.balanceLabel { margin: 0 0 6px; color: #516575; font-size: 13px; font-weight: 750; letter-spacing: .005em; }
+.amount { font-size: clamp(25px, 6vw, 32px); line-height: 1.13; color: #1b2c39; font-variant-numeric: tabular-nums; letter-spacing: -.035em; }
+.unit { color: #637988; font-size: 13px; font-weight: 600; letter-spacing: 0; }
+.playCard { background: linear-gradient(115deg, #fff9ea, #fffdf8); border-color: #f6dca3; }
+.playCard .balanceIcon { background: #fff0c7; color: #9a620d; }
+.playValue { display: flex; align-items: center; min-width: 0; }
+.playValue > span { max-width: 100%; white-space: normal; text-align: center; }
+.withdrawCard .balanceIcon { background: #e3f7eb; color: #13854b; }
+.withdrawCard .amount { color: #126e48; }
+.borrowCard { background: linear-gradient(115deg, #f2f4ff, #fafbff); border-color: #cfd8f8; }
+.borrowCard .balanceIcon { background: #dfe5ff; color: #485bb4; }
+.borrowCard .amount { color: #4755a5; }
+.helper { margin: 6px 0 0; color: #78849d; font-size: 11px; line-height: 1.4; }
+.actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 12px 20px 24px; }
+.action {
+  border: 0; border-radius: 15px; min-height: 55px; padding: 13px 12px;
+  color: white; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer;
+  display: flex; justify-content: center; align-items: center; gap: 7px;
+  transition: transform .15s ease, filter .15s ease;
+}
+.action:active { transform: scale(.98); }
+.action:hover { filter: brightness(1.06); }
+.action > span { font-size: 21px; line-height: 1; }
+.buyButton { background: linear-gradient(115deg, #0b9362, #13ad72); box-shadow: 0 5px 12px rgba(11, 147, 98, .2); }
+.withdrawButton { background: linear-gradient(115deg, #b92f43, #da4354); box-shadow: 0 5px 12px rgba(185, 47, 67, .18); }
+@media (max-width: 400px) {
+  .page { padding: 0 12px; margin-top: 20px; }
+  .header { padding: 22px 17px 18px; }
+  .balances { padding: 16px 14px 10px; }
+  .balanceCard { padding: 15px 12px; gap: 11px; }
+  .balanceIcon { width: 41px; height: 41px; }
+  .actions { padding: 10px 14px 18px; gap: 9px; }
+  .action { font-size: 13px; padding: 11px 7px; }
+}
+@media (prefers-reduced-motion: reduce) { .action { transition: none; } }
