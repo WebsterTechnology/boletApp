@@ -3,6 +3,7 @@ import type { MeUser } from "../api/types";
 import { useNavigate } from "react-router-dom";
 import Pwen from "../components/Pwen";
 import WithdrawModal from "../components/WithdrawModal";
+import styles from "./Balans.module.css";
 
 export default function Balans() {
   const navigate = useNavigate();
@@ -50,19 +51,57 @@ export default function Balans() {
   }, [refreshBalances, showWithdraw]);
 
   return (
-    <main style={{maxWidth:560,margin:"32px auto",padding:"0 16px"}}>
-      <button onClick={()=>navigate(-1)} aria-label="Back" style={{marginBottom:14,border:0,background:"transparent",fontSize:24,cursor:"pointer",padding:"4px 8px"}}>←</button>
-      <div style={{background:"#111827",borderRadius:18,padding:24,boxShadow:"0 10px 30px rgba(0,0,0,.18)"}}>
-        <h2 style={{color:"#fff",marginTop:0,marginBottom:22}}>💰 Balans</h2>
-        <div style={{background:"#fff",borderRadius:14,padding:18,marginBottom:12,display:"flex",justifyContent:"center"}}><Pwen label /></div>
-        <div style={{background:"#fff",borderRadius:14,padding:18,marginBottom:16,textAlign:"center",fontWeight:800,color:"#111827",fontSize:17}}>Disponib pou retire: {withdrawable}</div>
-        <div style={{background:"#fff",borderRadius:14,padding:18,marginBottom:16,textAlign:"center",fontWeight:800,color:"#111827",fontSize:17}}>Disponib pou prete: {borrowable}</div>
-        <div style={{display:"grid",gap:12}}>
-          <button onClick={()=>navigate("/buy-credits")} style={{border:0,borderRadius:12,padding:"14px 18px",background:"#16a34a",color:"#fff",fontWeight:800,fontSize:17,cursor:"pointer"}}>Achte Pwen</button>
-          <button onClick={()=>setShowWithdraw(true)} style={{border:0,borderRadius:12,padding:"14px 18px",background:"#ef4444",color:"#fff",fontWeight:800,fontSize:17,cursor:"pointer"}}>Retire Pwen</button>
+    <main className={styles.page}>
+      <section className={styles.panel} aria-label="Balans kont ou">
+        <header className={styles.header}>
+          <div className={styles.headingGroup}>
+            <span className={styles.headerIcon} aria-hidden="true">💼</span>
+            <div>
+              <p className={styles.eyebrow}>Kont HTNovaTech</p>
+              <h1 className={styles.heading}>Balans ou</h1>
+              <p className={styles.subtitle}>Gade tout balans ou yo yon sèl kote</p>
+            </div>
+          </div>
+          <button type="button" className={styles.backButton} onClick={() => navigate(-1)} aria-label="Retounen nan paj anvan an">←</button>
+        </header>
+
+        <div className={styles.balances}>
+          <div className={`${styles.balanceCard} ${styles.playCard}`}>
+            <div className={styles.balanceIcon} aria-hidden="true">⭐</div>
+            <div className={styles.balanceContent}>
+              <p className={styles.balanceLabel}>Balans pou jwe</p>
+              <div className={styles.playValue}><Pwen label /></div>
+            </div>
+          </div>
+
+          <div className={`${styles.balanceCard} ${styles.withdrawCard}`}>
+            <div className={styles.balanceIcon} aria-hidden="true">↗</div>
+            <div className={styles.balanceContent}>
+              <p className={styles.balanceLabel}>Disponib pou retire</p>
+              <strong className={styles.amount}>{withdrawable.toLocaleString("pt-BR")} <span className={styles.unit}>pwen</span></strong>
+            </div>
+          </div>
+
+          <div className={`${styles.balanceCard} ${styles.borrowCard}`}>
+            <div className={styles.balanceIcon} aria-hidden="true">◇</div>
+            <div className={styles.balanceContent}>
+              <p className={styles.balanceLabel}>Disponib pou prete</p>
+              <strong className={styles.amount}>{borrowable.toLocaleString("pt-BR")} <span className={styles.unit}>pwen</span></strong>
+              <p className={styles.helper}>Limit admin lan mete disponib pou ou</p>
+            </div>
+          </div>
         </div>
-      </div>
-      {showWithdraw&&<WithdrawModal onClose={()=>{setShowWithdraw(false);void refreshBalances();}}/>}
+
+        <div className={styles.actions}>
+          <button type="button" className={`${styles.action} ${styles.buyButton}`} onClick={() => navigate("/buy-credits")}>
+            <span aria-hidden="true">＋</span> Achte Pwen
+          </button>
+          <button type="button" className={`${styles.action} ${styles.withdrawButton}`} onClick={() => setShowWithdraw(true)}>
+            <span aria-hidden="true">↗</span> Retire Pwen
+          </button>
+        </div>
+      </section>
+      {showWithdraw && <WithdrawModal onClose={() => { setShowWithdraw(false); void refreshBalances(); }} />}
     </main>
   );
 }
