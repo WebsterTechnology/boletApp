@@ -187,8 +187,8 @@ router.post("/:id/wallet-repayments", async (req, res) => {
       await user.save({ transaction });
       await loan.save({ transaction });
       await sequelize.query(
-        'INSERT INTO borrow_repayments ("borrowRequestId","userId",amount,"playDebited","withdrawDebited",method,"idempotencyKey","createdAt") VALUES (:id,:userId,:amount,:playDebited,:withdrawDebited,\'wallet\',:key,NOW())',
-        { replacements: { id, userId: user.id, amount, playDebited, withdrawDebited, key }, transaction }
+        'INSERT INTO borrow_repayments ("borrowRequestId","userId",amount,"playDebited","withdrawDebited","playBefore","withdrawBefore","playAfter","withdrawAfter",method,"idempotencyKey","createdAt") VALUES (:id,:userId,:amount,:playDebited,:withdrawDebited,:playBefore,:withdrawBefore,:playAfter,:withdrawAfter,\'wallet\',:key,NOW())',
+        { replacements: { id, userId: user.id, amount, playDebited, withdrawDebited, playBefore: play, withdrawBefore: withdraw, playAfter: debit.playAfter, withdrawAfter: debit.withdrawAfter, key }, transaction }
       );
       return { code: 200, remaining: remaining - amount, paid: amount };
     });
@@ -208,7 +208,7 @@ router.get("/:id/repayments", async (req,res) => {
     if(!loan || (loan.userId!==currentUser(req).id && !currentUser(req).isAdmin))
       return res.status(404).json({message:"Prè pa jwenn."});
     const payments=await sequelize.query(
-      'SELECT id, amount, method, "createdAt" FROM borrow_repayments WHERE "borrowRequestId"=:id ORDER BY "createdAt" DESC',
+      'SELECT id, amount, method, "playDebited", "withdrawDebited", "playBefore", "withdrawBefore", "playAfter", "withdrawAfter", "createdAt" FROM borrow_repayments WHERE "borrowRequestId"=:id ORDER BY "createdAt" DESC',
       {replacements:{id},type:QueryTypes.SELECT}
     );
     return res.json({total:loanTotal(Number(loan.amount)),repaid:Number(loan.repaidPoints),remaining:Math.max(0,loanTotal(Number(loan.amount))-Number(loan.repaidPoints)),payments});
