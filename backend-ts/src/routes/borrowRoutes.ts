@@ -174,6 +174,13 @@ router.post("/:id/wallet-repayments", async (req, res) => {
       }
       if (loan.status !== "approved" || !loan.creditedAt)
         return { code: 409, message: "Prè sa a poko kredite." };
+      // Never debit a wallet if the loan's aggregate ledger is already inconsistent.
+      const ledgerAmounts = await sequelize.query<{amount:number}>(
+        'SELECT amount FROM borrow_repayments WHERE "borrowRequestId"=:id',
+        { replacements:{id}, type:QueryTypes.SELECT, transaction }
+      );
+      if (!repaymentLedgerReconciles(Number(loan.repaidPoints),ledgerAmounts.map(p=>Number(p.amount))))
+        return { code:409, message:"Istwa peman prè a pa koresponn. Kontakte administratè a." };
       const total = loanTotal(Number(loan.amount));
       const remaining = total - Number(loan.repaidPoints);
       if (!Number.isSafeInteger(remaining) || remaining <= 0 || amount > remaining)
