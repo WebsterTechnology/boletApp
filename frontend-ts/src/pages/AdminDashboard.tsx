@@ -50,7 +50,7 @@ function AdminBorrowCountdown({creditedAt,amount,repaid,now}:{creditedAt:string;
   const hours = Math.floor((seconds%86400)/3600);
   const minutes = Math.floor((seconds%3600)/60);
   const secs = seconds%60;
-  const total = Math.round(amount * BORROW_INTEREST * 100)/100;
+  const total = Math.ceil(amount * BORROW_INTEREST);
   const outstanding = Math.max(0,total-repaid);
   return <div className="admin-borrow-countdown" role="timer">
     {outstanding===0 ? <strong>✅ Prè a fin peye.</strong> : <div>Rete <strong className="admin-borrow-days">{days} jou</strong> pou remèt <strong>{outstanding.toLocaleString("pt-BR")} pwen</strong></div>}
