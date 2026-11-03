@@ -18,6 +18,7 @@ export interface AuthUser {
   phone: string;
   points: number;
   withdrawablePoints: number;
+  borrowablePoints: number;
   isAdmin: boolean;
   fullName: string;
   cpf: string;
@@ -49,6 +50,7 @@ export interface MeUser {
   phone: string;
   points: number;
   withdrawablePoints: number;
+  borrowablePoints: number;
   isAdmin: boolean;
   fullName: string;
   email: string;
@@ -127,6 +129,7 @@ export interface AdminUser {
   phone: string;
   points: number;
   withdrawablePoints: number;
+  borrowablePoints: number;
   isAdmin: boolean;
   fullName: string | null;
   cpf: string | null;

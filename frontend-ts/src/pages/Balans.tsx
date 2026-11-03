@@ -8,6 +8,7 @@ export default function Balans() {
   const navigate = useNavigate();
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawable, setWithdrawable] = useState(0);
+  const [borrowable, setBorrowable] = useState(0);
   const refreshBalances = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -21,6 +22,7 @@ export default function Balans() {
 
       const user: MeUser = await response.json();
       setWithdrawable(Number(user.withdrawablePoints ?? 0));
+      setBorrowable(Number(user.borrowablePoints ?? 0));
 
       // Keep the same current-user cache used by the rest of the app in sync.
       localStorage.setItem("user", JSON.stringify(user));
@@ -54,6 +56,7 @@ export default function Balans() {
         <h2 style={{color:"#fff",marginTop:0,marginBottom:22}}>💰 Balans</h2>
         <div style={{background:"#fff",borderRadius:14,padding:18,marginBottom:12,display:"flex",justifyContent:"center"}}><Pwen label /></div>
         <div style={{background:"#fff",borderRadius:14,padding:18,marginBottom:16,textAlign:"center",fontWeight:800,color:"#111827",fontSize:17}}>Disponib pou retire: {withdrawable}</div>
+        <div style={{background:"#fff",borderRadius:14,padding:18,marginBottom:16,textAlign:"center",fontWeight:800,color:"#111827",fontSize:17}}>Disponib pou prete: {borrowable}</div>
         <div style={{display:"grid",gap:12}}>
           <button onClick={()=>navigate("/buy-credits")} style={{border:0,borderRadius:12,padding:"14px 18px",background:"#16a34a",color:"#fff",fontWeight:800,fontSize:17,cursor:"pointer"}}>Achte Pwen</button>
           <button onClick={()=>setShowWithdraw(true)} style={{border:0,borderRadius:12,padding:"14px 18px",background:"#ef4444",color:"#fff",fontWeight:800,fontSize:17,cursor:"pointer"}}>Retire Pwen</button>

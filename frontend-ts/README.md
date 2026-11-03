@@ -78,3 +78,9 @@ These are covered by the contract test, so it fails when one gets fixed:
 Other things to know:
 - **Remaining points:** Maryaj and Katchif always check the remaining points for "New York", even when the player picks Florida or Georgia.
 - **Unused files:** `BetCart`, `BetList` and `DepositPix` are not used anywhere. `BetCart` would also fail against backend-ts because it doesn't send `receiptId`.
+
+## Bolet borrowing allowance — stage 1
+
+The customer `/balans` page now shows **Disponib pou prete: 0** by default; it uses the authenticated `GET /api/users/me` response field `borrowablePoints`, which the admin can assign per user.
+
+The admin customer list shows this third amount next to `Disponib pou jwe` and `Disponib pou retire`. The existing amount selector gains a third option, `Disponib pou prete`, which calls the same admin add/remove API with `balanceType: "borrow"`. The borrow allowance is informational only at this stage: it cannot fund bets or withdrawals, and no actual loan is issued. Ensure the corresponding backend migration is applied before testing admin changes.
