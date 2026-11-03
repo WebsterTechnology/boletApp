@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { UniqueConstraintError } from "sequelize";
+import { UniqueConstraintError, QueryTypes } from "sequelize";
 import { authenticate, currentUser } from "../middleware/authenticate";
 import { adminOnly } from "../middleware/adminOnly";
 import { BorrowRequest, User, sequelize } from "../models";
@@ -137,4 +137,83 @@ router.patch("/admin/:id/credit", adminOnly, async (req, res) => {
     return res.status(500).json({ message: "Pa kapab kredite prè a." });
   }
 });
+
+const LOAN_TERM_MS = 30 * 86400000;
+const loanTotal = (amount: number) => Math.ceil(amount * 120 / 100);
+
+// Loan repayments are feature-flagged until ledger and settlement tests pass.
+// PIX settlement requires a separate, verified payment-provider integration.
+router.post("/:id/wallet-repayments", async (req, res) => {
+  if (process.env.BORROW_WALLET_REPAYMENTS_ENABLED !== "true")
+    return res.status(503).json({ message: "Peman prè yo poko aktive." });
+  const id = Number(req.params.id);
+  const amount = req.body?.amount;
+  const key = req.get("Idempotency-Key");
+  if (!Number.isSafeInteger(id) || id < 1 || !Number.isSafeInteger(amount) || amount < 1 || amount > 2147483647 ||
+      !key || !/^[A-Za-z0-9_-]{16,128}$/.test(key))
+    return res.status(400).json({ message: "Kantite oswa referans peman an pa valid." });
+  try {
+    const result = await sequelize.transaction(async transaction => {
+      const loan = await BorrowRequest.findByPk(id, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!loan || loan.userId !== currentUser(req).id) return { code: 404, message: "Prè pa jwenn." };
+      const user = await User.findByPk(loan.userId, { transaction, lock: transaction.LOCK.UPDATE });
+      if (!user) return { code: 404, message: "Kont pa jwenn." };
+      const previous = await sequelize.query<{ borrowRequestId: number; amount: number }>(
+        'SELECT "borrowRequestId", amount FROM borrow_repayments WHERE "idempotencyKey" = :key LIMIT 1',
+        { replacements: { key }, type: QueryTypes.SELECT, transaction }
+      );
+      if (previous.length) {
+        if (previous[0].borrowRequestId !== id || previous[0].amount !== amount)
+          return { code: 409, message: "Referans peman sa a deja sèvi pou yon lòt peman." };
+        return { code: 200, remaining: Math.max(0, loanTotal(loan.amount) - Number(loan.repaidPoints)), duplicate: true };
+      }
+      if (loan.status !== "approved" || !loan.creditedAt)
+        return { code: 409, message: "Prè sa a poko kredite." };
+      const total = loanTotal(Number(loan.amount));
+      const remaining = total - Number(loan.repaidPoints);
+      if (!Number.isSafeInteger(remaining) || remaining <= 0 || amount > remaining)
+        return { code: 409, message: "Kantite a depase rès prè a oswa prè a fin peye." };
+      const dueAt = new Date(loan.creditedAt).getTime() + LOAN_TERM_MS;
+      if (Date.now() >= dueAt - 86400000 && amount !== remaining)
+        return { code: 409, message: "Nan dènye jou a, ou dwe peye tout rès prè a." };
+      const play = Number(user.points);
+      const withdraw = Number(user.withdrawablePoints);
+      if (!Number.isSafeInteger(play) || !Number.isSafeInteger(withdraw) || play < 0 || withdraw < 0 || play + withdraw < amount)
+        return { code: 409, message: "Balans Bolet ou pa sifi." };
+      const withdrawDebited = Math.min(withdraw, amount);
+      const playDebited = amount - withdrawDebited;
+      user.withdrawablePoints = withdraw - withdrawDebited;
+      user.points = play - playDebited;
+      loan.repaidPoints = Number(loan.repaidPoints) + amount;
+      await user.save({ transaction });
+      await loan.save({ transaction });
+      await sequelize.query(
+        'INSERT INTO borrow_repayments ("borrowRequestId","userId",amount,"playDebited","withdrawDebited",method,"idempotencyKey","createdAt") VALUES (:id,:userId,:amount,:playDebited,:withdrawDebited,\'wallet\',:key,NOW())',
+        { replacements: { id, userId: user.id, amount, playDebited, withdrawDebited, key }, transaction }
+      );
+      return { code: 200, remaining: remaining - amount, paid: amount };
+    });
+    if ("message" in result) return res.status(result.code).json({ message: result.message });
+    return res.status(result.code).json(result);
+  } catch (error) {
+    if (error instanceof UniqueConstraintError) return res.status(409).json({ message: "Peman sa a deja anrejistre." });
+    console.error("borrow repayment failed", error instanceof Error ? error.name : "unknown");
+    return res.status(500).json({ message: "Peman an pa pase." });
+  }
+});
+router.get("/:id/repayments", async (req,res) => {
+  const id=Number(req.params.id);
+  if(!Number.isSafeInteger(id)||id<1) return res.status(400).json({message:"ID pa valid."});
+  try {
+    const loan=await BorrowRequest.findByPk(id);
+    if(!loan || (loan.userId!==currentUser(req).id && !currentUser(req).isAdmin))
+      return res.status(404).json({message:"Prè pa jwenn."});
+    const payments=await sequelize.query(
+      'SELECT id, amount, method, "createdAt" FROM borrow_repayments WHERE "borrowRequestId"=:id ORDER BY "createdAt" DESC',
+      {replacements:{id},type:QueryTypes.SELECT}
+    );
+    return res.json({total:loanTotal(Number(loan.amount)),repaid:Number(loan.repaidPoints),remaining:Math.max(0,loanTotal(Number(loan.amount))-Number(loan.repaidPoints)),payments});
+  } catch {return res.status(500).json({message:"Pa kapab chaje peman yo."});}
+});
+
 export default router;
