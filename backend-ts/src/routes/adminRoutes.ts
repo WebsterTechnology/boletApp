@@ -22,7 +22,7 @@ router.get("/users", authenticate, adminOnly, async (_req, res) => {
   try {
     const users = await User.findAll({
       attributes: [
-        "id", "phone", "points", "withdrawablePoints", "isAdmin", "fullName", "cpf",
+        "id", "phone", "points", "withdrawablePoints", "borrowablePoints", "isAdmin", "fullName", "cpf",
         "birthDate", "email", "address", "city", "state", "cep",
       ],
       order: [["id", "ASC"]],
@@ -36,7 +36,8 @@ router.get("/users", authenticate, adminOnly, async (_req, res) => {
 
 router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => {
   const toAdd = Number(req.body?.amount);
-  const balanceType = req.body?.balanceType === "withdraw" ? "withdraw" : "play";
+  const balanceType = req.body?.balanceType ?? "play";
+  if (!["play", "withdraw", "borrow"].includes(balanceType)) return res.status(400).json({ message: "Invalid balance type" });
   if (!Number.isSafeInteger(toAdd) || toAdd <= 0) {
     return res.status(400).json({ message: "Amount must be a positive whole number" });
   }
@@ -45,7 +46,11 @@ router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => 
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (balanceType === "withdraw") user.withdrawablePoints = Number(user.withdrawablePoints || 0) + toAdd;
-    else user.points += toAdd;
+    else if (balanceType === "borrow") {
+      const next = Number(user.borrowablePoints || 0) + toAdd;
+      if (!Number.isSafeInteger(next)) return res.status(400).json({ message: "Borrowable allowance exceeds valid limit" });
+      user.borrowablePoints = next;
+    } else user.points += toAdd;
     await user.save();
 
     return res.json({ message: `Added ${toAdd} pwen to ${user.phone}`, user: {
@@ -53,6 +58,7 @@ router.post("/users/:id/add-pwen", authenticate, adminOnly, async (req, res) => 
       phone: user.phone,
       points: Number(user.points ?? 0),
       withdrawablePoints: Number(user.withdrawablePoints ?? 0),
+      borrowablePoints: Number(user.borrowablePoints ?? 0),
       isAdmin: !!user.isAdmin,
       fullName: user.fullName,
       email: user.email,
@@ -102,7 +108,8 @@ router.patch("/users/:id/admin-status", authenticate, adminOnly, async (req, res
 
 router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) => {
   const toRemove = Number(req.body?.amount);
-  const balanceType = req.body?.balanceType === "withdraw" ? "withdraw" : "play";
+  const balanceType = req.body?.balanceType ?? "play";
+  if (!["play", "withdraw", "borrow"].includes(balanceType)) return res.status(400).json({ message: "Invalid balance type" });
   if (!Number.isSafeInteger(toRemove) || toRemove <= 0) {
     return res.status(400).json({ message: "Amount must be a positive whole number" });
   }
@@ -111,10 +118,11 @@ router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) 
     const user = await User.findByPk(String(req.params.id));
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    const currentBalance = balanceType === "withdraw" ? Number(user.withdrawablePoints || 0) : Number(user.points || 0);
+    const currentBalance = balanceType === "borrow" ? Number(user.borrowablePoints || 0) : balanceType === "withdraw" ? Number(user.withdrawablePoints || 0) : Number(user.points || 0);
     if (currentBalance < toRemove) return res.status(400).json({ message: "User does not have enough points in this balance" });
 
-    if (balanceType === "withdraw") user.withdrawablePoints = currentBalance - toRemove;
+    if (balanceType === "borrow") user.borrowablePoints = currentBalance - toRemove;
+    else if (balanceType === "withdraw") user.withdrawablePoints = currentBalance - toRemove;
     else user.points = currentBalance - toRemove;
     await user.save();
 
@@ -122,6 +130,8 @@ router.post("/users/:id/remove-pwen", authenticate, adminOnly, async (req, res) 
       id: user.id,
       phone: user.phone,
       points: Number(user.points ?? 0),
+      withdrawablePoints: Number(user.withdrawablePoints ?? 0),
+      borrowablePoints: Number(user.borrowablePoints ?? 0),
       isAdmin: !!user.isAdmin,
       fullName: user.fullName,
       email: user.email,
