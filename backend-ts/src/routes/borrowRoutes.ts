@@ -158,12 +158,12 @@ router.post("/:id/wallet-repayments", async (req, res) => {
       if (!loan || loan.userId !== currentUser(req).id) return { code: 404, message: "Prè pa jwenn." };
       const user = await User.findByPk(loan.userId, { transaction, lock: transaction.LOCK.UPDATE });
       if (!user) return { code: 404, message: "Kont pa jwenn." };
-      const previous = await sequelize.query<{ borrowRequestId: number; amount: number }>(
-        'SELECT "borrowRequestId", amount FROM borrow_repayments WHERE "idempotencyKey" = :key LIMIT 1',
+      const previous = await sequelize.query<{ borrowRequestId: number; userId: number; amount: number }>(
+        'SELECT "borrowRequestId", "userId", amount FROM borrow_repayments WHERE "idempotencyKey" = :key LIMIT 1',
         { replacements: { key }, type: QueryTypes.SELECT, transaction }
       );
       if (previous.length) {
-        if (previous[0].borrowRequestId !== id || previous[0].amount !== amount)
+        if (previous[0].borrowRequestId !== id || previous[0].userId !== loan.userId || previous[0].amount !== amount)
           return { code: 409, message: "Referans peman sa a deja sèvi pou yon lòt peman." };
         return { code: 200, remaining: Math.max(0, loanTotal(loan.amount) - Number(loan.repaidPoints)), duplicate: true };
       }
