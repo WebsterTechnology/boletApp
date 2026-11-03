@@ -105,3 +105,12 @@
 .modalActions button:last-child {background:#5146bd;color:#fff;}
 .modalActions button:disabled {opacity:.55;cursor:not-allowed;}
 @media(max-width:400px){.requestHistory{padding-left:14px;padding-right:14px}.requestModal{padding:19px}}
+
+.historyToggle {width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;border:1px solid #40556a;background:linear-gradient(135deg,#1b3346,#142638);border-radius:15px;color:#f2f7ff;font:inherit;font-size:15px;font-weight:800;text-align:left;cursor:pointer;transition:background .2s,border-color .2s;}
+.historyToggle:hover {background:#233e53;border-color:#6a879e;}
+.historyToggle:focus-visible {outline:3px solid #73b7ff;outline-offset:3px;}
+.historyTitle {display:flex;align-items:center;gap:9px;min-width:0;}
+.historyCount {display:inline-flex;align-items:center;justify-content:center;min-width:25px;height:25px;padding:0 6px;border-radius:20px;background:#2f6fa0;color:white;font-size:12px;box-sizing:border-box;}
+.historyChevron {font-size:25px;line-height:1;color:#9dd6ff;}
+.historyList {padding:7px 15px 8px;border:1px solid #40556a;border-top:0;border-radius:0 0 15px 15px;background:#142537;}
+.historyToggle[aria-expanded="true"] {border-radius:15px 15px 0 0;}
