@@ -1,0 +1,17 @@
+import { describe,expect,it } from "vitest";
+import { verifiedBorrowPixPayment } from "./borrowPixVerification";
+
+describe("InfinitePay loan PIX payment verification",()=>{
+  const valid={success:true,paid:true,amount:12000,capture_method:"pix"};
+  it("accepts exact paid PIX amount in cents",()=>expect(verifiedBorrowPixPayment(valid,12000)).toBe(true));
+  it("rejects unpaid, unsuccessful and incorrect payment methods",()=>{
+    expect(verifiedBorrowPixPayment({...valid,paid:false},12000)).toBe(false);
+    expect(verifiedBorrowPixPayment({...valid,success:false},12000)).toBe(false);
+    expect(verifiedBorrowPixPayment({...valid,capture_method:"credit_card"},12000)).toBe(false);
+  });
+  it("rejects mismatched and invalid monetary values",()=>{
+    expect(verifiedBorrowPixPayment({...valid,amount:11900},12000)).toBe(false);
+    expect(verifiedBorrowPixPayment({...valid,amount:"12000"},12000)).toBe(false);
+    expect(verifiedBorrowPixPayment(valid,0)).toBe(false);
+  });
+});
