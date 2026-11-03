@@ -222,6 +222,18 @@ router.post("/:id/wallet-repayments", async (req, res) => {
     return res.status(500).json({ message: "Peman an pa pase." });
   }
 });
+/**
+ * A PIX payment intent is NOT a confirmed payment. Provider checkout and
+ * verified settlement must be implemented before customer access is enabled.
+ */
+router.post("/:id/pix-intents", async (req,res) => {
+  if (process.env.BORROW_PIX_CHECKOUT_ENABLED !== "true" ||
+      process.env.BORROW_PIX_WEBHOOK_ENABLED !== "true")
+    return res.status(503).json({message:"Peman PIX poko aktive."});
+  // Deliberately fail closed until a verified provider checkout exists.
+  return res.status(503).json({message:"Koneksyon PIX pou prè poko pare."});
+});
+
 router.get("/:id/repayments", async (req,res) => {
   const id=Number(req.params.id);
   if(!Number.isSafeInteger(id)||id<1) return res.status(400).json({message:"ID pa valid."});
