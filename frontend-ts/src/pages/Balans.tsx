@@ -5,7 +5,7 @@ import Pwen from "../components/Pwen";
 import WithdrawModal from "../components/WithdrawModal";
 import styles from "./Balans.module.css";
 
-type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null };
+type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const statusLabel:Record<BorrowRequest["status"],string> = {
   pending:"🟠 Annatant", approved:"✅ Apwouve", rejected:"❌ Refize"
@@ -80,9 +80,9 @@ export default function Balans() {
     void refreshRequests();
 
     // Refresh again when the user returns to this tab/page.
-    const onFocus = () => refreshBalances();
+    const onFocus = () => { void refreshBalances(); void refreshRequests(); };
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") refreshBalances();
+      if (document.visibilityState === "visible") { void refreshBalances(); void refreshRequests(); }
     };
 
     window.addEventListener("focus", onFocus);
@@ -141,7 +141,7 @@ export default function Balans() {
           {requests.length===0 && <p>Ou poko voye okenn demann prè.</p>}
           {requests.map(request=><div className={styles.requestRow} key={request.id}>
             <span>{request.amount.toLocaleString("pt-BR")} pwen · {request.reason}</span>
-            <strong>{statusLabel[request.status]}</strong>
+            <strong>{statusLabel[request.status]}{request.status==="approved" ? (request.creditedAt ? " · Kredite" : " · Poko kredite") : ""}</strong>
           </div>)}
         </section>
         <div className={styles.actions}>
