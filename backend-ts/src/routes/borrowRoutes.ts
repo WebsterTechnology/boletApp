@@ -181,6 +181,16 @@ router.post("/:id/wallet-repayments", async (req, res) => {
       );
       if (!repaymentLedgerReconciles(Number(loan.repaidPoints),ledgerAmounts.map(p=>Number(p.amount))))
         return { code:409, message:"Istwa peman prè a pa koresponn. Kontakte administratè a." };
+      const walletRecords = await sequelize.query<{
+        amount:number; playDebited:number; withdrawDebited:number;
+        playBefore:number|null; withdrawBefore:number|null;
+        playAfter:number|null; withdrawAfter:number|null;
+      }>(
+        'SELECT amount, "playDebited", "withdrawDebited", "playBefore", "withdrawBefore", "playAfter", "withdrawAfter" FROM borrow_repayments WHERE "borrowRequestId"=:id AND method=\'wallet\'',
+        { replacements:{id}, type:QueryTypes.SELECT, transaction }
+      );
+      if (walletRecords.some(record=>!walletRepaymentReconciles(record)))
+        return { code:409, message:"Gen yon diferans nan balans peman yo. Kontakte administratè a." };
       const total = loanTotal(Number(loan.amount));
       const remaining = total - Number(loan.repaidPoints);
       if (!Number.isSafeInteger(remaining) || remaining <= 0 || amount > remaining)
