@@ -40,6 +40,24 @@ const borrowStatusLabels:Record<AdminBorrowRequest["status"],string> = {
   pending:"🟠 Annatant", approved:"✅ Apwouve", rejected:"❌ Refize"
 };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const BORROW_TERM_MS = 30 * 24 * 60 * 60 * 1000;
+const BORROW_INTEREST = 1.2;
+function AdminBorrowCountdown({creditedAt,amount,now}:{creditedAt:string;amount:number;now:number}) {
+  const credited = Date.parse(creditedAt);
+  if (!Number.isFinite(credited)) return <p>Dat kredi a pa disponib.</p>;
+  const seconds = Math.max(0,Math.ceil((credited + BORROW_TERM_MS - now)/1000));
+  const days = Math.floor(seconds/86400);
+  const hours = Math.floor((seconds%86400)/3600);
+  const minutes = Math.floor((seconds%3600)/60);
+  const secs = seconds%60;
+  const total = Math.round(amount * BORROW_INTEREST * 100)/100;
+  return <div className="admin-borrow-countdown" role="timer">
+    <div>Rete <strong className="admin-borrow-days">{days} jou</strong> pou remèt <strong>{total.toLocaleString("pt-BR")} pwen</strong></div>
+    <div className="admin-borrow-clock">⏱ {[hours,minutes,secs].map(n=>String(n).padStart(2,"0")).join(":")}</div>
+    <small>Èdtan : Minit : Segonn</small>
+    {seconds===0 && <div className="admin-borrow-overdue">⚠️ Delè 30 jou a pase</div>}
+  </div>;
+}
 
 export default function AdminDashboard() {
   const [withdrawals,setWithdrawals] = useState<SolWithdrawal[]>([]);
@@ -67,6 +85,8 @@ export default function AdminDashboard() {
     catch {alert("Se sèlman retrè ki deja peye ou ka achive.");}
     finally {setWithdrawalsBusy(null);}
   };
+  const [borrowClockNow,setBorrowClockNow] = useState(Date.now());
+  useEffect(()=>{const id=window.setInterval(()=>setBorrowClockNow(Date.now()),1000);return ()=>window.clearInterval(id);},[]);
   const [borrowRequestsOpen,setBorrowRequestsOpen] = useState(false);
   const [borrowRequests,setBorrowRequests] = useState<AdminBorrowRequest[]>([]);
   const [borrowError,setBorrowError] = useState("");
@@ -369,6 +389,7 @@ const filteredUsers = useMemo(() => {
             <p style={{margin:"8px 0"}}><b>{request.amount.toLocaleString("pt-BR")} pwen</b> · Limit kliyan: {Number(request.customer?.borrowablePoints??0).toLocaleString("pt-BR")} pwen</p>
             <p style={{margin:"8px 0"}}>Rezon: {request.reason}</p>
             <p style={{margin:"8px 0"}}>{borrowStatusLabels[request.status]}{request.creditedAt ? " · 💸 Kredite nan balans retrè" : request.status==="approved" ? " · ⚠️ Poko kredite" : ""} · {new Date(request.createdAt).toLocaleString()}</p>
+            {request.status==="approved" && request.creditedAt && <AdminBorrowCountdown creditedAt={request.creditedAt} amount={request.amount} now={borrowClockNow}/>}
             {request.status==="approved" && !request.creditedAt && <button
               type="button" disabled={borrowBusy===request.id}
               onClick={()=>void creditLegacyBorrow(request.id,request.amount)}
