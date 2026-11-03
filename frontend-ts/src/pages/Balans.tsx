@@ -5,7 +5,7 @@ import Pwen from "../components/Pwen";
 import WithdrawModal from "../components/WithdrawModal";
 import styles from "./Balans.module.css";
 
-type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null };
+type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null; repaidPoints?:number };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const LOAN_TERM_DAYS = 30;
 const LOAN_INTEREST_PERCENT = 20;
@@ -171,11 +171,12 @@ export default function Balans() {
                 {request.status==="approved" && request.creditedAt && (() => {
                   const time = remainingTime(request.creditedAt,clockNow);
                   const expired = time !== null && time.days===0 && time.hours===0 && time.minutes===0 && time.seconds===0;
+                  const outstanding = Math.max(0,repaymentTotal(request.amount)-Number(request.repaidPoints??0));
                   const clock = time ? [time.hours,time.minutes,time.seconds].map(value=>String(value).padStart(2,"0")).join(":") : "--:--:--";
                   return <div className={styles.repaymentDue} role="timer" aria-label="Tan ki rete pou remèt prè a">
-                    <span className={styles.repaymentSentence}>Rete <strong className={expired ? styles.repaymentOverdue : styles.repaymentDays}>{time?.days ?? "—"} jou</strong> pou remèt <strong>{repaymentTotal(request.amount).toLocaleString("pt-BR")} pwen</strong></span>
-                    <span className={styles.repaymentClock}>⏱ {clock} <small>èdtan : minit : segonn</small></span>
-                    {expired && <span className={styles.repaymentOverdue}>Delè 30 jou a pase</span>}
+                    {outstanding===0 ? <strong>✅ Prè a fin peye.</strong> : <span className={styles.repaymentSentence}>Rete <strong className={expired ? styles.repaymentOverdue : styles.repaymentDays}>{time?.days ?? "—"} jou</strong> pou remèt <strong>{outstanding.toLocaleString("pt-BR")} pwen</strong></span>}
+                    {outstanding>0 && <span className={styles.repaymentClock}>⏱ {clock} <small>èdtan : minit : segonn</small></span>}
+                    {outstanding>0 && expired && <span className={styles.repaymentOverdue}>Delè 30 jou a pase</span>}
                   </div>;
                 })()}
               </div>
