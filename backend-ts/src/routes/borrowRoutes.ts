@@ -139,7 +139,7 @@ router.patch("/admin/:id/credit", adminOnly, async (req, res) => {
 });
 
 const LOAN_TERM_MS = 30 * 86400000;
-import { loanTotal, repaymentAllowed, allocateWalletRepayment } from "../services/borrowRepayment";
+import { loanTotal, repaymentAllowed, allocateWalletRepayment, walletRepaymentReconciles } from "../services/borrowRepayment";
 
 // Loan repayments are feature-flagged until ledger and settlement tests pass.
 // PIX settlement requires a separate, verified payment-provider integration.
@@ -207,11 +207,18 @@ router.get("/:id/repayments", async (req,res) => {
     const loan=await BorrowRequest.findByPk(id);
     if(!loan || (loan.userId!==currentUser(req).id && !currentUser(req).isAdmin))
       return res.status(404).json({message:"Prè pa jwenn."});
-    const payments=await sequelize.query(
+    const payments=await sequelize.query<{
+      id:number; amount:number; method:string; playDebited:number; withdrawDebited:number;
+      playBefore:number|null; withdrawBefore:number|null; playAfter:number|null;
+      withdrawAfter:number|null; createdAt:Date;
+    }>(
       'SELECT id, amount, method, "playDebited", "withdrawDebited", "playBefore", "withdrawBefore", "playAfter", "withdrawAfter", "createdAt" FROM borrow_repayments WHERE "borrowRequestId"=:id ORDER BY "createdAt" DESC',
       {replacements:{id},type:QueryTypes.SELECT}
     );
-    return res.json({total:loanTotal(Number(loan.amount)),repaid:Number(loan.repaidPoints),remaining:Math.max(0,loanTotal(Number(loan.amount))-Number(loan.repaidPoints)),payments});
+    const auditedPayments=payments.map(payment=>({
+      ...payment, balancesReconcile:payment.method==="wallet" ? walletRepaymentReconciles(payment) : null
+    }));
+    return res.json({total:loanTotal(Number(loan.amount)),repaid:Number(loan.repaidPoints),remaining:Math.max(0,loanTotal(Number(loan.amount))-Number(loan.repaidPoints)),payments:auditedPayments});
   } catch {return res.status(500).json({message:"Pa kapab chaje peman yo."});}
 });
 
