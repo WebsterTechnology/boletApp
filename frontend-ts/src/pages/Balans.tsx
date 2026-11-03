@@ -10,10 +10,11 @@ const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const LOAN_TERM_DAYS = 30;
 const LOAN_INTEREST_PERCENT = 20;
 const repaymentTotal = (amount:number) => Math.round(amount * (100 + LOAN_INTEREST_PERCENT)) / 100;
-const remainingDays = (creditedAt:string, now:number) => {
+const remainingTime = (creditedAt:string, now:number) => {
   const credited = Date.parse(creditedAt);
   if (!Number.isFinite(credited)) return null;
-  return Math.max(0, Math.ceil((credited + LOAN_TERM_DAYS * 86400000 - now) / 86400000));
+  const remaining = Math.max(0, Math.ceil((credited + LOAN_TERM_DAYS * 86400000 - now) / 1000));
+  return {days:Math.floor(remaining/86400),hours:Math.floor((remaining%86400)/3600),minutes:Math.floor((remaining%3600)/60),seconds:remaining%60};
 };
 const statusLabel:Record<BorrowRequest["status"],string> = {
   pending:"🟠 Annatant", approved:"✅ Apwouve", rejected:"❌ Refize"
@@ -86,7 +87,7 @@ export default function Balans() {
   }, []);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setClockNow(Date.now()), 60000);
+    const timer = window.setInterval(() => setClockNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -168,11 +169,14 @@ export default function Balans() {
               <div className={styles.requestStatus}>
                 <strong>{statusLabel[request.status]}{request.status==="approved" ? (request.creditedAt ? " · Kredite" : " · Poko kredite") : ""}</strong>
                 {request.status==="approved" && request.creditedAt && (() => {
-                  const days = remainingDays(request.creditedAt,clockNow);
-                  return <span className={days===0 ? styles.repaymentOverdue : styles.repaymentDue}>
-                    Pou remèt: {repaymentTotal(request.amount).toLocaleString("pt-BR")} pwen
-                    {days===null ? "" : days===0 ? " · Delè 30 jou a pase" : ` · ${days} jou rete`}
-                  </span>;
+                  const time = remainingTime(request.creditedAt,clockNow);
+                  const expired = time !== null && time.days===0 && time.hours===0 && time.minutes===0 && time.seconds===0;
+                  const clock = time ? [time.hours,time.minutes,time.seconds].map(value=>String(value).padStart(2,"0")).join(":") : "--:--:--";
+                  return <div className={styles.repaymentDue} role="timer" aria-label="Tan ki rete pou remèt prè a">
+                    <span className={styles.repaymentSentence}>Rete <strong className={expired ? styles.repaymentOverdue : styles.repaymentDays}>{time?.days ?? "—"} jou</strong> pou remèt <strong>{repaymentTotal(request.amount).toLocaleString("pt-BR")} pwen</strong></span>
+                    <span className={styles.repaymentClock}>⏱ {clock} <small>èdtan : minit : segonn</small></span>
+                    {expired && <span className={styles.repaymentOverdue}>Delè 30 jou a pase</span>}
+                  </div>;
                 })()}
               </div>
             </div>)}

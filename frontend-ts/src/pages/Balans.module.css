@@ -122,3 +122,10 @@
 .repaymentDue,.repaymentOverdue {display:block;font-size:12px;font-weight:700;color:#a7e7d3;}
 .repaymentOverdue {color:#ffb3b3;}
 @media(max-width:480px){.requestStatus {align-items:flex-start;text-align:left;}.requestRow {align-items:flex-start;}}
+
+.repaymentDue {display:flex;flex-direction:column;align-items:flex-end;gap:5px;font-size:13px;font-weight:500;color:#dbeafe;}
+.repaymentSentence {line-height:1.5;}
+.repaymentDays {color:#fbbf24;font-weight:800;font-size:15px;}
+.repaymentClock {font-variant-numeric:tabular-nums;font-weight:800;letter-spacing:1px;color:#7dd3fc;font-size:17px;}
+.repaymentClock small {display:block;font-size:10px;font-weight:500;letter-spacing:0;color:#a5b4c7;}
+@media(max-width:480px){.repaymentDue{align-items:flex-start;}}
