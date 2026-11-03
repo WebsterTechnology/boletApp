@@ -20,6 +20,7 @@ import solWithdrawalRequests from "./20261030020000-sol-withdrawal-requests";
 import solWithdrawRecipient from "./20261030030000-sol-withdraw-recipient";
 import addBorrowablePoints from "./20261103000000-add-borrowable-points";
 import borrowRequests from "./20261103010000-borrow-requests";
+import borrowCreditAudit from "./20261103020000-borrow-credit-audit";
 
 // Names keep the ".js" suffix that sequelize-cli recorded in SequelizeMeta, so migrations
 // already applied by ../backend are recognised and not run twice.
@@ -43,6 +44,7 @@ const migrations = [
   { name: "20261030030000-sol-withdraw-recipient.js", ...solWithdrawRecipient },
   { name: "20261103000000-add-borrowable-points.js", ...addBorrowablePoints },
   { name: "20261103010000-borrow-requests.js", ...borrowRequests },
+  { name: "20261103020000-borrow-credit-audit.js", ...borrowCreditAudit },
 ];
 
 export const migrator = new Umzug<QueryInterface>({
