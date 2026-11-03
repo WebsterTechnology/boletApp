@@ -84,3 +84,7 @@ Other things to know:
 The customer `/balans` page now shows **Disponib pou prete: 0** by default; it uses the authenticated `GET /api/users/me` response field `borrowablePoints`, which the admin can assign per user.
 
 The admin customer list shows this third amount next to `Disponib pou jwe` and `Disponib pou retire`. The existing amount selector gains a third option, `Disponib pou prete`, which calls the same admin add/remove API with `balanceType: "borrow"`. The borrow allowance is informational only at this stage: it cannot fund bets or withdrawals, and no actual loan is issued. Ensure the corresponding backend migration is applied before testing admin changes.
+
+## Borrow requests — customer and admin UI (stage 2)
+
+On Balans, eligible customers can tap **Mande yon prè**, select a positive whole amount up to their assigned allowance, choose a reason, and submit an authenticated request. They can review statuses **Annatant**, **Apwouve**, and **Refize** on the same page. The button is disabled when the allowance is zero or a request is pending. The admin dashboard has a matching **Demann prè** dropdown showing customer identification, reason, amount, allowance and review buttons. Decisions record status only: they do not move money, change wallet balances or issue a loan. Requires the corresponding backend migration and API to be deployed.
