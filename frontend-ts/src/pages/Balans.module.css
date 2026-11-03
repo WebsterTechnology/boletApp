@@ -84,3 +84,24 @@
   .action { font-size: 13px; padding: 11px 7px; }
 }
 @media (prefers-reduced-motion: reduce) { .action { transition: none; } }
+
+/* Borrowing request: approval-only workflow; does not transfer funds. */
+.requestButton { display:block; margin-top:12px; padding:10px 15px; border:0; border-radius:11px; background:#5046b5; color:#fff; font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
+.requestButton:disabled { background:#a7acc2; cursor:not-allowed; }
+.requestHistory { padding:6px 20px 10px; color:#e7edfa; }
+.requestHistory h2 { margin:5px 0 10px; font-size:16px; }
+.requestHistory p { margin:0 0 8px; color:#b9c5d4; font-size:13px; }
+.requestRow {display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid #ffffff20;font-size:13px;}
+.requestRow strong {white-space:nowrap;}
+.modalBackdrop {position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;background:#051524b8;padding:16px;}
+.requestModal {width:min(100%,440px);max-height:90vh;overflow:auto;background:#fff;color:#172b37;border-radius:20px;padding:24px;box-sizing:border-box;box-shadow:0 18px 50px #0004;}
+.requestModal h2 {margin:0 0 12px;}
+.requestModal label {display:block;margin:15px 0 7px;font-size:14px;font-weight:750;}
+.requestModal input,.requestModal select {display:block;width:100%;padding:13px;border:1px solid #bbc7d2;border-radius:10px;box-sizing:border-box;background:#fff;color:#172b37;font:inherit;}
+.requestNotice {font-size:12px;line-height:1.5;color:#58687b;}
+.requestError {color:#a4162a;font-weight:700;font-size:13px;}
+.modalActions {display:flex;gap:10px;margin-top:18px;}
+.modalActions button {flex:1;min-height:47px;border:0;border-radius:10px;cursor:pointer;font:inherit;font-weight:800;background:#e7eaf0;color:#172b37;}
+.modalActions button:last-child {background:#5146bd;color:#fff;}
+.modalActions button:disabled {opacity:.55;cursor:not-allowed;}
+@media(max-width:400px){.requestHistory{padding-left:14px;padding-right:14px}.requestModal{padding:19px}}
