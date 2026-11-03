@@ -9,7 +9,7 @@ type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const LOAN_TERM_DAYS = 30;
 const LOAN_INTEREST_PERCENT = 20;
-const repaymentTotal = (amount:number) => Math.round(amount * (100 + LOAN_INTEREST_PERCENT)) / 100;
+const repaymentTotal = (amount:number) => Math.ceil(amount * (100 + LOAN_INTEREST_PERCENT) / 100);
 const remainingTime = (creditedAt:string, now:number) => {
   const credited = Date.parse(creditedAt);
   if (!Number.isFinite(credited)) return null;
