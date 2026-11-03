@@ -33,3 +33,11 @@ export function walletRepaymentReconciles(record: {
     record.playBefore! - record.playDebited === record.playAfter &&
     record.withdrawBefore! - record.withdrawDebited === record.withdrawAfter;
 }
+
+/** Compare the loan's stored repaid balance to its immutable payment ledger. */
+export function repaymentLedgerReconciles(repaidPoints: number, amounts: number[]): boolean {
+  if (!Number.isSafeInteger(repaidPoints) || repaidPoints < 0 ||
+      !amounts.every(n => Number.isSafeInteger(n) && n > 0)) return false;
+  const sum = amounts.reduce((total, amount) => total + amount, 0);
+  return Number.isSafeInteger(sum) && sum === repaidPoints;
+}
