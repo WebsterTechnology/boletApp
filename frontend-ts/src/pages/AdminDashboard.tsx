@@ -93,6 +93,27 @@ export default function AdminDashboard() {
   const [borrowRequests,setBorrowRequests] = useState<AdminBorrowRequest[]>([]);
   const [borrowError,setBorrowError] = useState("");
   const [borrowBusy,setBorrowBusy] = useState<number|null>(null);
+  const [borrowHistory,setBorrowHistory] = useState<Record<number,{
+    payments:{id:number;amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[];
+    ledgerReconciles:boolean;
+  }>>({});
+  const [borrowHistoryError,setBorrowHistoryError] = useState<Record<number,string>>({});
+  const showBorrowHistory = async (id:number) => {
+    if (borrowHistory[id]) {
+      setBorrowHistory(previous=>{const next={...previous};delete next[id];return next;});
+      return;
+    }
+    try {
+      setBorrowHistoryError(previous=>({...previous,[id]:""}));
+      const response=await axios.get<{
+        payments:{id:number;amount:number;method:string;createdAt:string;balancesReconcile?:boolean|null}[];
+        ledgerReconciles:boolean;
+      }>(API+"/api/borrow-requests/"+id+"/repayments",auth);
+      setBorrowHistory(previous=>({...previous,[id]:response.data}));
+    } catch {
+      setBorrowHistoryError(previous=>({...previous,[id]:"Pa kapab chaje istwa peman prè a."}));
+    }
+  };
   const loadBorrowRequests = async () => {
     try {
       setBorrowError("");
@@ -391,6 +412,20 @@ const filteredUsers = useMemo(() => {
             <p style={{margin:"8px 0"}}><b>{request.amount.toLocaleString("pt-BR")} pwen</b> · Limit kliyan: {Number(request.customer?.borrowablePoints??0).toLocaleString("pt-BR")} pwen</p>
             <p style={{margin:"8px 0"}}>Rezon: {request.reason}</p>
             <p style={{margin:"8px 0"}}>{borrowStatusLabels[request.status]}{request.creditedAt ? " · 💸 Kredite nan balans retrè" : request.status==="approved" ? " · ⚠️ Poko kredite" : ""} · {new Date(request.createdAt).toLocaleString()}</p>
+            {request.status==="approved" && request.creditedAt && <>
+              <button type="button" onClick={()=>void showBorrowHistory(request.id)}>
+                {borrowHistory[request.id]?"Fèmen istwa peman":"Gade istwa peman"}
+              </button>
+              {borrowHistoryError[request.id] && <p role="alert">{borrowHistoryError[request.id]}</p>}
+              {borrowHistory[request.id] && <section aria-label="Istwa peman prè">
+                <strong>{borrowHistory[request.id].ledgerReconciles?"✓ Total peman yo koresponn":"⚠️ Diferans nan total peman yo"}</strong>
+                {borrowHistory[request.id].payments.length===0 ? <p>Pa gen peman anrejistre.</p> :
+                  <ul>{borrowHistory[request.id].payments.map(payment=><li key={payment.id}>
+                    {payment.amount.toLocaleString("pt-BR")} pwen · {payment.method==="wallet"?"Balans Bolet":payment.method} · {new Date(payment.createdAt).toLocaleString("fr-CA")}
+                    {payment.balancesReconcile===false?" · ⚠️ Diferans nan balans":""}
+                  </li>)}</ul>}
+              </section>}
+            </>}
             {request.status==="approved" && request.creditedAt && <AdminBorrowCountdown creditedAt={request.creditedAt} amount={request.amount} repaid={Number(request.repaidPoints??0)} now={borrowClockNow}/>}
             {request.status==="approved" && !request.creditedAt && <button
               type="button" disabled={borrowBusy===request.id}
