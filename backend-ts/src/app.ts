@@ -8,6 +8,7 @@ import adminPaymentsRoutes from "./routes/adminPaymentsRoutes";
 import adminRoutes from "./routes/adminRoutes";
 import authRoutes from "./routes/authRoutes";
 import betsRoutes from "./routes/betsRoutes";
+import borrowRoutes from "./routes/borrowRoutes";
 import claimRoutes from "./routes/claimRoutes";
 import chatRoutes from "./routes/chatRoutes";
 import solRoutes from "./routes/solRoutes";
@@ -61,6 +62,7 @@ app.use("/api/admin/bets", adminBetsRoutes);
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/borrow-requests", borrowRoutes);
 app.use("/api/claims", claimRoutes);
 app.use("/api/admin/payments", adminPaymentsRoutes);
 app.use("/api/notifications", notificationRoutes);

@@ -62,3 +62,13 @@ data/                  disabledNumbers.json / disabledLocations.json
 ## Borrowing allowance (stage 1)
 
 A separate `users.borrowablePoints` INTEGER column defaults to zero for every account. The database migration is registered as `20261103000000-add-borrowable-points.js` and runs through the normal backend startup migrator. `GET /api/users/me`, auth responses and `GET /api/admin/users` return `borrowablePoints`. An authenticated admin can choose `balanceType: "borrow"` when calling `POST /api/admin/users/:id/add-pwen` or `/remove-pwen` to change this limit, without changing `points` or `withdrawablePoints`. The customer's Balans view displays it as **Disponib pou prete**. **This is only an allowance, not disbursed cash or spendable betting funds.** No borrow/disburse, loan agreement, interest, repayment, PIX or withdrawal logic is enabled by this step. Validate legal requirements before enabling loans.
+
+## Borrow request + administrator decision (stage 2)
+
+The `20261103010000-borrow-requests.js` migration creates `borrow_requests` with one pending request per customer (unique partial index). Endpoints are authenticated:
+- `GET /api/borrow-requests/mine`: own request statuses.
+- `POST /api/borrow-requests`: submit `{amount: positive integer, reason: string <=120 chars}` while within `borrowablePoints`. Only one pending request per customer; no wallet effect.
+- `GET /api/borrow-requests/admin`: admin-only list, with customer identification.
+- `PATCH /api/borrow-requests/admin/:id/decision`: admin-only `{decision:"approved"|"rejected"}`, only when pending. Approval validates the user's current limit again, sets reviewer/time and **does not disburse credit or change balances**.
+
+Do not interpret approval as a real loan or legal commitment. This release has no disbursement, repayment, gambling-credit usage, fees, interest, or debt creation. Any real-money lending must undergo legal and operational review before enabling it.
