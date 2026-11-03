@@ -114,3 +114,11 @@
 .historyChevron {font-size:25px;line-height:1;color:#9dd6ff;}
 .historyList {padding:7px 15px 8px;border:1px solid #40556a;border-top:0;border-radius:0 0 15px 15px;background:#142537;}
 .historyToggle[aria-expanded="true"] {border-radius:15px 15px 0 0;}
+
+.repaymentPreview {display:flex;flex-direction:column;gap:7px;padding:15px;margin:16px 0;border-radius:14px;border:1px solid #9fd8c5;background:#effbf5;color:#173e32;font-size:14px;line-height:1.4;}
+.repaymentPreview strong:last-of-type {font-size:17px;color:#0c7551;}
+.repaymentPreview small {color:#536b63;line-height:1.5;}
+.requestStatus {display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right;}
+.repaymentDue,.repaymentOverdue {display:block;font-size:12px;font-weight:700;color:#a7e7d3;}
+.repaymentOverdue {color:#ffb3b3;}
+@media(max-width:480px){.requestStatus {align-items:flex-start;text-align:left;}.requestRow {align-items:flex-start;}}
