@@ -32,7 +32,21 @@ export default function Balans() {
   const [paymentAmount,setPaymentAmount] = useState("");
   const [paymentError,setPaymentError] = useState("");
   const [paymentBusy,setPaymentBusy] = useState(false);
+  const [paymentHistory,setPaymentHistory] = useState<{amount:number;method:string;createdAt:string}[]>([]);
   const repaymentEnabled = import.meta.env.VITE_BORROW_REPAYMENTS_ENABLED === "true";
+  const openRepayment = async (request: BorrowRequest) => {
+    const outstanding = Math.max(0,repaymentTotal(request.amount)-Number(request.repaidPoints??0));
+    setPaying(request);setPaymentAmount(String(outstanding));setPaymentError("");setPaymentHistory([]);
+    const token=localStorage.getItem("token");
+    if(!token)return;
+    try {
+      const response=await fetch(API+"/api/borrow-requests/"+request.id+"/repayments",{headers:{Authorization:"Bearer "+token}});
+      if(response.ok){
+        const result=await response.json() as {payments?:{amount:number;method:string;createdAt:string}[]};
+        setPaymentHistory(result.payments??[]);
+      }
+    }catch{ /* History can be viewed on the next request. */ }
+  };
   const submitWalletRepayment = async () => {
     if (!paying || !repaymentEnabled) return;
     const outstanding = Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0));
@@ -209,7 +223,7 @@ export default function Balans() {
                   return <div className={styles.repaymentDue} role="timer" aria-label="Tan ki rete pou remèt prè a">
                     {outstanding===0 ? <strong>✅ Prè a fin peye.</strong> : <span className={styles.repaymentSentence}>Rete <strong className={expired ? styles.repaymentOverdue : styles.repaymentDays}>{time?.days ?? "—"} jou</strong> pou remèt <strong>{outstanding.toLocaleString("pt-BR")} pwen</strong></span>}
                     {outstanding>0 && <span className={styles.repaymentClock}>⏱ {clock} <small>èdtan : minit : segonn</small></span>}
-                    {outstanding>0 && repaymentEnabled && <button type="button" onClick={()=>{setPaying(request);setPaymentAmount("");setPaymentError("");}}>Remèt prè mwen</button>}
+                    {outstanding>0 && repaymentEnabled && <button type="button" onClick={()=>void openRepayment(request)}>Remèt prè mwen</button>}
                     {outstanding>0 && expired && <span className={styles.repaymentOverdue}>Delè 30 jou a pase</span>}
                   </div>;
                 })()}
@@ -238,6 +252,10 @@ export default function Balans() {
             value={paymentAmount} onChange={e=>setPaymentAmount(e.target.value)}
             readOnly={remainingTime(paying.creditedAt||"",clockNow)?.days===0}/>
           <button type="button" onClick={()=>setPaymentAmount(String(Math.max(0,repaymentTotal(paying.amount)-Number(paying.repaidPoints??0))))}>Peye tout rès la</button>
+          {paymentHistory.length>0 && <section aria-label="Istwa peman prè">
+            <h3>Istwa peman yo</h3>
+            <ul>{paymentHistory.map((entry,index)=><li key={index}>{entry.amount.toLocaleString("pt-BR")} pwen — {entry.method==="wallet"?"Balans Bolet":entry.method} — {new Date(entry.createdAt).toLocaleDateString("fr-CA")}</li>)}</ul>
+          </section>}
           {paymentError && <p role="alert" className={styles.requestError}>{paymentError}</p>}
           <div className={styles.modalActions}>
             <button type="button" disabled={paymentBusy} onClick={()=>setPaying(null)}>Anile</button>
