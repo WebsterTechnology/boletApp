@@ -7,12 +7,21 @@ import styles from "./Balans.module.css";
 
 type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null };
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const LOAN_TERM_DAYS = 30;
+const LOAN_INTEREST_PERCENT = 20;
+const repaymentTotal = (amount:number) => Math.round(amount * (100 + LOAN_INTEREST_PERCENT)) / 100;
+const remainingDays = (creditedAt:string, now:number) => {
+  const credited = Date.parse(creditedAt);
+  if (!Number.isFinite(credited)) return null;
+  return Math.max(0, Math.ceil((credited + LOAN_TERM_DAYS * 86400000 - now) / 86400000));
+};
 const statusLabel:Record<BorrowRequest["status"],string> = {
   pending:"🟠 Annatant", approved:"✅ Apwouve", rejected:"❌ Refize"
 };
 export default function Balans() {
   const [requestOpen,setRequestOpen] = useState(false);
   const [historyOpen,setHistoryOpen] = useState(false);
+  const [clockNow,setClockNow] = useState(() => Date.now());
   const [requestAmount,setRequestAmount] = useState("");
   const [requestReason,setRequestReason] = useState("");
   const [requests,setRequests] = useState<BorrowRequest[]>([]);
@@ -74,6 +83,11 @@ export default function Balans() {
     } catch (error) {
       console.error("Failed to refresh balances:", error);
     }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClockNow(Date.now()), 60000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -151,7 +165,16 @@ export default function Balans() {
             {requests.length===0 && <p>Ou poko voye okenn demann prè.</p>}
             {requests.map(request=><div className={styles.requestRow} key={request.id}>
               <span>{request.amount.toLocaleString("pt-BR")} pwen · {request.reason}</span>
-              <strong>{statusLabel[request.status]}{request.status==="approved" ? (request.creditedAt ? " · Kredite" : " · Poko kredite") : ""}</strong>
+              <div className={styles.requestStatus}>
+                <strong>{statusLabel[request.status]}{request.status==="approved" ? (request.creditedAt ? " · Kredite" : " · Poko kredite") : ""}</strong>
+                {request.status==="approved" && request.creditedAt && (() => {
+                  const days = remainingDays(request.creditedAt,clockNow);
+                  return <span className={days===0 ? styles.repaymentOverdue : styles.repaymentDue}>
+                    Pou remèt: {repaymentTotal(request.amount).toLocaleString("pt-BR")} pwen
+                    {days===null ? "" : days===0 ? " · Delè 30 jou a pase" : ` · ${days} jou rete`}
+                  </span>;
+                })()}
+              </div>
             </div>)}
           </div>}
         </section>
@@ -170,6 +193,13 @@ export default function Balans() {
           <p>Limit ou disponib: <strong>{borrowable.toLocaleString("pt-BR")} pwen</strong></p>
           <label htmlFor="borrow-amount">Konbyen pwen ou vle prete?</label>
           <input id="borrow-amount" type="number" min={1} max={borrowable} step={1} value={requestAmount} onChange={e=>setRequestAmount(e.target.value)} placeholder="Egzanp: 200"/>
+          {Number.isSafeInteger(Number(requestAmount)) && Number(requestAmount)>0 && Number(requestAmount)<=borrowable && <div className={styles.repaymentPreview} aria-live="polite">
+            <strong>Konbyen w ap remèt apre 30 jou?</strong>
+            <span>Prè: {Number(requestAmount).toLocaleString("pt-BR")} pwen</span>
+            <span>Enterè (20%): {(repaymentTotal(Number(requestAmount))-Number(requestAmount)).toLocaleString("pt-BR")} pwen</span>
+            <strong>Total pou remèt: {repaymentTotal(Number(requestAmount)).toLocaleString("pt-BR")} pwen</strong>
+            <small>30 jou yo kòmanse lè admin lan apwouve epi kredite prè a.</small>
+          </div>}
           <label htmlFor="borrow-reason">Rezon demann nan</label>
           <select id="borrow-reason" value={requestReason} onChange={e=>setRequestReason(e.target.value)}>
             <option value="">Chwazi yon rezon</option>
@@ -177,7 +207,7 @@ export default function Balans() {
             <option value="Depans ijan">Depans ijan</option>
             <option value="Lòt rezon">Lòt rezon</option>
           </select>
-          <p className={styles.requestNotice}>Voye demann nan pa transfere lajan. Admin lan ap egzamine demann ou an.</p>
+          <p className={styles.requestNotice}>Voye demann nan pa transfere lajan. Admin lan ap egzamine demann ou an. Kondisyon yo: 20% enterè, 30 jou apre kredi a.</p>
           {requestError && <p role="alert" className={styles.requestError}>{requestError}</p>}
           <div className={styles.modalActions}>
             <button type="button" disabled={requestBusy} onClick={()=>setRequestOpen(false)}>Anile</button>
