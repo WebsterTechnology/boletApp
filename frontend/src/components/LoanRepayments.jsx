@@ -36,6 +36,10 @@ export default function LoanRepayments(){
   };
   useEffect(()=>{load();},[]);
   useEffect(()=>{
+    const timer=setInterval(()=>{load();},30000);
+    return ()=>clearInterval(timer);
+  },[]);
+  useEffect(()=>{
     const timer=setInterval(()=>setClock(Date.now()),1000);
     return ()=>clearInterval(timer);
   },[]);
