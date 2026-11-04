@@ -86,3 +86,12 @@ The 30-day repayment deadline starts when a loan is credited. Total due is princ
 `GET /api/borrow-requests/:id/repayment-status` returns the countdown, outstanding balance and payment-method availability. `GET /api/borrow-requests/:id/repayments` returns the repayment ledger. Wallet repayments use `POST /api/borrow-requests/:id/wallet-repayments` with an `Idempotency-Key` header and require `BORROW_WALLET_REPAYMENTS_ENABLED=true`.
 
 InfinitePay checkout creation is implemented behind feature flags, but verified settlement is not complete. Keep `BORROW_PIX_SETTLEMENT_READY` disabled until payment verification, deduplication, and end-to-end tests are complete. A checkout URL is not proof of payment.
+
+### Loan PIX rollout checklist
+
+- Configure `INFINITEPAY_HANDLE`, `BORROW_PIX_REDIRECT_URL`, and `BORROW_PIX_WEBHOOK_URL` (HTTPS URL ending in `/api/borrow-pix/webhook`). Configure `INFINITEPAY_API_KEY` only if required by the merchant's API contract.
+- Apply both loan repayment database migrations before enabling any repayment flag.
+- Confirm InfinitePay checkout creation, the callback payload fields, and the `payment_check` response against the merchant account in a safe test environment. The callback must match a stored order and the expected amount and PIX method.
+- Test partial payment, full payment during the final 24 hours, duplicate callbacks, failed verification, overpayment prevention, and simultaneous wallet/PIX attempts.
+- Keep `BORROW_PIX_CHECKOUT_ENABLED`, `BORROW_PIX_WEBHOOK_ENABLED`, `BORROW_PIX_SETTLEMENT_READY`, and `BORROW_PIX_CUSTOMER_ACCESS_ENABLED` disabled until all checks pass. `BORROW_WALLET_REPAYMENTS_ENABLED` is independently controlled.
+- Customer controls appear in the Profile page. Checkout redirects do not mark a loan paid; only verified server-side settlement does.
