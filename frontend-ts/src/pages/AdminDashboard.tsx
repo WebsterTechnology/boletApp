@@ -35,6 +35,11 @@ type AdminBorrowRequest = {
   id:number; userId:number; amount:number; reason:string;
   status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null;
   customer:{id:number;fullName:string|null;phone:string;borrowablePoints:number}|null;
+  repayment?: {
+    total:number;repaid:number;remaining:number;percentage:number;
+    status:"unpaid"|"partial"|"paid";ledgerReconciles:boolean;
+    payments:{id:number;amount:number;method:string;createdAt:string}[];
+  };
 };
 const borrowStatusLabels:Record<AdminBorrowRequest["status"],string> = {
   pending:"🟠 Annatant", approved:"✅ Apwouve", rejected:"❌ Refize"
@@ -98,6 +103,11 @@ export default function AdminDashboard() {
       setBorrowRequests(response.data);
     } catch { setBorrowError("Pa kapab chaje demann prè yo."); }
   };
+  useEffect(()=>{
+    if(!borrowRequestsOpen)return;
+    const timer=window.setInterval(()=>{void loadBorrowRequests();},10000);
+    return ()=>window.clearInterval(timer);
+  },[borrowRequestsOpen]);
   const decideBorrow = async (id:number,decision:"approved"|"rejected") => {
     if (!window.confirm(decision==="approved"
       ? "Apwouve demann sa a epi transfere kantite pwen yo soti nan Disponib pou prete pou ale nan Disponib pou retire? Aksyon sa a kredite balans kliyan an."
@@ -389,6 +399,27 @@ const filteredUsers = useMemo(() => {
             <p style={{margin:"8px 0"}}><b>{request.amount.toLocaleString("pt-BR")} pwen</b> · Limit kliyan: {Number(request.customer?.borrowablePoints??0).toLocaleString("pt-BR")} pwen</p>
             <p style={{margin:"8px 0"}}>Rezon: {request.reason}</p>
             <p style={{margin:"8px 0"}}>{borrowStatusLabels[request.status]}{request.creditedAt ? " · 💸 Kredite nan balans retrè" : request.status==="approved" ? " · ⚠️ Poko kredite" : ""} · {new Date(request.createdAt).toLocaleString()}</p>
+            {request.status==="approved" && request.creditedAt && request.repayment && <section aria-label="Enfòmasyon sou ranbousman" style={{background:"#132b3e",border:"1px solid #53718b",borderRadius:12,padding:14,margin:"12px 0",color:"#f4f8ff"}}>
+              <strong style={{fontSize:18}}>Enfòmasyon sou ranbousman</strong>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(130px,1fr))",gap:10,marginTop:12}}>
+                <div>Montan pou remèt<br/><strong>{request.repayment.total.toLocaleString("pt-BR")} pwen</strong></div>
+                <div>Total peye<br/><strong>{request.repayment.repaid.toLocaleString("pt-BR")} pwen</strong></div>
+                <div>Rès pou peye<br/><strong>{request.repayment.remaining.toLocaleString("pt-BR")} pwen</strong></div>
+                <div>Estati<br/><strong style={{color:request.repayment.status==="paid"?"#4ade80":request.repayment.status==="partial"?"#facc15":"#f4f8ff"}}>{request.repayment.status==="paid"?"✅ Peye nèt":request.repayment.status==="partial"?"🟡 Peye an pati":"Poko peye"}</strong></div>
+              </div>
+              <div style={{marginTop:12}}><strong>{request.repayment.percentage}% ranbouse</strong>
+                <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={request.repayment.percentage} style={{height:10,borderRadius:10,background:"#35495b",overflow:"hidden",marginTop:6}}>
+                  <div style={{width:`${request.repayment.percentage}%`,height:"100%",background:request.repayment.status==="paid"?"#22c55e":"#facc15"}}/>
+                </div>
+              </div>
+              {!request.repayment.ledgerReconciles && <p role="alert" style={{color:"#fca5a5"}}>⚠️ Dosye peman yo pa koresponn ak total anrejistre a. Verifye kont lan.</p>}
+              <strong style={{display:"block",marginTop:14}}>Istwa peman yo</strong>
+              {request.repayment.payments.length===0?<p>Pa gen peman konfime ankò.</p>:<ul style={{paddingLeft:20,margin:"8px 0"}}>
+                {request.repayment.payments.map(payment=><li key={payment.id} style={{marginBottom:8}}>
+                  <strong>{Number(payment.amount).toLocaleString("pt-BR")} pwen</strong> · {payment.method==="wallet"?"Balans Bolet":payment.method==="pix"?"PIX":payment.method} · {new Date(payment.createdAt).toLocaleString("fr-CA",{dateStyle:"medium",timeStyle:"medium"})}
+                </li>)}
+              </ul>}
+            </section>}
             {request.status==="approved" && request.creditedAt && <AdminBorrowCountdown creditedAt={request.creditedAt} amount={request.amount} now={borrowClockNow}/>}
             {request.status==="approved" && !request.creditedAt && <button
               type="button" disabled={borrowBusy===request.id}
