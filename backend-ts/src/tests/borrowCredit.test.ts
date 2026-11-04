@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   findRequest: vi.fn(),
   findUser: vi.fn(),
   transaction: vi.fn(),
+  query: vi.fn(),
   currentUser: vi.fn(() => ({ id: 999 })),
 }));
 vi.mock("../middleware/authenticate", () => ({
@@ -18,7 +19,7 @@ vi.mock("../middleware/adminOnly", () => ({
 vi.mock("../models", () => ({
   BorrowRequest: { findByPk: mocks.findRequest, findAll: vi.fn(), findOne: vi.fn(), create: vi.fn() },
   User: { findByPk: mocks.findUser },
-  sequelize: { transaction: mocks.transaction },
+  sequelize: { transaction: mocks.transaction, query: mocks.query },
 }));
 import borrowRoutes from "../routes/borrowRoutes";
 
@@ -114,5 +115,62 @@ describe("Borrow approval wallet credit", () => {
     expect(response.status).toBe(409);
     expect(user.borrowablePoints).toBe(100);
     expect(user.save).not.toHaveBeenCalled();
+  });
+});
+
+describe("Borrow wallet repayment HTTP transaction", () => {
+  const key = "repaymentTestKey00000001";
+  it("returns disabled without modifying the wallet when the feature flag is off", async () => {
+    const previous = process.env.BORROW_WALLET_REPAYMENTS_ENABLED;
+    delete process.env.BORROW_WALLET_REPAYMENTS_ENABLED;
+    try {
+      const response = await request(app).post("/api/borrow-requests/7/wallet-repayments")
+        .set("Idempotency-Key",key).send({amount:10});
+      expect(response.status).toBe(503);
+      expect(mocks.transaction).not.toHaveBeenCalled();
+    } finally {
+      if(previous===undefined) delete process.env.BORROW_WALLET_REPAYMENTS_ENABLED;
+      else process.env.BORROW_WALLET_REPAYMENTS_ENABLED=previous;
+    }
+  });
+  it("atomically debits 10 points and refuses duplicate debit on retry", async () => {
+    const previous = process.env.BORROW_WALLET_REPAYMENTS_ENABLED;
+    process.env.BORROW_WALLET_REPAYMENTS_ENABLED="true";
+    const borrow = {...makeRequest("approved",new Date()),repaidPoints:0};
+    const user = {...makeUser(50,315),points:1600};
+    mocks.currentUser.mockReturnValue({id:10});
+    mocks.findRequest.mockResolvedValue(borrow);
+    mocks.findUser.mockResolvedValue(user);
+    let saved = false;
+    mocks.query.mockImplementation(async (sql:string) => {
+      if(sql.includes('WHERE "idempotencyKey"')) return saved ? [{borrowRequestId:7,userId:10,amount:10}] : [];
+      if(sql.includes('SELECT amount FROM borrow_repayments')) return saved ? [{amount:10}] : [];
+      if(sql.includes('SELECT amount, "playDebited"')) return saved ? [{
+        amount:10,playDebited:0,withdrawDebited:10,playBefore:1600,withdrawBefore:315,
+        playAfter:1600,withdrawAfter:305
+      }] : [];
+      if(sql.includes('SELECT points FROM borrow_pix_attempts')) return [];
+      if(sql.includes('INSERT INTO borrow_repayments')) {saved=true;return [];}
+      throw new Error("Unexpected query");
+    });
+    try {
+      const first = await request(app).post("/api/borrow-requests/7/wallet-repayments")
+        .set("Idempotency-Key",key).send({amount:10});
+      expect(first.status).toBe(200);
+      expect(first.body).toEqual(expect.objectContaining({remaining:50,paid:10}));
+      expect(user.withdrawablePoints).toBe(305);
+      expect(user.points).toBe(1600);
+      expect(borrow.repaidPoints).toBe(10);
+      const second = await request(app).post("/api/borrow-requests/7/wallet-repayments")
+        .set("Idempotency-Key",key).send({amount:10});
+      expect(second.status).toBe(200);
+      expect(second.body).toEqual(expect.objectContaining({remaining:50,duplicate:true}));
+      expect(user.withdrawablePoints).toBe(305);
+      expect(borrow.repaidPoints).toBe(10);
+      expect(user.save).toHaveBeenCalledTimes(1);
+    } finally {
+      if(previous===undefined) delete process.env.BORROW_WALLET_REPAYMENTS_ENABLED;
+      else process.env.BORROW_WALLET_REPAYMENTS_ENABLED=previous;
+    }
   });
 });
