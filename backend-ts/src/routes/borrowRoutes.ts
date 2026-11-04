@@ -254,7 +254,7 @@ router.post("/:id/pix-intents", async (req,res) => {
   try {
     const reserved=await sequelize.transaction(async transaction=>{
       const candidate=await BorrowRequest.findByPk(id,{transaction});
-      if (!candidate || candidate.userId!==currentUser(req).id)
+      if (!candidate || (candidate.userId!==currentUser(req).id && !currentUser(req).isAdmin))
         return {code:404,message:"Prè pa jwenn."};
       const user=await User.findByPk(candidate.userId,{transaction,lock:transaction.LOCK.UPDATE});
       if (!user) return {code:404,message:"Kont pa jwenn."};
