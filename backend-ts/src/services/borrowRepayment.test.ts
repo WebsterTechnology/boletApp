@@ -17,6 +17,12 @@ describe("borrow repayment policy", () => {
     expect(repaymentAllowed(120,120,due,due-86400000)).toBe(true);
     expect(repaymentAllowed(120,120,due,due+1000)).toBe(true);
   });
+  it("switches from partial to full repayment exactly at the final-day boundary", () => {
+    const due = 30 * 86400000;
+    expect(repaymentAllowed(1, 120, due, due - 86400000 - 1)).toBe(true);
+    expect(repaymentAllowed(1, 120, due, due - 86400000)).toBe(false);
+    expect(repaymentAllowed(120, 120, due, due)).toBe(true);
+  });
   it("rejects overpayment, zero payment, and unsafe values", () => {
     expect(repaymentAllowed(121,120,100000000,0)).toBe(false);
     expect(repaymentAllowed(0,120,100000000,0)).toBe(false);
