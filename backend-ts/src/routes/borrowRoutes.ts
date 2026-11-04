@@ -4,6 +4,7 @@ import { authenticate, currentUser } from "../middleware/authenticate";
 import { adminOnly } from "../middleware/adminOnly";
 import { BorrowRequest, User, sequelize } from "../models";
 import type { Transaction } from "sequelize";
+import { createBorrowPixCheckout } from "../services/borrowPixCheckout";
 
 const router = Router();
 router.use(authenticate);
@@ -230,16 +231,85 @@ router.post("/:id/wallet-repayments", async (req, res) => {
     return res.status(500).json({ message: "Peman an pa pase." });
   }
 });
-/**
- * A PIX payment intent is NOT a confirmed payment. Provider checkout and
- * verified settlement must be implemented before customer access is enabled.
+/** Reserve exactly one outstanding PIX attempt before requesting a hosted checkout.
+ * No repayment is recorded until independently verified settlement is implemented.
  */
 router.post("/:id/pix-intents", async (req,res) => {
   if (process.env.BORROW_PIX_CHECKOUT_ENABLED !== "true" ||
-      process.env.BORROW_PIX_WEBHOOK_ENABLED !== "true")
+      process.env.BORROW_PIX_WEBHOOK_ENABLED !== "true" ||
+      process.env.BORROW_PIX_SETTLEMENT_READY !== "true")
     return res.status(503).json({message:"Peman PIX poko aktive."});
-  // Deliberately fail closed until a verified provider checkout exists.
-  return res.status(503).json({message:"Koneksyon PIX pou prè poko pare."});
+  if (process.env.BORROW_PIX_CUSTOMER_ACCESS_ENABLED !== "true" && !currentUser(req).isAdmin)
+    return res.status(403).json({message:"PIX disponib sèlman pou tès administratè."});
+  const id=Number(req.params.id), amount=req.body?.amount;
+  const key=req.get("Idempotency-Key");
+  if (!Number.isSafeInteger(id) || id<1 || !Number.isSafeInteger(amount) ||
+      amount<1 || amount>21474836 || !key || !/^[A-Za-z0-9_-]{16,128}$/.test(key))
+    return res.status(400).json({message:"Kantite oswa referans PIX pa valid."});
+  const handle=process.env.INFINITEPAY_HANDLE;
+  const redirectUrl=process.env.BORROW_PIX_REDIRECT_URL;
+  const webhookUrl=process.env.BORROW_PIX_WEBHOOK_URL;
+  if (!handle || !redirectUrl || !webhookUrl)
+    return res.status(503).json({message:"Konfigirasyon PIX poko pare."});
+  try {
+    const reserved=await sequelize.transaction(async transaction=>{
+      const candidate=await BorrowRequest.findByPk(id,{transaction});
+      if (!candidate || candidate.userId!==currentUser(req).id)
+        return {code:404,message:"Prè pa jwenn."};
+      const user=await User.findByPk(candidate.userId,{transaction,lock:transaction.LOCK.UPDATE});
+      if (!user) return {code:404,message:"Kont pa jwenn."};
+      const loan=await BorrowRequest.findByPk(id,{transaction,lock:transaction.LOCK.UPDATE});
+      if (!loan || loan.userId!==user.id) return {code:404,message:"Prè pa jwenn."};
+      const previous=await sequelize.query<{id:number;borrowRequestId:number;userId:number;points:number;status:string;checkoutUrl:string|null}>(
+        'SELECT id,"borrowRequestId","userId",points,status,"checkoutUrl" FROM borrow_pix_attempts WHERE "idempotencyKey"=:key',
+        {replacements:{key},type:QueryTypes.SELECT,transaction});
+      if (previous.length) {
+        const p=previous[0];
+        if (p.borrowRequestId!==id || p.userId!==user.id || p.points!==amount)
+          return {code:409,message:"Referans PIX deja itilize."};
+        if (p.status==="checkout_created" && p.checkoutUrl)
+          return {code:200,checkoutUrl:p.checkoutUrl,attemptId:p.id};
+        return {code:409,message:"Peman PIX sa a deja ap trete."};
+      }
+      if (loan.status!=="approved" || !loan.creditedAt)
+        return {code:409,message:"Prè sa a poko kredite."};
+      const ledger=await sequelize.query<{amount:number}>(
+        'SELECT amount FROM borrow_repayments WHERE "borrowRequestId"=:id',
+        {replacements:{id},type:QueryTypes.SELECT,transaction});
+      if (!repaymentLedgerReconciles(Number(loan.repaidPoints),ledger.map(p=>Number(p.amount))))
+        return {code:409,message:"Istwa peman prè a pa koresponn."};
+      const pending=await sequelize.query<{id:number}>(
+        'SELECT id FROM borrow_pix_attempts WHERE "borrowRequestId"=:id AND status IN (\'pending\',\'checkout_created\') LIMIT 1',
+        {replacements:{id},type:QueryTypes.SELECT,transaction});
+      if (pending.length) return {code:409,message:"Gen yon peman PIX ki poko fini."};
+      const remaining=loanTotal(Number(loan.amount))-Number(loan.repaidPoints);
+      const dueAt=new Date(loan.creditedAt).getTime()+LOAN_TERM_MS;
+      if (remaining<1 || amount>remaining || !repaymentAllowed(amount,remaining,dueAt,Date.now()))
+        return {code:409,message:"Nan dènye jou a, ou dwe peye tout rès prè a."};
+      const inserted=await sequelize.query<{id:number}>(
+        'INSERT INTO borrow_pix_attempts ("borrowRequestId","userId",points,"amountCents",currency,status,"idempotencyKey","providerReference","createdAt","updatedAt") VALUES (:id,:userId,:amount,:cents,\'BRL\',\'pending\',:key,:reference,NOW(),NOW()) RETURNING id',
+        {replacements:{id,userId:user.id,amount,cents:amount*100,key,reference:key},type:QueryTypes.SELECT,transaction});
+      return {code:201,attemptId:inserted[0].id};
+    });
+    if ("message" in reserved) return res.status(reserved.code).json({message:reserved.message});
+    if (reserved.code===200) return res.json({attemptId:reserved.attemptId,checkoutUrl:reserved.checkoutUrl,paymentConfirmed:false});
+    // Provider network request must not hold database locks.
+    const checkout=await createBorrowPixCheckout({
+      handle,orderNsu:key,points:amount,redirectUrl,webhookUrl,
+      apiKey:process.env.INFINITEPAY_API_KEY
+    });
+    await sequelize.query(
+      'UPDATE borrow_pix_attempts SET status=\'checkout_created\',"checkoutUrl"=:url,"updatedAt"=NOW() WHERE id=:attemptId AND status=\'pending\'',
+      {replacements:{url:checkout.checkoutUrl,attemptId:reserved.attemptId}}
+    );
+    return res.status(201).json({attemptId:reserved.attemptId,checkoutUrl:checkout.checkoutUrl,paymentConfirmed:false});
+  } catch (error) {
+    // An ambiguous provider timeout cannot safely be retried with a new key.
+    console.error("borrow PIX checkout failed",error instanceof Error?error.name:"unknown");
+    if (error instanceof UniqueConstraintError)
+      return res.status(409).json({message:"Referans PIX deja itilize."});
+    return res.status(503).json({message:"Verifye eta peman PIX la anvan ou eseye ankò."});
+  }
 });
 
 /** Read-only checkout status. Pending PIX attempts never count as repayments. */
