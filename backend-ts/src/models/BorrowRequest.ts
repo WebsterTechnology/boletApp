@@ -14,6 +14,7 @@ export class BorrowRequest extends Model<InferAttributes<BorrowRequest>, InferCr
   declare creditedBy: CreationOptional<number | null>;
   declare borrowableBefore: CreationOptional<number | null>;
   declare withdrawableBefore: CreationOptional<number | null>;
+  declare repaidPoints: CreationOptional<number>;
   declare createdAt: CreationOptional<Date>;
 }
 export function initBorrowRequest(sequelize: Sequelize): typeof BorrowRequest {
@@ -29,6 +30,7 @@ export function initBorrowRequest(sequelize: Sequelize): typeof BorrowRequest {
     creditedBy: { type: DataTypes.INTEGER, allowNull: true },
     borrowableBefore: { type: DataTypes.INTEGER, allowNull: true },
     withdrawableBefore: { type: DataTypes.INTEGER, allowNull: true },
+    repaidPoints: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
     createdAt: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
   }, { sequelize, tableName: "borrow_requests", modelName: "BorrowRequest", timestamps: false });
   return BorrowRequest;

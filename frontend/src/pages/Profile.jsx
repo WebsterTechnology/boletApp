@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import LoanRepayments from "../components/LoanRepayments";
 
 const API = import.meta.env.VITE_API_URL || "https://boletapp-production.up.railway.app";
 
@@ -54,6 +55,7 @@ export default function Profile() {
         <div style={row}><span style={label}>E-mail</span><strong style={{...value,overflowWrap:"anywhere"}}>{user.email || "—"}</strong></div>
         <div style={row}><span style={label}>Telefòn</span><strong style={value}>{user.phone || "—"}</strong></div>
         <div style={row}><span style={label}>Pwen</span><strong style={value}>{user.points ?? 0}</strong></div>
+        <LoanRepayments />
         <button onClick={fetchUser} disabled={loading} style={primary}>{loading ? "Ap rafrechi..." : "RAFRECHI"}</button>
         <hr style={{border:0,borderTop:"1px solid #ddd",margin:"24px 0"}} />
         <button onClick={handleLogout} style={logout}>🚪 DEKONEKTE</button>

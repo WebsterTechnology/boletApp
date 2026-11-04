@@ -82,47 +82,47 @@ suite("Sòl wallet ledger PostgreSQL invariants", () => {
     expect(count.total).toBe("1");
   });
   it("serializes simultaneous wallet debits with a row lock", async () => {
-    await db.query('CREATE TABLE concurrent_wallet_probe (id integer PRIMARY KEY, points integer NOT NULL)');
-    await db.query('INSERT INTO concurrent_wallet_probe VALUES (1, 100)');
+    await db.query('CREATE TABLE sol_ledger_ci.concurrent_wallet_probe (id integer PRIMARY KEY, points integer NOT NULL)');
+    await db.query('INSERT INTO sol_ledger_ci.concurrent_wallet_probe VALUES (1, 100)');
     const debit = () => db.transaction(async transaction => {
       const [wallet] = await db.query<{ points: number }>(
-        'SELECT points FROM concurrent_wallet_probe WHERE id = 1 FOR UPDATE',
+        'SELECT points FROM sol_ledger_ci.concurrent_wallet_probe WHERE id = 1 FOR UPDATE',
         { transaction, type: QueryTypes.SELECT },
       );
       if (wallet.points < 100) return false;
-      await db.query('UPDATE concurrent_wallet_probe SET points = points - 100 WHERE id = 1', { transaction });
+      await db.query('UPDATE sol_ledger_ci.concurrent_wallet_probe SET points = points - 100 WHERE id = 1', { transaction });
       return true;
     });
     const outcomes = await Promise.all([debit(), debit()]);
     expect(outcomes.filter(Boolean)).toHaveLength(1);
     const [wallet] = await db.query<{ points: number }>(
-      'SELECT points FROM concurrent_wallet_probe WHERE id = 1',
+      'SELECT points FROM sol_ledger_ci.concurrent_wallet_probe WHERE id = 1',
       { type: QueryTypes.SELECT },
     );
     expect(wallet.points).toBe(0);
   });
   it("rolls back a wallet change when ledger insert fails", async () => {
-    await db.query('CREATE TABLE wallet_probe (id integer PRIMARY KEY, points integer NOT NULL, withdrawable integer NOT NULL)');
-    await db.query('CREATE TABLE installment_probe (id integer PRIMARY KEY, status text NOT NULL)');
-    await db.query('CREATE TABLE attempt_probe (id integer PRIMARY KEY, status text NOT NULL)');
-    await db.query('INSERT INTO wallet_probe VALUES (1, 50, 735)');
-    await db.query("INSERT INTO installment_probe VALUES (1, 'pending')");
-    await db.query("INSERT INTO attempt_probe VALUES (1, 'created')");
+    await db.query('CREATE TABLE sol_ledger_ci.wallet_probe (id integer PRIMARY KEY, points integer NOT NULL, withdrawable integer NOT NULL)');
+    await db.query('CREATE TABLE sol_ledger_ci.installment_probe (id integer PRIMARY KEY, status text NOT NULL)');
+    await db.query('CREATE TABLE sol_ledger_ci.attempt_probe (id integer PRIMARY KEY, status text NOT NULL)');
+    await db.query('INSERT INTO sol_ledger_ci.wallet_probe VALUES (1, 50, 735)');
+    await db.query("INSERT INTO sol_ledger_ci.installment_probe VALUES (1, 'pending')");
+    await db.query("INSERT INTO sol_ledger_ci.attempt_probe VALUES (1, 'created')");
     await expect(db.transaction(async t => {
-      await db.query('UPDATE wallet_probe SET points = 0, withdrawable = 685 WHERE id = 1', { transaction: t });
-      await db.query("UPDATE installment_probe SET status = 'paid' WHERE id = 1", { transaction: t });
-      await db.query("UPDATE attempt_probe SET status = 'confirmed' WHERE id = 1", { transaction: t });
+      await db.query('UPDATE sol_ledger_ci.wallet_probe SET points = 0, withdrawable = 685 WHERE id = 1', { transaction: t });
+      await db.query("UPDATE sol_ledger_ci.installment_probe SET status = 'paid' WHERE id = 1", { transaction: t });
+      await db.query("UPDATE sol_ledger_ci.attempt_probe SET status = 'confirmed' WHERE id = 1", { transaction: t });
       // Duplicate contributionId=1 violates the unique index, aborting the transaction.
       await db.query(`INSERT INTO sol_wallet_ledger VALUES ${row(4, 1)}`, { transaction: t });
     })).rejects.toThrow();
     const [wallet] = await db.query<{ points: number; withdrawable: number }>(
-      'SELECT points, withdrawable FROM wallet_probe WHERE id = 1', { type: QueryTypes.SELECT },
+      'SELECT points, withdrawable FROM sol_ledger_ci.wallet_probe WHERE id = 1', { type: QueryTypes.SELECT },
     );
     const [installment] = await db.query<{ status: string }>(
-      'SELECT status FROM installment_probe WHERE id = 1', { type: QueryTypes.SELECT },
+      'SELECT status FROM sol_ledger_ci.installment_probe WHERE id = 1', { type: QueryTypes.SELECT },
     );
     const [attempt] = await db.query<{ status: string }>(
-      'SELECT status FROM attempt_probe WHERE id = 1', { type: QueryTypes.SELECT },
+      'SELECT status FROM sol_ledger_ci.attempt_probe WHERE id = 1', { type: QueryTypes.SELECT },
     );
     expect(wallet).toEqual({ points: 50, withdrawable: 735 });
     expect(installment.status).toBe("pending");
