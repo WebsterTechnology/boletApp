@@ -95,3 +95,8 @@ InfinitePay checkout for PIX and credit cards, provider-side `payment_check` ver
 - Test partial payment, full payment during the final 24 hours, duplicate callbacks, failed verification, overpayment prevention, and simultaneous wallet/PIX attempts.
 - Keep `BORROW_PIX_CHECKOUT_ENABLED`, `BORROW_PIX_WEBHOOK_ENABLED`, `BORROW_PIX_SETTLEMENT_READY`, and `BORROW_PIX_CUSTOMER_ACCESS_ENABLED` disabled until all checks pass. `BORROW_WALLET_REPAYMENTS_ENABLED` is independently controlled.
 - Customer controls appear in **Balans**. `Peye ak PIX` is shown only when the backend advertises PIX availability. Configure `BORROW_PIX_REDIRECT_URL=https://htnovatech.com/balans` and `BORROW_PIX_WEBHOOK_URL=https://boletapp-production.up.railway.app/api/borrow-pix/webhook`. Checkout redirects do not mark a loan paid; only verified server-side settlement does.
+
+
+### Switching from an unpaid InfinitePay checkout to wallet repayment
+
+The customer can POST `/api/borrow-requests/:id/pix-attempts/abandon` to abandon an existing `checkout_created` attempt, then pay with their Bolet wallet. This is an **internal abandonment, not a cancellation at InfinitePay**. InfinitePay-hosted links without `valid_until` remain payable indefinitely; customer must not use the old link after choosing wallet. If an abandoned link is later paid, the verified settlement is applied only if the remaining loan covers it; otherwise the attempt is stored as `refund_required` for manual refund and is never recorded as overpayment. Merchant must monitor `borrow_pix_attempts.status='refund_required'` and refund such receipts. Production user testing must include late callbacks and duplicate notifications.
