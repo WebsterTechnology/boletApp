@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Client } from "pg";
+const { Client } = require("pg") as { Client: new (options: { connectionString: string | undefined }) => { connect(): Promise<void>; query(sql: string, params?: unknown[]): Promise<{ rows: Record<string, any>[]; rowCount: number | null }>; end(): Promise<void> } };
 import { allocateWalletRepayment, loanTotal, repaymentLedgerReconciles } from "../services/borrowRepayment";
 
 /** Real PostgreSQL rollback test; uses only session-local temporary tables in CI. */
