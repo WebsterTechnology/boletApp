@@ -11,7 +11,7 @@ export function verifiedBorrowPixPayment(
   return Number.isSafeInteger(expectedAmountCents) &&
     expectedAmountCents >= 100 &&
     response.success === true && response.paid === true &&
-    response.capture_method === "pix" &&
+    (response.capture_method === "pix" || response.capture_method === "credit_card") &&
     typeof response.amount === "number" &&
     Number.isSafeInteger(response.amount) &&
     response.amount === expectedAmountCents;
