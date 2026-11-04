@@ -43,6 +43,24 @@ export default function Balans() {
     }));
     setLoanStatuses(Object.fromEntries(entries.filter(entry=>entry[1]!==null)) as Record<number,LoanStatus>);
   },[]);
+  // A hosted InfinitePay link cannot be cancelled at the provider. Abandon only
+  // the local attempt, and tell the customer not to use their old payment link.
+  const abandonPix=async(id:number)=>{
+    setPaymentBusy(p=>({...p,[id]:true}));
+    setPaymentMessage(p=>({...p,[id]:""}));
+    try{
+      const response=await fetch(API+"/api/borrow-requests/"+id+"/pix-attempts/abandon",{
+        method:"POST",headers:{Authorization:"Bearer "+localStorage.getItem("token")}
+      });
+      const data=await response.json();
+      if(!response.ok)throw new Error(data.message||"Pa kapab chanje metòd peman an.");
+      setPaymentMethods(p=>({...p,[id]:"wallet"}));
+      setPaymentMessage(p=>({...p,[id]:"Ou ka peye ak balans Bolet kounye a. Pa itilize ansyen lyen InfinitePay la."}));
+      await refreshRequests();
+    }catch(e){
+      setPaymentMessage(p=>({...p,[id]:e instanceof Error?e.message:"Pa kapab chanje metòd peman an."}));
+    }finally{setPaymentBusy(p=>({...p,[id]:false}));}
+  };
   const repayLoan=async(id:number,status:LoanStatus)=>{
     const method=paymentMethods[id]||(status.walletPaymentsEnabled?"wallet":"pix");
     const amount=status.finalDay?status.remaining:Number(paymentAmounts[id]??String(status.remaining));
@@ -218,7 +236,15 @@ export default function Balans() {
                     <p>Rès pou peye: <strong>{loan.remaining} pwen</strong> sou {loan.total} pwen</p>
                     {loan.remaining===0?<p>Prè sa a fin peye.</p>:<>
                       {loan.finalDay&&<p>Dènye jou a: peye tout rès la.</p>}
-                      {loan.pendingPix&&<p>Yon peman InfinitePay annatant.</p>}
+                      {loan.pendingPix&&<div style={{margin:"10px 0"}}>
+                        <p>Yon peman InfinitePay annatant.</p>
+                        <p style={{fontSize:13,color:"#e5edf8"}}>Si ou pa peye ak InfinitePay, ou ka chwazi balans Bolet. Pa peye ak ansyen lyen InfinitePay la apre sa.</p>
+                        <button type="button" disabled={!!paymentBusy[request.id]}
+                          onClick={()=>void abandonPix(request.id)}
+                          style={{background:"#facc15",color:"#111827",fontWeight:700,padding:"9px 12px",borderRadius:8}}>
+                          {paymentBusy[request.id]?"Tanpri tann...":"Anile peman annatant pou peye ak balans"}
+                        </button>
+                      </div>}
                       {!loan.finalDay&&<label style={{display:"block",color:"#e5edf8",fontWeight:700,marginTop:10}}>Kantite pou peye
                         <input type="number" min={1} max={loan.remaining} step={1} value={paymentAmounts[request.id]??String(loan.remaining)}
                           onChange={e=>setPaymentAmounts(p=>({...p,[request.id]:e.target.value}))}
