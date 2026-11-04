@@ -5,7 +5,7 @@ afterEach(()=>vi.unstubAllGlobals());
 
 describe("loan InfinitePay hosted checkout",()=>{
   const input={
-    handle:"merchant123",apiKey:"test_checkout_key",orderNsu:"loan_pix_order_123456789",
+    handle:"merchant123",orderNsu:"loan_pix_order_123456789",
     points:60,redirectUrl:"https://example.com/loan/return",
     webhookUrl:"https://api.example.com/api/borrow-pix/webhook"
   };
@@ -22,14 +22,8 @@ describe("loan InfinitePay hosted checkout",()=>{
     expect(payload.order_nsu).toBe(input.orderNsu);
     expect(payload.items[0].price).toBe(6000);
     expect(payload.webhook_url).toBe(input.webhookUrl);
-    expect(payload.options.payment_methods_enabled).toEqual(["pix"]);
-    expect(request.headers["X-Api-Key"]).toBe(input.apiKey);
-  });
-  it("refuses a checkout without a key to guarantee PIX-only payment", async()=>{
-    const fetchMock=vi.fn();
-    vi.stubGlobal("fetch",fetchMock);
-    await expect(createBorrowPixCheckout({...input,apiKey:""})).rejects.toThrow("PIX-only");
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(payload.options).toBeUndefined();
+    expect(request.headers["X-Api-Key"]).toBeUndefined();
   });
   it("rejects non-HTTPS callback addresses without contacting provider",async()=>{
     const fetchMock=vi.fn();
