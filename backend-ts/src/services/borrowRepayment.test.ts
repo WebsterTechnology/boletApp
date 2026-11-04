@@ -75,3 +75,25 @@ describe("loan repayment ledger totals", () => {
     expect(repaymentLedgerReconciles(20,[0,20])).toBe(false);
   });
 });
+
+describe("controlled 50-point loan repayment simulation", () => {
+  it("deducts 10 from withdrawable funds, leaves 50 owed, and reconciles the ledger", () => {
+    const total = loanTotal(50);
+    const before = { play:1600, withdraw:315 };
+    const payment = 10;
+    expect(total).toBe(60);
+    expect(repaymentAllowed(payment,total,30*86400000,0)).toBe(true);
+    const allocation = allocateWalletRepayment(before.play,before.withdraw,payment);
+    expect(allocation).toEqual({
+      withdrawDebited:10,playDebited:0,withdrawAfter:305,playAfter:1600
+    });
+    expect(walletRepaymentReconciles({
+      amount:payment,playDebited:allocation!.playDebited,withdrawDebited:allocation!.withdrawDebited,
+      playBefore:before.play,withdrawBefore:before.withdraw,
+      playAfter:allocation!.playAfter,withdrawAfter:allocation!.withdrawAfter
+    })).toBe(true);
+    expect(total-payment).toBe(50);
+    expect(repaymentLedgerReconciles(payment,[payment])).toBe(true);
+    expect(repaymentLedgerReconciles(payment,[payment,payment])).toBe(false);
+  });
+});
