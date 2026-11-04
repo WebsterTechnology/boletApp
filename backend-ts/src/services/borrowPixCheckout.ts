@@ -1,12 +1,8 @@
 /** Hosted Brazilian InfinitePay checkout. No money is marked paid by this call. */
 export async function createBorrowPixCheckout(input:{
   handle:string; orderNsu:string; points:number; redirectUrl:string;
-  webhookUrl:string; apiKey:string;
+  webhookUrl:string; apiKey?:string;
 }):Promise<{checkoutUrl:string}> {
-  // InfinitePay requires an API key to enforce a PIX-only checkout. Without it,
-  // customers could select a card payment that the loan settlement rejects.
-  if (typeof input.apiKey !== "string" || !input.apiKey.trim())
-    throw new Error("PIX-only checkout requires an InfinitePay API key");
   if (!/^[a-zA-Z0-9_.-]{2,100}$/.test(input.handle) ||
       !/^[a-zA-Z0-9_-]{16,128}$/.test(input.orderNsu) ||
       !Number.isSafeInteger(input.points) || input.points<1 ||
@@ -22,14 +18,13 @@ export async function createBorrowPixCheckout(input:{
   try {
     const response=await fetch("https://api.checkout.infinitepay.io/links",{
       method:"POST",
-      headers:{"Content-Type":"application/json","X-Api-Key":input.apiKey},
+      headers:{"Content-Type":"application/json",...(input.apiKey?{"X-Api-Key":input.apiKey}:{})},
       body:JSON.stringify({
         handle:input.handle,
         order_nsu:input.orderNsu,
         items:[{description:"Pagamento de empréstimo Bolet",price:input.points*100,quantity:1}],
         redirect_url:input.redirectUrl,
-        webhook_url:input.webhookUrl,
-        options:{payment_methods_enabled:["pix"]}
+        webhook_url:input.webhookUrl
       }),
       signal:controller.signal
     });
