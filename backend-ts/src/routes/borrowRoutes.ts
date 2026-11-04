@@ -345,6 +345,45 @@ router.post("/admin/pix-attempts/:attemptId/verify",adminOnly,async(req,res)=>{
   }
 });
 
+/** A customer can abandon an unpaid checkout to switch payment methods.
+ * InfinitePay does NOT cancel this hosted link: it may still be paid later.
+ * Such late payments are verified and reconciled, with overpayments flagged
+ * for a manual refund instead of silently increasing the loan's paid amount.
+ */
+router.post("/:id/pix-attempts/abandon", async (req,res) => {
+  const id=Number(req.params.id);
+  if (!Number.isSafeInteger(id)||id<1)
+    return res.status(400).json({message:"ID pa valid."});
+  try {
+    const result=await sequelize.transaction(async transaction=>{
+      const candidate=await BorrowRequest.findByPk(id,{transaction});
+      if (!candidate || candidate.userId!==currentUser(req).id)
+        return {code:404,message:"Prè pa jwenn."};
+      const user=await User.findByPk(currentUser(req).id,{transaction,lock:transaction.LOCK.UPDATE});
+      if (!user) return {code:404,message:"Kont pa jwenn."};
+      const loan=await BorrowRequest.findByPk(id,{transaction,lock:transaction.LOCK.UPDATE});
+      if (!loan || loan.userId!==user.id)
+        return {code:404,message:"Prè pa jwenn."};
+      const pending=await sequelize.query<{id:number;status:string}>(
+        'SELECT id,status FROM borrow_pix_attempts WHERE "borrowRequestId"=:id AND status IN (\'pending\',\'checkout_created\') FOR UPDATE',
+        {replacements:{id},type:QueryTypes.SELECT,transaction}
+      );
+      if (!pending.length) return {code:200,abandoned:false};
+      if (pending.some(p=>p.status==="pending"))
+        return {code:409,message:"Lyen InfinitePay la ap prepare. Eseye ankò."};
+      await sequelize.query(
+        'UPDATE borrow_pix_attempts SET status=\'abandoned\',"updatedAt"=NOW() WHERE "borrowRequestId"=:id AND status=\'checkout_created\'',
+        {replacements:{id},transaction}
+      );
+      return {code:200,abandoned:true};
+    });
+    return res.status(result.code).json("message" in result?{message:result.message}:{abandoned:result.abandoned});
+  }catch(error){
+    console.error("borrow PIX abandonment failed",error instanceof Error?error.name:"unknown");
+    return res.status(500).json({message:"Pa kapab sispann peman InfinitePay annatant lan."});
+  }
+});
+
 /** Read-only checkout status. Pending PIX attempts never count as repayments. */
 router.get("/:id/pix-attempts", async (req,res) => {
   const id=Number(req.params.id);
