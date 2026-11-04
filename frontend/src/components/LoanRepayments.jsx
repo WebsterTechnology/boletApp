@@ -44,7 +44,7 @@ export default function LoanRepayments(){
     return ()=>clearInterval(timer);
   },[]);
   const pay=async(item,status)=>{
-    const id=item.id,selected=method[id]||"wallet";
+    const id=item.id,selected=method[id]||(status.walletPaymentsEnabled?"wallet":"pix");
     const amount=status.finalDay?status.remaining:Number(amounts[id]||status.remaining);
     if(!Number.isSafeInteger(amount)||amount<1||amount>status.remaining){
       setMessage("Antre yon kantite pwen ki valid.");return;
@@ -79,7 +79,7 @@ export default function LoanRepayments(){
       const status=statuses[item.id];
       if(!status)return null;
       const left=Math.max(0,new Date(status.dueAt).getTime()-clock);
-      const selected=method[item.id]||"wallet";
+      const selected=method[item.id]||(status.walletPaymentsEnabled?"wallet":"pix");
       return <div key={item.id} style={{border:"1px solid #ddd",borderRadius:12,padding:16,marginBottom:14}}>
         <strong>Prè #{item.id}</strong>
         <p>Rès pou peye: <strong>{status.remaining} pwen</strong> sou {status.total} pwen</p>
