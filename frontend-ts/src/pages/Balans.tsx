@@ -6,7 +6,8 @@ import WithdrawModal from "../components/WithdrawModal";
 import styles from "./Balans.module.css";
 
 type BorrowRequest = { id:number; amount:number; reason:string; status:"pending"|"approved"|"rejected"; createdAt:string; reviewedAt:string|null; creditedAt:string|null };
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = import.meta.env.VITE_API_URL || "https://boletapp-production.up.railway.app";
+type LoanStatus={remaining:number;total:number;finalDay:boolean;pendingPix:boolean;walletPaymentsEnabled:boolean;pixPaymentsEnabled:boolean};
 const LOAN_TERM_DAYS = 30;
 const LOAN_INTEREST_PERCENT = 20;
 const repaymentTotal = (amount:number) => Math.round(amount * (100 + LOAN_INTEREST_PERCENT)) / 100;
@@ -28,14 +29,44 @@ export default function Balans() {
   const [requests,setRequests] = useState<BorrowRequest[]>([]);
   const [requestError,setRequestError] = useState("");
   const [requestBusy,setRequestBusy] = useState(false);
+  const [loanStatuses,setLoanStatuses] = useState<Record<number,LoanStatus>>({});
+  const [paymentAmounts,setPaymentAmounts] = useState<Record<number,string>>({});
+  const [paymentMethods,setPaymentMethods] = useState<Record<number,"wallet"|"pix">>({});
+  const [paymentBusy,setPaymentBusy] = useState<Record<number,boolean>>({});
+  const [paymentMessage,setPaymentMessage] = useState<Record<number,string>>({});
+  const refreshLoanStatuses = useCallback(async (records:BorrowRequest[])=>{
+    const token=localStorage.getItem("token");if(!token)return;
+    const entries=await Promise.all(records.filter(r=>r.status==="approved"&&r.creditedAt).map(async r=>{
+      try {const response=await fetch(API+"/api/borrow-requests/"+r.id+"/repayment-status",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+        return [r.id,response.ok?await response.json():null] as const;
+      }catch{return [r.id,null] as const;}
+    }));
+    setLoanStatuses(Object.fromEntries(entries.filter(entry=>entry[1]!==null)) as Record<number,LoanStatus>);
+  },[]);
+  const repayLoan=async(id:number,status:LoanStatus)=>{
+    const method=paymentMethods[id]||(status.walletPaymentsEnabled?"wallet":"pix");
+    const amount=status.finalDay?status.remaining:Number(paymentAmounts[id]??String(status.remaining));
+    if(!Number.isSafeInteger(amount)||amount<1||amount>status.remaining){setPaymentMessage(p=>({...p,[id]:"Antre yon kantite valid."}));return;}
+    setPaymentBusy(p=>({...p,[id]:true}));
+    try{
+      const endpoint=method==="wallet"?"wallet-repayments":"pix-intents";
+      const response=await fetch(API+"/api/borrow-requests/"+id+"/"+endpoint,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+localStorage.getItem("token"),"Idempotency-Key":"loan_"+crypto.randomUUID().replace(/-/g,"")},body:JSON.stringify({amount})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.message||"Peman an pa pase.");
+      if(method==="pix"){if(!result.checkoutUrl)throw new Error("Lyen PIX pa disponib.");window.location.assign(result.checkoutUrl);return;}
+      setPaymentMessage(p=>({...p,[id]:"Peman anrejistre."}));
+      void refreshBalances();void refreshRequests();window.dispatchEvent(new Event("pointsUpdated"));
+    }catch(e){setPaymentMessage(p=>({...p,[id]:e instanceof Error?e.message:"Peman an pa pase."}));}
+    finally{setPaymentBusy(p=>({...p,[id]:false}));}
+  };
   const refreshRequests = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
     try {
       const response = await fetch(`${API}/api/borrow-requests/mine`, {headers:{Authorization:`Bearer ${token}`},cache:"no-store"});
-      if (response.ok) setRequests(await response.json() as BorrowRequest[]);
+      if (response.ok) {const records=await response.json() as BorrowRequest[];setRequests(records);void refreshLoanStatuses(records);}
     } catch { /* Remain on balance page if history is temporarily unavailable. */ }
-  },[]);
+  },[refreshLoanStatuses]);
   const sendBorrowRequest = async () => {
     const amount = Number(requestAmount);
     if (!Number.isSafeInteger(amount) || amount<=0 || amount>borrowable || !requestReason.trim()) {
@@ -176,6 +207,30 @@ export default function Balans() {
                     <span className={styles.repaymentSentence}>Rete <strong className={expired ? styles.repaymentOverdue : styles.repaymentDays}>{time?.days ?? "—"} jou</strong> pou remèt <strong>{repaymentTotal(request.amount).toLocaleString("pt-BR")} pwen</strong></span>
                     <span className={styles.repaymentClock}>⏱ {clock} <small>èdtan : minit : segonn</small></span>
                     {expired && <span className={styles.repaymentOverdue}>Delè 30 jou a pase</span>}
+                  </div>;
+                })()}
+                {request.status==="approved"&&request.creditedAt&&loanStatuses[request.id]&&(()=>{
+                  const loan=loanStatuses[request.id];
+                  const method=paymentMethods[request.id]||(loan.walletPaymentsEnabled?"wallet":"pix");
+                  return <div style={{marginTop:12,padding:12,border:"1px solid #526a80",borderRadius:12}}>
+                    <strong>Remèt prè mwen</strong>
+                    <p>Rès pou peye: <strong>{loan.remaining} pwen</strong> sou {loan.total} pwen</p>
+                    {loan.remaining===0?<p>Prè sa a fin peye.</p>:<>
+                      {loan.finalDay&&<p>Dènye jou a: peye tout rès la.</p>}
+                      {loan.pendingPix&&<p>Yon peman PIX annatant.</p>}
+                      {!loan.finalDay&&<label style={{display:"block"}}>Kantite pou peye
+                        <input type="number" min={1} max={loan.remaining} step={1} value={paymentAmounts[request.id]??String(loan.remaining)}
+                          onChange={e=>setPaymentAmounts(p=>({...p,[request.id]:e.target.value}))}
+                          style={{display:"block",padding:8,width:"100%",boxSizing:"border-box"}}/>
+                      </label>}
+                      {loan.walletPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="wallet"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"wallet"}))}/> Peye ak balans Bolet</label>}
+                      {loan.pixPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="pix"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"pix"}))}/> Peye ak PIX</label>}
+                      {(loan.walletPaymentsEnabled||loan.pixPaymentsEnabled)?
+                        <button type="button" disabled={!!paymentBusy[request.id]||loan.pendingPix||(method==="wallet"&&!loan.walletPaymentsEnabled)||(method==="pix"&&!loan.pixPaymentsEnabled)}
+                          onClick={()=>void repayLoan(request.id,loan)}>{paymentBusy[request.id]?"Tanpri tann...":loan.finalDay?"Peye tout rès la":"Peye kounye a"}</button>
+                        :<p>Opsyon peman yo poko aktive.</p>}
+                    </>}
+                    {paymentMessage[request.id]&&<p role="status">{paymentMessage[request.id]}</p>}
                   </div>;
                 })()}
               </div>
