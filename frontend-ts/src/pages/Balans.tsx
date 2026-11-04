@@ -279,12 +279,13 @@ export default function Balans() {
           <p>Limit ou disponib: <strong>{borrowable.toLocaleString("pt-BR")} pwen</strong></p>
           <label htmlFor="borrow-amount">Konbyen pwen ou vle prete?</label>
           <input id="borrow-amount" type="number" min={1} max={borrowable} step={1} value={requestAmount} onChange={e=>setRequestAmount(e.target.value)} placeholder="Egzanp: 200"/>
-          {Number.isSafeInteger(Number(requestAmount)) && Number(requestAmount)>0 && Number(requestAmount)<=borrowable && <div className={styles.repaymentPreview} aria-live="polite">
+          {Number.isSafeInteger(Number(requestAmount)) && Number(requestAmount)>0 && Number(requestAmount)<=1789569705 && <div className={styles.repaymentPreview} aria-live="polite">
             <strong>Konbyen w ap remèt apre 30 jou?</strong>
             <span>Prè: {Number(requestAmount).toLocaleString("pt-BR")} pwen</span>
             <span>Enterè (20%): {(repaymentTotal(Number(requestAmount))-Number(requestAmount)).toLocaleString("pt-BR")} pwen</span>
             <strong>Total pou remèt: {repaymentTotal(Number(requestAmount)).toLocaleString("pt-BR")} pwen</strong>
             <small>30 jou yo kòmanse lè admin lan apwouve epi kredite prè a.</small>
+            {Number(requestAmount)>borrowable && <small style={{color:"#9f1239",fontWeight:700}}>Kantite sa a depase limit ou disponib ({borrowable.toLocaleString("pt-BR")} pwen). Ou pa ka voye demann sa a.</small>}
           </div>}
           <label htmlFor="borrow-reason">Rezon demann nan</label>
           <select id="borrow-reason" value={requestReason} onChange={e=>setRequestReason(e.target.value)}>
