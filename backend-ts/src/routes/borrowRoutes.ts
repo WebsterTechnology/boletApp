@@ -5,6 +5,8 @@ import { adminOnly } from "../middleware/adminOnly";
 import { BorrowRequest, User, sequelize } from "../models";
 import type { Transaction } from "sequelize";
 import { createBorrowPixCheckout } from "../services/borrowPixCheckout";
+import { checkBorrowPixWithProvider, verifiedBorrowPixPayment } from "../services/borrowPixVerification";
+import { settleVerifiedBorrowPix } from "../services/borrowPixSettlement";
 
 const router = Router();
 router.use(authenticate);
@@ -309,6 +311,37 @@ router.post("/:id/pix-intents", async (req,res) => {
     if (error instanceof UniqueConstraintError)
       return res.status(409).json({message:"Referans PIX deja itilize."});
     return res.status(503).json({message:"Verifye eta peman PIX la anvan ou eseye ankò."});
+  }
+});
+
+/** Verify payment with InfinitePay before posting a loan repayment. Admin only. */
+router.post("/admin/pix-attempts/:attemptId/verify",adminOnly,async(req,res)=>{
+  if(process.env.BORROW_PIX_WEBHOOK_ENABLED!=="true")
+    return res.status(503).json({message:"Verifikasyon PIX poko aktive."});
+  const attemptId=Number(req.params.attemptId);
+  const transactionNsu=req.body?.transactionNsu,slug=req.body?.slug;
+  if(!Number.isSafeInteger(attemptId)||attemptId<1 ||
+    typeof transactionNsu!=="string" || !/^[A-Za-z0-9_.-]{1,255}$/.test(transactionNsu) ||
+    typeof slug!=="string" || !/^[A-Za-z0-9_.-]{1,255}$/.test(slug) ||
+    !process.env.INFINITEPAY_HANDLE)
+    return res.status(400).json({message:"Referans PIX pa valid."});
+  try {
+    const rows=await sequelize.query<{providerReference:string;amountCents:number}>(
+      'SELECT "providerReference","amountCents" FROM borrow_pix_attempts WHERE id=:attemptId',
+      {replacements:{attemptId},type:QueryTypes.SELECT});
+    if(!rows.length || !rows[0].providerReference)
+      return res.status(404).json({message:"Peman PIX pa jwenn."});
+    const checked=await checkBorrowPixWithProvider({
+      handle:process.env.INFINITEPAY_HANDLE,
+      orderNsu:rows[0].providerReference,transactionNsu,slug,
+      apiKey:process.env.INFINITEPAY_API_KEY
+    });
+    if(!verifiedBorrowPixPayment(checked,Number(rows[0].amountCents)))
+      return res.status(409).json({message:"InfinitePay pa konfime peman an."});
+    return res.json(await settleVerifiedBorrowPix(attemptId));
+  }catch(error){
+    console.error("loan PIX verification failed",error instanceof Error?error.name:"unknown");
+    return res.status(503).json({message:"Peman an pa ka verifye kounye a."});
   }
 });
 
