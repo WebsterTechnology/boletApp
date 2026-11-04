@@ -248,9 +248,6 @@ router.post("/:id/pix-intents", async (req,res) => {
   if (!Number.isSafeInteger(id) || id<1 || !Number.isSafeInteger(amount) ||
       amount<1 || amount>21474836 || !key || !/^[A-Za-z0-9_-]{16,128}$/.test(key))
     return res.status(400).json({message:"Kantite oswa referans PIX pa valid."});
-  // Never open a multi-method checkout under a PIX-only repayment label.
-  if (!process.env.INFINITEPAY_API_KEY?.trim())
-    return res.status(503).json({message:"Peman PIX bezwen konfigirasyon InfinitePay."});
   const handle=process.env.INFINITEPAY_HANDLE;
   const redirectUrl=process.env.BORROW_PIX_REDIRECT_URL;
   const webhookUrl=process.env.BORROW_PIX_WEBHOOK_URL;
@@ -301,7 +298,7 @@ router.post("/:id/pix-intents", async (req,res) => {
     // Provider network request must not hold database locks.
     const checkout=await createBorrowPixCheckout({
       handle,orderNsu:key,points:amount,redirectUrl,webhookUrl,
-      apiKey:process.env.INFINITEPAY_API_KEY!
+      apiKey:process.env.INFINITEPAY_API_KEY
     });
     await sequelize.query(
       'UPDATE borrow_pix_attempts SET status=\'checkout_created\',"checkoutUrl"=:url,"updatedAt"=NOW() WHERE id=:attemptId AND status=\'pending\'',
@@ -412,7 +409,7 @@ router.get("/:id/repayment-status", async (req,res) => {
       fullPaymentAllowed:remaining>0 && pendingPix.length===0,
       pendingPix:pendingPix.length>0,
       walletPaymentsEnabled:process.env.BORROW_WALLET_REPAYMENTS_ENABLED==="true",
-      pixPaymentsEnabled:process.env.BORROW_PIX_CHECKOUT_ENABLED==="true" && process.env.BORROW_PIX_WEBHOOK_ENABLED==="true" && process.env.BORROW_PIX_SETTLEMENT_READY==="true" && Boolean(process.env.INFINITEPAY_API_KEY?.trim()) && Boolean(process.env.BORROW_PIX_REDIRECT_URL && process.env.BORROW_PIX_WEBHOOK_URL) && (process.env.BORROW_PIX_CUSTOMER_ACCESS_ENABLED==="true" || currentUser(req).isAdmin),
+      pixPaymentsEnabled:process.env.BORROW_PIX_CHECKOUT_ENABLED==="true" && process.env.BORROW_PIX_WEBHOOK_ENABLED==="true" && process.env.BORROW_PIX_SETTLEMENT_READY==="true" && Boolean(process.env.BORROW_PIX_REDIRECT_URL && process.env.BORROW_PIX_WEBHOOK_URL) && (process.env.BORROW_PIX_CUSTOMER_ACCESS_ENABLED==="true" || currentUser(req).isAdmin),
     });
   } catch {
     return res.status(500).json({message:"Pa kapab chaje kontè prè a."});
