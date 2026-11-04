@@ -55,7 +55,7 @@ export default function Balans() {
       const data=await response.json();
       if(!response.ok)throw new Error(data.message||"Pa kapab chanje metòd peman an.");
       setPaymentMethods(p=>({...p,[id]:"wallet"}));
-      setPaymentMessage(p=>({...p,[id]:"Ou ka peye ak balans Bolet kounye a. Pa itilize ansyen lyen InfinitePay la."}));
+      setPaymentMessage(p=>({...p,[id]:"Ou ka peye ak balans Bolet kounye a. Pa itilize ansyen lyen PIX la."}));
       await refreshRequests();
     }catch(e){
       setPaymentMessage(p=>({...p,[id]:e instanceof Error?e.message:"Pa kapab chanje metòd peman an."}));
@@ -237,8 +237,8 @@ export default function Balans() {
                     {loan.remaining===0?<p>Prè sa a fin peye.</p>:<>
                       {loan.finalDay&&<p>Dènye jou a: peye tout rès la.</p>}
                       {loan.pendingPix&&<div style={{margin:"10px 0"}}>
-                        <p>Yon peman InfinitePay annatant.</p>
-                        <p style={{fontSize:13,color:"#e5edf8"}}>Si ou pa peye ak InfinitePay, ou ka chwazi balans Bolet. Pa peye ak ansyen lyen InfinitePay la apre sa.</p>
+                        <p>Yon peman PIX annatant.</p>
+                        <p style={{fontSize:13,color:"#e5edf8"}}>Si w pa peye ak PIX, ou ka chwazi balans Bolet. Pa itilize ansyen lyen PIX la apre sa.</p>
                         <button type="button" disabled={!!paymentBusy[request.id]}
                           onClick={()=>void abandonPix(request.id)}
                           style={{background:"#facc15",color:"#111827",fontWeight:700,padding:"9px 12px",borderRadius:8}}>
