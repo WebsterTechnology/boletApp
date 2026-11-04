@@ -54,6 +54,7 @@ export default function Balans() {
       const result=await response.json();
       if(!response.ok)throw new Error(result.message||"Peman an pa pase.");
       if(method==="pix"){if(!result.checkoutUrl)throw new Error("Lyen PIX pa disponib.");window.location.assign(result.checkoutUrl);return;}
+      setPaymentAmounts(p=>({...p,[id]:""}));
       setPaymentMessage(p=>({...p,[id]:"Peman anrejistre."}));
       void refreshBalances();void refreshRequests();window.dispatchEvent(new Event("pointsUpdated"));
     }catch(e){setPaymentMessage(p=>({...p,[id]:e instanceof Error?e.message:"Peman an pa pase."}));}
