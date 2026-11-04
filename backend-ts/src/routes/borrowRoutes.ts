@@ -51,7 +51,32 @@ router.get("/admin", adminOnly, async (_req, res) => {
       include: [{ model: User, as: "customer", attributes: ["id","fullName","phone","borrowablePoints"] }],
       order: [["createdAt","DESC"],["id","DESC"]], limit: 300,
     });
-    return res.json(requests);
+    // Only confirmed repayments are inserted into borrow_repayments. Never use PIX intents.
+    const ids=requests.map(request=>request.id);
+    const confirmed=ids.length ? await sequelize.query<{
+      id:number;borrowRequestId:number;amount:number;method:string;createdAt:Date;
+    }>(
+      'SELECT id, "borrowRequestId", amount, method, "createdAt" FROM borrow_repayments WHERE "borrowRequestId" IN (:ids) ORDER BY "createdAt" DESC, id DESC',
+      {replacements:{ids},type:QueryTypes.SELECT}
+    ) : [];
+    const byLoan=new Map<number,typeof confirmed>();
+    for(const payment of confirmed){
+      const list=byLoan.get(Number(payment.borrowRequestId))??[];
+      list.push(payment);
+      byLoan.set(Number(payment.borrowRequestId),list);
+    }
+    return res.json(requests.map(request=>{
+      const payments=byLoan.get(request.id)??[];
+      const total=request.creditedAt ? loanTotal(Number(request.amount)) : 0;
+      const repaid=payments.reduce((sum,payment)=>sum+Number(payment.amount),0);
+      const ledgerReconciles=repaymentLedgerReconciles(Number(request.repaidPoints??0),payments.map(p=>Number(p.amount)));
+      return {...request.toJSON(),repayment:{
+        total,repaid,remaining:Math.max(0,total-repaid),
+        percentage:total>0?Math.min(100,Math.round(repaid/total*100)):0,
+        status:total>0&&repaid>=total?"paid":repaid>0?"partial":"unpaid",
+        payments,ledgerReconciles
+      }};
+    }));
   } catch { return res.status(500).json({ message: "Pa kapab chaje demann prè yo." }); }
 });
 
