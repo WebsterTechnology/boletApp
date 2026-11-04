@@ -218,7 +218,7 @@ export default function Balans() {
               <span>{request.amount.toLocaleString("pt-BR")} pwen · {request.reason}</span>
               <div className={styles.requestStatus}>
                 <strong>{statusLabel[request.status]}{request.status==="approved" ? (request.creditedAt ? " · Kredite" : " · Poko kredite") : ""}</strong>
-                {request.status==="approved" && request.creditedAt && (() => {
+                {request.status==="approved" && request.creditedAt && loanStatuses[request.id]?.remaining !== 0 && (() => {
                   const time = remainingTime(request.creditedAt,clockNow);
                   const expired = time !== null && time.days===0 && time.hours===0 && time.minutes===0 && time.seconds===0;
                   const clock = time ? [time.hours,time.minutes,time.seconds].map(value=>String(value).padStart(2,"0")).join(":") : "--:--:--";
