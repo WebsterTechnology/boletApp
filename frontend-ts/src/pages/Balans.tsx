@@ -225,7 +225,7 @@ export default function Balans() {
                           style={{display:"block",padding:8,width:"100%",boxSizing:"border-box"}}/>
                       </label>}
                       {loan.walletPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="wallet"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"wallet"}))}/> <span style={{color:"#facc15",fontWeight:700}}>Peye ak balans Bolet</span></label>}
-                      {loan.pixPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="pix"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"pix"}))}/> Peye ak InfinitePay (PIX / kat)</label>}
+                      {loan.pixPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="pix"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"pix"}))}/> <span style={{color:"#facc15",fontWeight:700}}>Peye ak pix</span></label>}
                       {(loan.walletPaymentsEnabled||loan.pixPaymentsEnabled)?
                         <button type="button" disabled={!!paymentBusy[request.id]||loan.pendingPix||(method==="wallet"&&!loan.walletPaymentsEnabled)||(method==="pix"&&!loan.pixPaymentsEnabled)}
                           onClick={()=>void repayLoan(request.id,loan)}>{paymentBusy[request.id]?"Tanpri tann...":loan.finalDay?"Peye tout rès la":"Peye kounye a"}</button>
