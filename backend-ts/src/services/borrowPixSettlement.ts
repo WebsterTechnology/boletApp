@@ -22,7 +22,19 @@ export async function settleVerifiedBorrowPix(attemptId:number) {
     if (!attempt || attempt.userId!==user.id || attempt.borrowRequestId!==loan.id)
       throw new Error("Attempt mismatch");
     const remaining=loanTotal(Number(loan.amount))-Number(loan.repaidPoints);
-    if (attempt.status==="confirmed") return {duplicate:true,remaining};
+    if (attempt.status==="confirmed") {
+      const existing=await sequelize.query<{amount:number;method:string}>(
+        'SELECT amount,method FROM borrow_repayments WHERE "idempotencyKey"=:key',
+        {replacements:{key:"borrow-pix-"+attempt.id},type:QueryTypes.SELECT,transaction});
+      const ledger=await sequelize.query<{amount:number}>(
+        'SELECT amount FROM borrow_repayments WHERE "borrowRequestId"=:id',
+        {replacements:{id:loan.id},type:QueryTypes.SELECT,transaction});
+      if (existing.length!==1 || existing[0].method!=="pix" ||
+          Number(existing[0].amount)!==attempt.points ||
+          !repaymentLedgerReconciles(Number(loan.repaidPoints),ledger.map(x=>Number(x.amount))))
+        throw new Error("Confirmed PIX repayment reconciliation failed");
+      return {duplicate:true,remaining};
+    }
     if (!["pending","checkout_created"].includes(attempt.status) ||
         !Number.isSafeInteger(attempt.points) || attempt.points<1 ||
         attempt.points*100!==attempt.amountCents || attempt.points>remaining)
