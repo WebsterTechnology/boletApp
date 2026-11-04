@@ -82,21 +82,21 @@ suite("Sòl wallet ledger PostgreSQL invariants", () => {
     expect(count.total).toBe("1");
   });
   it("serializes simultaneous wallet debits with a row lock", async () => {
-    await db.query('CREATE TABLE concurrent_wallet_probe (id integer PRIMARY KEY, points integer NOT NULL)');
-    await db.query('INSERT INTO concurrent_wallet_probe VALUES (1, 100)');
+    await db.query('CREATE TABLE sol_ledger_ci.concurrent_wallet_probe (id integer PRIMARY KEY, points integer NOT NULL)');
+    await db.query('INSERT INTO sol_ledger_ci.concurrent_wallet_probe VALUES (1, 100)');
     const debit = () => db.transaction(async transaction => {
       const [wallet] = await db.query<{ points: number }>(
-        'SELECT points FROM concurrent_wallet_probe WHERE id = 1 FOR UPDATE',
+        'SELECT points FROM sol_ledger_ci.concurrent_wallet_probe WHERE id = 1 FOR UPDATE',
         { transaction, type: QueryTypes.SELECT },
       );
       if (wallet.points < 100) return false;
-      await db.query('UPDATE concurrent_wallet_probe SET points = points - 100 WHERE id = 1', { transaction });
+      await db.query('UPDATE sol_ledger_ci.concurrent_wallet_probe SET points = points - 100 WHERE id = 1', { transaction });
       return true;
     });
     const outcomes = await Promise.all([debit(), debit()]);
     expect(outcomes.filter(Boolean)).toHaveLength(1);
     const [wallet] = await db.query<{ points: number }>(
-      'SELECT points FROM concurrent_wallet_probe WHERE id = 1',
+      'SELECT points FROM sol_ledger_ci.concurrent_wallet_probe WHERE id = 1',
       { type: QueryTypes.SELECT },
     );
     expect(wallet.points).toBe(0);
