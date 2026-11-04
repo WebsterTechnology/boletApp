@@ -223,7 +223,7 @@ export default function Balans() {
                           onChange={e=>setPaymentAmounts(p=>({...p,[request.id]:e.target.value}))}
                           style={{display:"block",padding:8,width:"100%",boxSizing:"border-box"}}/>
                       </label>}
-                      {loan.walletPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="wallet"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"wallet"}))}/> Peye ak balans Bolet</label>}
+                      {loan.walletPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="wallet"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"wallet"}))}/> <span style={{color:"#facc15",fontWeight:700}}>Peye ak balans Bolet</span></label>}
                       {loan.pixPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="pix"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"pix"}))}/> Peye ak PIX</label>}
                       {(loan.walletPaymentsEnabled||loan.pixPaymentsEnabled)?
                         <button type="button" disabled={!!paymentBusy[request.id]||loan.pendingPix||(method==="wallet"&&!loan.walletPaymentsEnabled)||(method==="pix"&&!loan.pixPaymentsEnabled)}
