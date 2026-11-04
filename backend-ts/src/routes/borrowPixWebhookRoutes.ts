@@ -24,6 +24,9 @@ router.post("/webhook",async(req,res)=>{
       {replacements:{orderNsu},type:QueryTypes.SELECT});
     if(rows.length!==1)
       return res.status(404).json({success:false,message:"Unknown loan PIX order"});
+    if(!Number.isSafeInteger(Number(rows[0].amountCents)) ||
+       Number(rows[0].amountCents)<100)
+      return res.status(409).json({success:false,message:"Invalid expected loan payment"});
     const verification=await checkBorrowPixWithProvider({
       handle:process.env.INFINITEPAY_HANDLE,orderNsu,transactionNsu,slug,
       apiKey:process.env.INFINITEPAY_API_KEY
