@@ -218,14 +218,14 @@ export default function Balans() {
                     <p>Rès pou peye: <strong>{loan.remaining} pwen</strong> sou {loan.total} pwen</p>
                     {loan.remaining===0?<p>Prè sa a fin peye.</p>:<>
                       {loan.finalDay&&<p>Dènye jou a: peye tout rès la.</p>}
-                      {loan.pendingPix&&<p>Yon peman PIX annatant.</p>}
+                      {loan.pendingPix&&<p>Yon peman InfinitePay annatant.</p>}
                       {!loan.finalDay&&<label style={{display:"block",color:"#e5edf8",fontWeight:700,marginTop:10}}>Kantite pou peye
                         <input type="number" min={1} max={loan.remaining} step={1} value={paymentAmounts[request.id]??String(loan.remaining)}
                           onChange={e=>setPaymentAmounts(p=>({...p,[request.id]:e.target.value}))}
                           style={{display:"block",padding:8,width:"100%",boxSizing:"border-box"}}/>
                       </label>}
                       {loan.walletPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="wallet"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"wallet"}))}/> <span style={{color:"#facc15",fontWeight:700}}>Peye ak balans Bolet</span></label>}
-                      {loan.pixPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="pix"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"pix"}))}/> Peye ak PIX</label>}
+                      {loan.pixPaymentsEnabled&&<label style={{display:"block"}}><input type="radio" checked={method==="pix"} onChange={()=>setPaymentMethods(p=>({...p,[request.id]:"pix"}))}/> Peye ak InfinitePay (PIX / kat)</label>}
                       {(loan.walletPaymentsEnabled||loan.pixPaymentsEnabled)?
                         <button type="button" disabled={!!paymentBusy[request.id]||loan.pendingPix||(method==="wallet"&&!loan.walletPaymentsEnabled)||(method==="pix"&&!loan.pixPaymentsEnabled)}
                           onClick={()=>void repayLoan(request.id,loan)}>{paymentBusy[request.id]?"Tanpri tann...":loan.finalDay?"Peye tout rès la":"Peye kounye a"}</button>
