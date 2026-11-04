@@ -16,7 +16,7 @@ const Home = ({ openLogin }: { openLogin: () => void }) => {
       {/* <h1 className={styles.title}>Jwe</h1> */}
       <div className={styles.grid}>
         <LottoCard openLogin={() => enter("/game")} />
-        <article className={styles.solCard}><div className={styles.solHero}><img src={solSavingsImage} alt="Bokal ekonomi ak plant, pil pyès lajan ak flèch pwogrè" className={styles.solImage} /></div><div className={styles.solBody}><h3>Sòl</h3><p>Mete lajan sou kote epi grandi ekonomi w.</p><button type="button" onClick={() => enter("/sol")}>ANTRE NAN SÒL</button></div></article>
+        <article className={styles.solCard} role="link" tabIndex={0} onClick={() => enter("/sol")} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); enter("/sol"); } }}><div className={styles.solHero}><img src={solSavingsImage} alt="Bokal ekonomi ak plant, pil pyès lajan ak flèch pwogrè" className={styles.solImage} /><div className={styles.solOverlay}><span>Klike pou antre</span></div></div><div className={styles.solBody}><h3>Sòl</h3><p>Mete lajan sou kote epi grandi ekonomi w.</p><button type="button" onClick={e => { e.stopPropagation(); enter("/sol"); }}>ANTRE NAN SÒL</button></div></article>
       </div>
     </div>
   );
