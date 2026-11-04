@@ -218,7 +218,7 @@ export default function Balans() {
                     {loan.remaining===0?<p>Prè sa a fin peye.</p>:<>
                       {loan.finalDay&&<p>Dènye jou a: peye tout rès la.</p>}
                       {loan.pendingPix&&<p>Yon peman PIX annatant.</p>}
-                      {!loan.finalDay&&<label style={{display:"block"}}>Kantite pou peye
+                      {!loan.finalDay&&<label style={{display:"block",color:"#e5edf8",fontWeight:700,marginTop:10}}>Kantite pou peye
                         <input type="number" min={1} max={loan.remaining} step={1} value={paymentAmounts[request.id]??String(loan.remaining)}
                           onChange={e=>setPaymentAmounts(p=>({...p,[request.id]:e.target.value}))}
                           style={{display:"block",padding:8,width:"100%",boxSizing:"border-box"}}/>
