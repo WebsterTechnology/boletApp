@@ -375,6 +375,8 @@ router.get("/:id/repayment-status", async (req,res) => {
       partialPaymentAllowed:remaining>0 && now<dueAtMs-86400000 && pendingPix.length===0,
       fullPaymentAllowed:remaining>0 && pendingPix.length===0,
       pendingPix:pendingPix.length>0,
+      walletPaymentsEnabled:process.env.BORROW_WALLET_REPAYMENTS_ENABLED==="true",
+      pixPaymentsEnabled:process.env.BORROW_PIX_CHECKOUT_ENABLED==="true" && process.env.BORROW_PIX_WEBHOOK_ENABLED==="true" && process.env.BORROW_PIX_SETTLEMENT_READY==="true" && (process.env.BORROW_PIX_CUSTOMER_ACCESS_ENABLED==="true" || currentUser(req).isAdmin),
     });
   } catch {
     return res.status(500).json({message:"Pa kapab chaje kontè prè a."});
