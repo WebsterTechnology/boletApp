@@ -35,10 +35,24 @@ export async function settleVerifiedBorrowPix(attemptId:number) {
         throw new Error("Confirmed PIX repayment reconciliation failed");
       return {duplicate:true,remaining};
     }
-    if (!["pending","checkout_created"].includes(attempt.status) ||
+    if (attempt.status==="refund_required")
+      return {duplicate:true,refundRequired:true,remaining};
+    if (!["pending","checkout_created","abandoned"].includes(attempt.status) ||
         !Number.isSafeInteger(attempt.points) || attempt.points<1 ||
-        attempt.points*100!==attempt.amountCents || attempt.points>remaining)
+        attempt.points*100!==attempt.amountCents)
       throw new Error("Attempt not eligible");
+    // A link abandoned in the app may remain payable at InfinitePay. When
+    // a verified late payment exceeds the loan balance, preserve an auditable
+    // refund-required state instead of posting an overpayment to the loan.
+    if (attempt.points>remaining) {
+      if (attempt.status!=="abandoned") throw new Error("Attempt exceeds remaining loan");
+      await sequelize.query(
+        'UPDATE borrow_pix_attempts SET status=\'refund_required\',"confirmedAt"=NOW(),"updatedAt"=NOW() WHERE id=:attemptId',
+        {replacements:{attemptId},transaction}
+      );
+      console.error("Verified abandoned checkout requires a merchant refund", {attemptId,loanId:loan.id});
+      return {duplicate:false,refundRequired:true,remaining};
+    }
     const ledger=await sequelize.query<{amount:number}>(
       'SELECT amount FROM borrow_repayments WHERE "borrowRequestId"=:id',
       {replacements:{id:loan.id},type:QueryTypes.SELECT,transaction});
