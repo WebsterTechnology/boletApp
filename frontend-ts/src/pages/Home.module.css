@@ -594,3 +594,44 @@
 .solBody button{padding:11px 18px;}
 @media(max-width:600px){.container{padding:0.7rem 0.4rem}.grid{gap:1.2rem;padding:0.55rem}.solCard{width:100%;max-width:330px}}
 @media(min-width:601px){.grid{gap:1.4rem}}
+
+/* Sòl: mirror Loto card hover, gold accent, image zoom and CTA feedback. */
+.solCard {
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: linear-gradient(145deg,#1f1f1f,#252525);
+  transition: transform .4s cubic-bezier(.175,.885,.32,1.275),border-color .4s ease,box-shadow .4s ease;
+}
+.solCard::before {
+  content:"";
+  position:absolute;
+  top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,#ffd700,#ffa500,#ffd700);
+  z-index:2;
+}
+.solCard:active { transform:scale(.98); }
+.solImage { transition:transform .6s cubic-bezier(.175,.885,.32,1.275); }
+.solCard:hover .solImage { transform:scale(1.08); }
+.solOverlay {
+  position:absolute;inset:0;display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:16px;background:linear-gradient(to top,rgba(26,26,46,.85),transparent 60%);
+  opacity:0;transition:opacity .3s ease;
+}
+.solCard:hover .solOverlay { opacity:1; }
+.solOverlay span {
+  background:linear-gradient(135deg,#ffd700,#ffa500);color:#1a1a2e;
+  padding:8px 20px;border-radius:50px;font-weight:800;font-size:13px;
+  text-transform:uppercase;letter-spacing:.5px;box-shadow:0 4px 10px #ffd70066;
+}
+.solBody button {
+  color:#1a1a2e;border:1px solid #ffffff4d;
+  letter-spacing:1px;text-transform:uppercase;
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.solBody button:hover { transform:scale(1.03);box-shadow:0 0 20px #ffd700; }
+@media(min-width:769px){
+  .solCard:hover { transform:translateY(-10px) scale(1.02);border-color:#ffd700;box-shadow:0 20px 40px #ffd70066; }
+}
+@media(prefers-reduced-motion:reduce){
+  .solCard,.solImage,.solOverlay,.solBody button { transition:none; }
+}
