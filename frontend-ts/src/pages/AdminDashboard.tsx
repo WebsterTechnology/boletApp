@@ -420,7 +420,7 @@ const filteredUsers = useMemo(() => {
                 </li>)}
               </ul>}
             </section>}
-            {request.status==="approved" && request.creditedAt && <AdminBorrowCountdown creditedAt={request.creditedAt} amount={request.amount} now={borrowClockNow}/>}
+            {request.status==="approved" && request.creditedAt && (!request.repayment || request.repayment.remaining > 0) && <AdminBorrowCountdown creditedAt={request.creditedAt} amount={request.amount} now={borrowClockNow}/>}
             {request.status==="approved" && !request.creditedAt && <button
               type="button" disabled={borrowBusy===request.id}
               onClick={()=>void creditLegacyBorrow(request.id,request.amount)}
