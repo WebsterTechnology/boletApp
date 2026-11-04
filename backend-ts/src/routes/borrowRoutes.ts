@@ -264,6 +264,53 @@ router.get("/:id/pix-attempts", async (req,res) => {
   }
 });
 
+/** Authoritative 30-day countdown for customer and administrator dashboards. */
+router.get("/:id/repayment-status", async (req,res) => {
+  const id = Number(req.params.id);
+  if (!Number.isSafeInteger(id) || id < 1)
+    return res.status(400).json({message:"ID pa valid."});
+  try {
+    const loan = await BorrowRequest.findByPk(id);
+    if (!loan || (loan.userId !== currentUser(req).id && !currentUser(req).isAdmin))
+      return res.status(404).json({message:"Prè pa jwenn."});
+    if (loan.status !== "approved" || !loan.creditedAt)
+      return res.status(409).json({message:"Prè sa a poko kredite."});
+    const total = loanTotal(Number(loan.amount));
+    const repaid = Number(loan.repaidPoints);
+    const remaining = total - repaid;
+    if (!Number.isSafeInteger(repaid) || repaid < 0 || remaining < 0)
+      return res.status(409).json({message:"Balans prè a bezwen verifikasyon."});
+    const ledger = await sequelize.query<{amount:number}>(
+      'SELECT amount FROM borrow_repayments WHERE "borrowRequestId"=:id',
+      {replacements:{id},type:QueryTypes.SELECT}
+    );
+    if (!repaymentLedgerReconciles(repaid,ledger.map(p=>Number(p.amount))))
+      return res.status(409).json({message:"Istwa peman prè a pa koresponn."});
+    const dueAtMs = new Date(loan.creditedAt).getTime() + LOAN_TERM_MS;
+    if (!Number.isFinite(dueAtMs))
+      return res.status(409).json({message:"Dat limit prè a pa valid."});
+    const now = Date.now();
+    const millisecondsLeft = Math.max(0,dueAtMs-now);
+    const pendingPix = await sequelize.query<{id:number}>(
+      'SELECT id FROM borrow_pix_attempts WHERE "borrowRequestId"=:id AND status IN (\'pending\',\'checkout_created\') LIMIT 1',
+      {replacements:{id},type:QueryTypes.SELECT}
+    );
+    return res.json({
+      loanId:id,total,repaid,remaining,
+      dueAt:new Date(dueAtMs).toISOString(),
+      millisecondsLeft,
+      daysLeft:Math.ceil(millisecondsLeft/86400000),
+      overdue:remaining>0 && now>dueAtMs,
+      finalDay:remaining>0 && now>=dueAtMs-86400000,
+      partialPaymentAllowed:remaining>0 && now<dueAtMs-86400000 && pendingPix.length===0,
+      fullPaymentAllowed:remaining>0 && pendingPix.length===0,
+      pendingPix:pendingPix.length>0,
+    });
+  } catch {
+    return res.status(500).json({message:"Pa kapab chaje kontè prè a."});
+  }
+});
+
 router.get("/:id/repayments", async (req,res) => {
   const id=Number(req.params.id);
   if(!Number.isSafeInteger(id)||id<1) return res.status(400).json({message:"ID pa valid."});
