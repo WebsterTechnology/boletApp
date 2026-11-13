@@ -26,6 +26,7 @@ import pwenRoutes from "./routes/pwenRoutes";
 import twaChifRoutes from "./routes/twaChifRoutes";
 import userRoutes from "./routes/userRoutes";
 import yonChifRoutes from "./routes/yonChifRoutes";
+import developerRoutes, { maintenanceEnabled } from "./routes/developerRoutes";
 
 const app = express();
 
@@ -45,6 +46,26 @@ app.use(express.json());
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+// Developer control remains reachable while the public site is offline.
+app.use("/api/developer", developerRoutes);
+
+// Keep incoming provider callbacks reachable so confirmed external payments are not lost.
+// All other customer and regular-admin API requests are blocked during maintenance.
+app.use("/api", async (req, res, next) => {
+  const path = req.path;
+  if (path.startsWith("/borrow-pix/") || path.startsWith("/sol-pix/") ||
+      path.startsWith("/pix/webhook") || path.startsWith("/infinitepay/webhook")) return next();
+  try {
+    if (await maintenanceEnabled()) {
+      res.status(503).setHeader("Cache-Control", "no-store").json({ message: "Sit entènèt la an antretyen.", maintenance: true });
+      return;
+    }
+    next();
+  } catch {
+    res.status(503).json({ message: "Service temporarily unavailable", maintenance: true });
+  }
 });
 
 app.use("/api/auth", authRoutes);
