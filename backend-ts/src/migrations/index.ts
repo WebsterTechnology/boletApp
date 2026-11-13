@@ -23,6 +23,7 @@ import borrowRequests from "./20261103010000-borrow-requests";
 import borrowCreditAudit from "./20261103020000-borrow-credit-audit";
 import borrowRepayments from "./20261103030000-borrow-repayments";
 import borrowPixAttempts from "./20261103040000-borrow-pix-attempts";
+import siteMaintenance from "./20261113000000-site-maintenance";
 
 // Names keep the ".js" suffix that sequelize-cli recorded in SequelizeMeta, so migrations
 // already applied by ../backend are recognised and not run twice.
@@ -49,6 +50,7 @@ const migrations = [
   { name: "20261103020000-borrow-credit-audit.js", ...borrowCreditAudit },
   { name: "20261103030000-borrow-repayments.js", ...borrowRepayments },
   { name: "20261103040000-borrow-pix-attempts.js", ...borrowPixAttempts },
+  { name: "20261113000000-site-maintenance.js", ...siteMaintenance },
 ];
 
 export const migrator = new Umzug<QueryInterface>({
