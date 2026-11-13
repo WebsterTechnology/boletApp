@@ -22,6 +22,7 @@ import CompleteProfile from "./pages/CompleteProfile";
 import ChatWidget from "./components/ChatWidget";
 import Balans from "./pages/Balans";
 import SolPage from "./pages/SolPage";
+import DeveloperMaintenance from "./pages/DeveloperMaintenance";
 
 // -------- Guard (supports admin-only) --------
 function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNode; requireAdmin?: boolean }) {
@@ -54,6 +55,26 @@ function ProtectedRoute({ children, requireAdmin = false }: { children: ReactNod
 function App() {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
+  const [maintenance, setMaintenance] = useState<boolean | null>(null);
+  const isDeveloperPath = window.location.pathname === "/developer/maintenance";
+
+  useEffect(() => {
+    if (isDeveloperPath) return;
+    let mounted = true;
+    const check = async () => {
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:3001"}/api/developer/status`, { cache: "no-store" });
+        if (!response.ok) throw new Error("Status unavailable");
+        const data = await response.json();
+        if (mounted) setMaintenance(!!data.maintenance);
+      } catch {
+        if (mounted) setMaintenance(true);
+      }
+    };
+    void check();
+    const timer = window.setInterval(() => void check(), 15000);
+    return () => { mounted = false; window.clearInterval(timer); };
+  }, [isDeveloperPath]);
 
   const openLogin = () => {
     if (localStorage.getItem("token")) return;
@@ -82,6 +103,10 @@ function App() {
       window.removeEventListener("authChanged", applyAuthHeader);
     };
   }, []);
+
+  if (isDeveloperPath) return <DeveloperMaintenance />;
+  if (maintenance === null) return <main style={{ padding: 40, textAlign: "center" }}>HTNovaTech — Ap chaje…</main>;
+  if (maintenance) return <main style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: "#101827", color: "white", padding: 24, textAlign: "center" }}><div><h1>HTNovaTech</h1><h2>Sit entènèt la an antretyen</h2><p>Nou pral retounen byento. Mèsi pou pasyans ou.</p></div></main>;
 
   return (
     <>
