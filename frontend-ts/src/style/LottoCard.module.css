@@ -180,3 +180,24 @@
 .desc{margin-bottom:12px;}
 .playBtn{padding:11px 18px;}
 @media(min-width:769px){.card{max-width:350px;}}
+
+
+/* Premium landing refinement aligned with Sòl. */
+.card {
+  border: 1px solid rgba(255, 218, 65, .28);
+  box-shadow: 0 16px 38px rgba(0,0,0,.46), 0 1px 0 rgba(255,255,255,.09) inset;
+}
+.content { padding: 19px 20px 21px; }
+.title { font-size: 24px; letter-spacing: -.35px; line-height: 1.2; margin-bottom: 10px; }
+.desc { font-size: 14px; line-height: 1.55; color: #d0d2d7; margin-bottom: 20px; }
+.playBtn {
+  min-height: 46px;
+  padding: 12px 18px;
+  font-weight: 850;
+  box-shadow: 0 5px 15px rgba(255, 177, 0, .16);
+}
+.card:focus-visible, .playBtn:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+@media (max-width: 600px) { .card { max-width: 350px; } }
+@media (prefers-reduced-motion: reduce) {
+  .card, .image, .overlay, .playBtn { animation: none; transition: none; }
+}
