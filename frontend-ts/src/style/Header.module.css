@@ -702,3 +702,23 @@ button svg,
   50%{box-shadow:0 0 0 3px rgba(255,177,223,.32),0 5px 19px rgba(232,45,119,.66)}
 }
 @media(prefers-reduced-motion:reduce){.switchProduct{animation:none}}
+
+
+/* Subtle premium polish without altering the existing Balans or notification actions. */
+.header {
+  background: linear-gradient(115deg, #151d34, #19223d);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, .28);
+  border-bottom-color: rgba(255, 215, 0, .38);
+}
+.logoSmall, .logoFull { object-fit: contain; }
+.buyButton { box-shadow: 0 3px 12px rgba(22, 163, 74, .22); }
+.buyButton:focus-visible, .bellButton:focus-visible, .logoLink:focus-visible {
+  outline: 2px solid #ffda18;
+  outline-offset: 3px;
+}
+@media (max-width: 480px) {
+  .header { padding-top: 9px; padding-bottom: 9px; }
+  .logoSmall { height: 34px; }
+  .buyButton { min-height: 34px; padding: 7px 11px; font-size: 11px; }
+  .bellButton { flex-basis: 34px; width: 34px; height: 34px; }
+}
